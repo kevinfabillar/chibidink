@@ -15,9 +15,13 @@ public interface IEmailSender
 /// </summary>
 internal sealed class BrevoEmailSender(HttpClient http, IConfiguration config, ILogger<BrevoEmailSender> logger) : IEmailSender
 {
+    /// <summary>Removes spaces, line breaks and quotes that often come along when pasting a value into settings.</summary>
+    private static string? Clean(string? value) => value?.Trim().Trim('"', '\'').Trim();
+
     public async Task SendAsync(string to, string subject, string html, string text, CancellationToken ct)
     {
-        var apiKey = config["Email:BrevoApiKey"];
+        // Forgive stray spaces, line breaks or quotes from pasting the key into the host's settings.
+        var apiKey = Clean(config["Email:BrevoApiKey"]);
         if (string.IsNullOrWhiteSpace(apiKey))
         {
             logger.LogWarning("Email isn't set up (Email:BrevoApiKey). Would have sent \"{Subject}\":\n{Text}", subject, text);
@@ -28,13 +32,15 @@ internal sealed class BrevoEmailSender(HttpClient http, IConfiguration config, I
         {
             Content = JsonContent.Create(new
             {
-                sender = new { name = config["Email:FromName"] ?? "ChibiDink", email = config["Email:FromAddress"] },
+                sender = new { name = config["Email:FromName"] ?? "ChibiDink", email = Clean(config["Email:FromAddress"]) },
                 to = new[] { new { email = to } },
                 subject,
                 htmlContent = html,
                 textContent = text,
             }),
         };
+        if (!apiKey.StartsWith("xkeysib-", StringComparison.Ordinal))
+            logger.LogWarning("Email:BrevoApiKey doesn't look like a Brevo API key (they start with \"xkeysib-\"; SMTP keys \"xsmtpsib-\" don't work here)");
         request.Headers.Add("api-key", apiKey);
         using var response = await http.SendAsync(request, ct);
         if (!response.IsSuccessStatusCode)
