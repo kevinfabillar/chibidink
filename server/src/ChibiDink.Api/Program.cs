@@ -3,6 +3,7 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.BearerToken;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ChibiDink.Api.Infrastructure;
@@ -114,6 +115,18 @@ services.AddProblemDetails(o => o.CustomizeProblemDetails = ctx =>
 });
 services.AddExceptionHandler<ProblemExceptionHandler>();
 
+// Compress API answers (JSON) and the website files. A session update sent to 60 phones is about 30 KB
+// each uncompressed and about 5 KB compressed, which matters on hosts that count bandwidth (Render).
+services.AddResponseCompression(o =>
+{
+    o.EnableForHttps = true; // answers carry no secrets worth guessing (tokens travel in headers)
+    o.Providers.Add<BrotliCompressionProvider>();
+    o.Providers.Add<GzipCompressionProvider>();
+    o.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(["application/problem+json"]);
+});
+services.Configure<BrotliCompressionProviderOptions>(o => o.Level = System.IO.Compression.CompressionLevel.Fastest);
+services.Configure<GzipCompressionProviderOptions>(o => o.Level = System.IO.Compression.CompressionLevel.Fastest);
+
 var allowedOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
 services.AddCors(o => o.AddDefaultPolicy(p => p
     .WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
@@ -131,6 +144,7 @@ if (behindProxy)
 
 var app = builder.Build();
 if (behindProxy) app.UseForwardedHeaders();
+app.UseResponseCompression();
 
 // ---- Pipeline -------------------------------------------------------------------------------
 // A phone that drops off mid-request (page change, screen lock, weak Wi-Fi) shouldn't cancel the
