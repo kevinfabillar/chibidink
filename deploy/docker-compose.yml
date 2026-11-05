@@ -1,0 +1,36 @@
+# Runs ChibiDink on the server: the app, and Caddy in front of it for HTTPS.
+# Start or update:  sudo docker compose up -d --build   (from this folder)
+services:
+  app:
+    build: ..
+    restart: unless-stopped
+    env_file: .env # ConnectionStrings__DefaultConnection lives here (never in the code)
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Database__MigrateOnStartup: "true" # applies database updates when a new version starts
+      Proxy__TrustForwardedHeaders: "true" # only Caddy can reach the app (no ports published below)
+      # Lighter memory use, so the app fits comfortably on the small 1 GB server (fine on bigger ones too).
+      DOTNET_gcServer: "0"
+      DOTNET_GCConserveMemory: "5"
+    expose:
+      - "8080"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data # HTTPS certificates
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

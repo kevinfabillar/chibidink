@@ -1,0 +1,25 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+
+# Node / Vite
+node_modules/
+dist/
+*.local
+
+# Editors & OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Secrets: never commit these
+.env
+deploy/.env
+*.key
+*.pem
+appsettings.*.local.json
+*.tgz

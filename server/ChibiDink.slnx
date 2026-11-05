@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ChibiDink.Api/ChibiDink.Api.csproj" />
+    <Project Path="src/ChibiDink.Application/ChibiDink.Application.csproj" />
+    <Project Path="src/ChibiDink.Domain/ChibiDink.Domain.csproj" />
+    <Project Path="src/ChibiDink.Infrastructure/ChibiDink.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ChibiDink.Tests/ChibiDink.Tests.csproj" />
+  </Folder>
+</Solution>

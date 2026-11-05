@@ -1,0 +1,28 @@
+# Render blueprint: one free web service in Singapore that builds the Dockerfile (API + website).
+# The database connection string is entered in Render's dashboard when you create the service
+# (sync: false), so it never goes into Git.
+services:
+  - type: web
+    name: chibidink
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true # every push to GitHub deploys the new version
+    envVars:
+      - key: ConnectionStrings__DefaultConnection
+        sync: false # you paste your Supabase connection string in Render
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: Database__MigrateOnStartup
+        value: "true"
+      - key: Proxy__TrustForwardedHeaders
+        value: "true" # behind Render's HTTPS proxy
+      - key: PORT
+        value: "8080" # the port the app listens on (see Dockerfile)
+      # Lighter memory use for the free 512 MB server
+      - key: DOTNET_gcServer
+        value: "0"
+      - key: DOTNET_GCConserveMemory
+        value: "5"

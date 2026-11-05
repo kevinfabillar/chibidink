@@ -1,0 +1,294 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-lime: #b7f33b;
+  --color-lime-deep: #8fcf14;
+  --color-grape: #a348fa;
+  --color-grape-deep: #7b22d6;
+  --color-sky: #3bc6f3;
+  --color-surface: #152630;
+  --color-surface-2: #1c3240;
+  --color-night: #0b1422;
+  --color-ink: #070c14;
+  --color-muted: #8ea3b5;
+  --color-danger: #ff5c7a;
+
+  --font-display: 'Baloo 2', ui-rounded, system-ui, sans-serif;
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-glow-lime: 0 0 0 1.5px rgb(183 243 59 / 0.85), 0 0 22px -4px rgb(183 243 59 / 0.55);
+  --shadow-glow-grape: 0 0 0 1.5px rgb(163 72 250 / 0.85), 0 0 22px -4px rgb(163 72 250 / 0.55);
+  --shadow-glow-sky: 0 0 0 1.5px rgb(59 198 243 / 0.8), 0 0 22px -6px rgb(59 198 243 / 0.5);
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    -webkit-tap-highlight-color: transparent;
+    /* Keep text the same size when a phone turns sideways. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-ink font-sans text-white antialiased;
+    min-height: 100dvh;
+    overflow-x: clip; /* nothing should ever make the page scroll sideways */
+  }
+  /* The glow behind every page. A fixed layer instead of background-attachment: fixed, which iOS
+     Safari ignores and which makes scrolling heavy on phones. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      radial-gradient(60rem 30rem at 110% -10%, rgb(163 72 250 / 0.16), transparent 60%),
+      radial-gradient(50rem 30rem at -20% 110%, rgb(183 243 59 / 0.08), transparent 60%);
+  }
+  /* A single-column grid never grows wider than its container (one wide child, like a long list,
+     would otherwise stretch the column past a phone's edge and clip everything in it). Layouts that
+     set their own columns (grid-cols-*) are unaffected. */
+  :where(.grid) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Phones zoom into text boxes with text under 16px; keep inputs at 16px on touch screens. */
+  @media (pointer: coarse) {
+    input,
+    select,
+    textarea {
+      font-size: max(16px, 1em);
+    }
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-lime);
+    outline-offset: 2px;
+  }
+}
+
+@utility font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+@utility card {
+  @apply rounded-3xl border border-white/8 bg-surface/80 backdrop-blur;
+}
+
+@utility pill {
+  @apply inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold;
+}
+
+@utility vs-text {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 800;
+  background: linear-gradient(180deg, #e9ff9e 0%, #b7f33b 45%, #6fae00 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 10px rgb(183 243 59 / 0.55)) drop-shadow(0 2px 0 rgb(7 12 20 / 0.9));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---- Character animations --------------------------------------------------------------------- */
+
+@keyframes cd-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2.5px);
+  }
+}
+.cd-bob {
+  animation: cd-bob 2.8s ease-in-out infinite;
+}
+
+@keyframes cd-wave {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-18deg);
+  }
+}
+
+/* The paddle character's raised arm; the shoulder is at (470, 352) in its artwork. */
+.cd-wave {
+  transform-origin: 470px 352px;
+  animation: cd-wave 1.3s ease-in-out infinite;
+}
+
+@keyframes cd-dash {
+  to {
+    stroke-dashoffset: -36;
+  }
+}
+
+/* Dashes flowing around a ring (the champion aura's floor rune). */
+.cd-dash {
+  animation: cd-dash 1.6s linear infinite;
+}
+
+@keyframes cd-twinkle {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Premium sparkles. Delay classes stagger them. */
+.cd-twinkle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cd-twinkle 2.2s ease-in-out infinite;
+}
+.cd-d1 {
+  animation-delay: 0.5s;
+}
+.cd-d2 {
+  animation-delay: 1s;
+}
+.cd-d3 {
+  animation-delay: 1.5s;
+}
+
+@keyframes cd-flick {
+  0%,
+  100% {
+    transform: scaleY(1);
+    opacity: 0.65;
+  }
+  50% {
+    transform: scaleY(1.14);
+    opacity: 1;
+  }
+}
+
+/* Flames flickering from their base. */
+.cd-flick {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: cd-flick 0.55s ease-in-out infinite;
+}
+
+@keyframes cd-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* The Void Reaper's spirit wisps circling the character (centre 300, 420 of its artwork). */
+.cd-orbit {
+  transform-origin: 300px 420px;
+  animation: cd-orbit 14s linear infinite;
+}
+
+@keyframes cd-flap {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-7deg);
+  }
+}
+
+/* The dragon's wings beating gently from the shoulder (200, 330 in the artwork). */
+.cd-flap {
+  transform-origin: 200px 330px;
+  animation: cd-flap 2.4s ease-in-out infinite;
+}
+
+@keyframes cd-glow {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(0.97);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+}
+.cd-glow {
+  animation: cd-glow 1.8s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes cd-rise {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-70px);
+    opacity: 0;
+  }
+}
+.cd-rise {
+  animation: cd-rise 2.6s ease-in infinite;
+}
+
+@keyframes cd-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.cd-spin {
+  animation: cd-spin 18s linear infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Small thumbnails (shop cards, wardrobe tiles) stay still: dozens of animated, blurred
+   previews at once would make the page heavy. */
+.cd-still,
+.cd-still * {
+  animation: none !important;
+}
+
+/* Shooting stars in the Galaxy scene */
+@keyframes cd-meteor {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  4% {
+    opacity: 1;
+  }
+  16%,
+  100% {
+    transform: translate(-150px, 70px);
+    opacity: 0;
+  }
+}
+.cd-meteor {
+  animation: cd-meteor 7s ease-out infinite;
+}

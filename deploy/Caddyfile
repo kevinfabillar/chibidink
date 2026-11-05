@@ -1,0 +1,17 @@
+# Caddy gets and renews a free HTTPS certificate for your domain automatically,
+# and sends plain http:// visitors to https://.
+{$DOMAIN} {
+	encode zstd gzip
+	header {
+		# Browsers only use HTTPS for this site from now on
+		Strict-Transport-Security "max-age=31536000"
+		# No guessing file types, no embedding the app in other sites
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Camera only for this site (QR scanning); nothing else
+		Permissions-Policy "camera=(self), microphone=(), geolocation=()"
+		-Server
+	}
+	reverse_proxy app:8080
+}

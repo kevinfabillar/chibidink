@@ -1,0 +1,63 @@
+using ChibiDink.Domain.Matches;
+using ChibiDink.Domain.Players;
+using ChibiDink.Domain.Progression;
+using ChibiDink.Domain.Sessions;
+
+namespace ChibiDink.Application.Abstractions;
+
+public interface IPlayerProfileRepository
+{
+    Task<PlayerProfile?> FindAsync(Guid userId, CancellationToken ct);
+    Task<IReadOnlyDictionary<Guid, PlayerProfile>> GetManyAsync(IEnumerable<Guid> userIds, CancellationToken ct);
+    void Add(PlayerProfile profile);
+}
+
+public interface ISessionRepository
+{
+    /// <summary>Loads the session with its courts and participants.</summary>
+    Task<PlaySession?> FindAsync(Guid sessionId, CancellationToken ct);
+    Task<PlaySession?> FindByInviteCodeAsync(string inviteCode, CancellationToken ct);
+    Task<Guid?> FindIdByInviteCodeAsync(string inviteCode, CancellationToken ct);
+    Task<bool> InviteCodeExistsAsync(string inviteCode, CancellationToken ct);
+    Task<IReadOnlyList<PlaySession>> ListForUserAsync(Guid userId, int take, CancellationToken ct);
+    Task<string?> FindTitleAsync(Guid sessionId, CancellationToken ct);
+
+    /// <summary>Sessions the background matchmaker should look at right now.</summary>
+    /// <summary>Sessions with matchmaking running, and sessions with a match whose confirmation time ran out.</summary>
+    Task<(IReadOnlyList<Guid> Active, IReadOnlyList<Guid> Expired)> ListNeedingAttentionAsync(DateTimeOffset now, CancellationToken ct);
+    void Add(PlaySession session);
+}
+
+public interface IMatchRepository
+{
+    Task<Match?> FindAsync(Guid matchId, CancellationToken ct);
+
+    /// <summary>Matches that are not completed, cancelled, or voided.</summary>
+    Task<IReadOnlyList<Match>> ListLiveAsync(Guid sessionId, CancellationToken ct);
+
+    /// <summary>Which of these players are in a live match right now, in any session.</summary>
+    Task<IReadOnlySet<Guid>> FindPlayersInLiveMatchesAsync(IReadOnlyCollection<Guid> userIds, CancellationToken ct);
+    Task<IReadOnlyList<Match>> ListRecentCompletedAsync(Guid sessionId, int take, CancellationToken ct);
+    Task<IReadOnlyList<Match>> ListCompletedForUserAsync(Guid userId, int take, CancellationToken ct);
+    Task<IReadOnlyList<Match>> ListCompletedForUserInSessionAsync(Guid userId, Guid sessionId, CancellationToken ct);
+
+    /// <summary>Every completed match in the session, newest first.</summary>
+    Task<IReadOnlyList<Match>> ListCompletedInSessionAsync(Guid sessionId, CancellationToken ct);
+
+    /// <summary>The player's one live match, if any (the database allows at most one).</summary>
+    Task<Match?> FindLiveForUserAsync(Guid userId, CancellationToken ct);
+    void Add(Match match);
+}
+
+public interface IAuditLog
+{
+    void Record(MatchEditAudit entry);
+    Task<IReadOnlyList<MatchEditAudit>> ListForSessionAsync(Guid sessionId, int take, CancellationToken ct);
+}
+
+/// <summary>Append-only record of XP and coin changes.</summary>
+public interface IRewardLedger
+{
+    Task<bool> HasEntryAsync(Guid userId, RewardCurrency currency, string sourceKey, CancellationToken ct);
+    void Record(RewardTransaction entry);
+}
