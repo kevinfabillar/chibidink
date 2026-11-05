@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import { ChevronLeft } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
@@ -5,6 +6,23 @@ import { CONTACT_EMAIL, LEGAL_UPDATED } from '../lib/legal'
 
 // Terms of Service and Privacy Policy, written for how ChibiDink actually works. Public pages:
 // people read them before they have an account.
+
+/** Text styles for the documents, on their pages and in the sign-up sheet. */
+export const LEGAL_TEXT =
+  'space-y-6 text-[15px] leading-relaxed text-white/85 [&_h2]:mb-2 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-white [&_li]:ml-5 [&_li]:list-disc [&_ul]:space-y-1'
+
+/** A link to the other document: switches the sheet when shown in one, otherwise goes to the page. */
+function DocLink({ to, onOpen, children }: { to: string; onOpen?: () => void; children: ReactNode }) {
+  return onOpen ? (
+    <button type="button" onClick={onOpen} className="text-lime hover:underline">
+      {children}
+    </button>
+  ) : (
+    <Link to={to} className="text-lime hover:underline">
+      {children}
+    </Link>
+  )
+}
 
 function LegalLayout({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -14,9 +32,7 @@ function LegalLayout({ title, children }: { title: string; children: ReactNode }
       </button>
       <h1 className="font-display text-3xl font-extrabold">{title}</h1>
       <p className="mt-1 text-sm text-muted">Last updated {LEGAL_UPDATED}</p>
-      <div className="mt-6 space-y-6 text-[15px] leading-relaxed text-white/85 [&_h2]:mb-2 [&_h2]:font-display [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-white [&_li]:ml-5 [&_li]:list-disc [&_ul]:space-y-1">
-        {children}
-      </div>
+      <div className={clsx('mt-6', LEGAL_TEXT)}>{children}</div>
       <p className="mt-10 text-sm text-muted">
         See also: <Link to="/terms" className="text-lime hover:underline">Terms of Service</Link> ·{' '}
         <Link to="/privacy" className="text-lime hover:underline">Privacy Policy</Link>
@@ -34,11 +50,28 @@ const Contact = () => (
 export function TermsPage() {
   return (
     <LegalLayout title="Terms of Service">
+      <TermsContent />
+    </LegalLayout>
+  )
+}
+
+export function PrivacyPage() {
+  return (
+    <LegalLayout title="Privacy Policy">
+      <PrivacyContent />
+    </LegalLayout>
+  )
+}
+
+/** The Terms of Service text. `onPrivacy` opens the Privacy Policy in place (used in the sign-up sheet). */
+export function TermsContent({ onPrivacy }: { onPrivacy?: () => void }) {
+  return (
+    <>
       <section>
         <p>
           These terms are the agreement between you and ChibiDink ("we") for using the ChibiDink app, which helps players run
           real pickleball open play: sessions, the court queue, scores, and a character you can dress up. By creating an account
-          or playing as a guest, you agree to these terms and to our <Link to="/privacy" className="text-lime hover:underline">Privacy Policy</Link>.
+          or playing as a guest, you agree to these terms and to our <DocLink to="/privacy" onOpen={onPrivacy}>Privacy Policy</DocLink>.
         </p>
       </section>
       <section>
@@ -105,13 +138,14 @@ export function TermsPage() {
           Questions about these terms: <Contact />.
         </p>
       </section>
-    </LegalLayout>
+    </>
   )
 }
 
-export function PrivacyPage() {
+/** The Privacy Policy text. */
+export function PrivacyContent() {
   return (
-    <LegalLayout title="Privacy Policy">
+    <>
       <section>
         <p>
           This explains what personal data ChibiDink collects, why, who can see it, and your rights under the Philippine Data
@@ -190,6 +224,6 @@ export function PrivacyPage() {
         <h2>9. Changes</h2>
         <p>If we change this policy in an important way, we'll update the date above and ask you to agree again.</p>
       </section>
-    </LegalLayout>
+    </>
   )
 }
