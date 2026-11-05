@@ -102,6 +102,16 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
           </Link>
         )}
         <ErrorNote error={submit.error} />
+        {register && submit.error instanceof ApiError && submit.error.status === 409 && (
+          <div className="-mt-1 flex justify-center gap-4 text-sm font-semibold">
+            <Link to={`/login?next=${encodeURIComponent(next)}`} className="text-lime hover:underline">
+              Sign in instead
+            </Link>
+            <Link to="/forgot-password" className="text-white/75 hover:text-white">
+              Forgot password?
+            </Link>
+          </div>
+        )}
         <Button type="submit" block size="lg" disabled={register && !agreed} loading={submit.isPending}>
           {register ? 'Create account' : 'Sign in'}
         </Button>

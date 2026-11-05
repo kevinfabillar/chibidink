@@ -87,6 +87,10 @@ public sealed class AuthController(
         var result = await users.CreateAsync(user, request.Password);
         if (!result.Succeeded)
         {
+            // Email and user name are the same here, so "taken" shows up twice: give one clear message instead.
+            if (result.Errors.Any(e => e.Code is "DuplicateEmail" or "DuplicateUserName"))
+                return Problem(statusCode: StatusCodes.Status409Conflict, title: "Account exists",
+                    detail: "There's already an account with this email. Sign in instead, or use Forgot password.");
             foreach (var error in result.Errors) ModelState.AddModelError(error.Code, error.Description);
             return ValidationProblem(ModelState);
         }
@@ -202,25 +206,49 @@ public sealed class AuthController(
 
     private async Task SendVerificationCodeAsync(AppUser user, CancellationToken ct)
     {
-        // A 6-digit code (no link), because mail services rewrite links for tracking and those can be blocked.
+        // A "Verify now" button, plus the 6-digit code as a backup: mail services rewrite links for tracking,
+        // and those tracking addresses can be blocked on some networks. The button carries the same code.
         var code = await users.GenerateEmailConfirmationTokenAsync(user);
         var spaced = code.Length == 6 ? $"{code[..3]} {code[3..]}" : code;
-        var text = $"Your ChibiDink code is {spaced}\n\nType it in the app to finish creating your account. It works for about 10 minutes.\n\nIf you didn't sign up, you can ignore this email.";
+        var site = PublicUrl();
+        var link = site is null ? null : $"{site}/verify-email?email={Uri.EscapeDataString(user.Email!)}&code={code}";
+        var text =
+            (link is null ? "" : $"Verify your email to finish creating your ChibiDink account:\n{link}\n\n") +
+            $"Or type this code in the app: {spaced}\n\nIt works for about 10 minutes. If you didn't sign up, you can ignore this email.";
+        var button = link is null ? "" :
+            "<p>Tap the button to finish creating your account.</p>" +
+            $"<p style=\"margin:24px 0\"><a href=\"{WebUtility.HtmlEncode(link)}\" style=\"background:#B7F33B;color:#070C14;padding:14px 26px;border-radius:12px;text-decoration:none;font-weight:bold;font-size:17px\">Verify now</a></p>" +
+            "<p style=\"font-size:13px;color:#5A6474;margin-bottom:4px\">Button not working? Type this code in the app instead:</p>";
         var html =
             "<div style=\"font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:24px;color:#1A1D24\">" +
             "<h2 style=\"margin:0 0 12px\">Confirm your email</h2>" +
-            "<p>Type this code in ChibiDink to finish creating your account:</p>" +
-            $"<p style=\"font-size:36px;font-weight:bold;letter-spacing:8px;margin:20px 0;color:#070C14\">{WebUtility.HtmlEncode(spaced)}</p>" +
+            (link is null ? "<p>Type this code in ChibiDink to finish creating your account:</p>" : button) +
+            $"<p style=\"font-size:{(link is null ? 36 : 26)}px;font-weight:bold;letter-spacing:6px;margin:10px 0 20px;color:#070C14\">{WebUtility.HtmlEncode(spaced)}</p>" +
             "<p style=\"font-size:13px;color:#5A6474\">It works for about 10 minutes. If you didn't sign up, ignore this email.</p>" +
             "</div>";
-        try
+        SendInBackground(user.Email!, "Verify your ChibiDink account", html, text, "sign-up verification");
+    }
+
+    /// <summary>
+    /// Sends after the answer has gone back, so a slow or unreachable mail server never leaves the player
+    /// waiting on a spinning button. Gives up after 20 seconds; failures are logged.
+    /// </summary>
+    private void SendInBackground(string to, string subject, string html, string text, string what)
+    {
+        var sender = email;
+        var log = logger;
+        _ = Task.Run(async () =>
         {
-            await email.SendAsync(user.Email!, $"Your ChibiDink code: {spaced}", html, text, ct);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Could not send a sign-up code email");
-        }
+            using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+            try
+            {
+                await sender.SendAsync(to, subject, html, text, limit.Token);
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Could not send the {What} email", what);
+            }
+        });
     }
 
     /// <summary>
@@ -245,14 +273,7 @@ public sealed class AuthController(
             }
             var token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(await users.GeneratePasswordResetTokenAsync(user)));
             var link = $"{site}/reset-password?email={Uri.EscapeDataString(user.Email!)}&token={token}";
-            try
-            {
-                await email.SendAsync(user.Email!, "Reset your ChibiDink password", ResetHtml(link), ResetText(link), ct);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Could not send a password reset email");
-            }
+            SendInBackground(user.Email!, "Reset your ChibiDink password", ResetHtml(link), ResetText(link), "password reset");
         }
         return NoContent();
     }

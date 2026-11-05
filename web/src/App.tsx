@@ -13,6 +13,7 @@ import { ShopPage } from './pages/items/ShopPage'
 import { JoinPage } from './pages/JoinPage'
 import { PrivacyPage, TermsPage } from './pages/LegalPages'
 import { ForgotPasswordPage, ResetPasswordPage } from './pages/PasswordPages'
+import { VerifyEmailPage } from './pages/VerifyEmailPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { CourtPage } from './pages/session/CourtPage'
 import { SessionPage } from './pages/session/SessionPage'
@@ -31,6 +32,7 @@ export default function App() {
       <Route path="/login" element={<AuthPage mode="login" />} />
       <Route path="/register" element={<AuthPage mode="register" />} />
       <Route path="/join/:code" element={<JoinPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/terms" element={<TermsPage />} />

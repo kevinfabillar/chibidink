@@ -35,7 +35,7 @@ export function VerifyEmailStep({ email, onVerified, onBack }: { email: string; 
       <div>
         <h2 className="font-display text-2xl font-bold">Check your email</h2>
         <p className="mt-1 text-sm text-muted">
-          We sent a 6-digit code to <b className="text-white">{email}</b>. Type it here to finish creating your account.
+          We sent an email to <b className="text-white">{email}</b>. Tap <b className="text-white">Verify now</b> in it, or type its 6-digit code here.
         </p>
       </div>
       <input

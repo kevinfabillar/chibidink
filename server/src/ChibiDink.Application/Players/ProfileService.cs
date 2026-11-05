@@ -20,8 +20,6 @@ public interface IProfileService
 
 public sealed class ProfileService(
     IPlayerProfileRepository profiles,
-    ISessionRepository sessions,
-    IMatchRepository matches,
     IRewardService rewards,
     RewardRules rewardRules,
     IUnitOfWork unitOfWork,
