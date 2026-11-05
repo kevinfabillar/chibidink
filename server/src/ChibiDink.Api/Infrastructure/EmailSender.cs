@@ -39,5 +39,7 @@ internal sealed class BrevoEmailSender(HttpClient http, IConfiguration config, I
         using var response = await http.SendAsync(request, ct);
         if (!response.IsSuccessStatusCode)
             logger.LogError("Brevo refused the email ({Status}): {Body}", (int)response.StatusCode, await response.Content.ReadAsStringAsync(ct));
+        else
+            logger.LogInformation("Brevo accepted the email \"{Subject}\" ({Status})", subject, (int)response.StatusCode);
     }
 }

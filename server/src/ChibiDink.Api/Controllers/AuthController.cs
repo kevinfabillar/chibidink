@@ -138,7 +138,10 @@ public sealed class AuthController(
     {
         var user = string.IsNullOrWhiteSpace(request.Email) ? null : await users.FindByEmailAsync(request.Email.Trim());
         // Only real accounts with a password (not guests, not the demo accounts).
-        if (user is not null && await users.HasPasswordAsync(user) && !user.Email!.EndsWith("@chibidink.test", StringComparison.OrdinalIgnoreCase))
+        if (user is null || !await users.HasPasswordAsync(user) || user.Email!.EndsWith("@chibidink.test", StringComparison.OrdinalIgnoreCase))
+            // Logged without the address, so the logs show why nothing was sent.
+            logger.LogInformation("Password reset asked for an email with no password account: nothing sent");
+        else
         {
             var site = PublicUrl();
             if (site is null)
