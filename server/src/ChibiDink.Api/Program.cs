@@ -29,6 +29,9 @@ services.AddIdentityApiEndpoints<AppUser>(o =>
         o.Password.RequiredLength = 8;
         o.Password.RequireNonAlphanumeric = false;
         o.Lockout.MaxFailedAccessAttempts = 8;
+        // New accounts must confirm their email (a 6-digit code) before they can sign in.
+        o.SignIn.RequireConfirmedEmail = true;
+        o.Tokens.EmailConfirmationTokenProvider = TokenOptions.DefaultEmailProvider;
     })
     .AddRoles<IdentityRole<Guid>>()
     .AddEntityFrameworkStores<AppDbContext>();

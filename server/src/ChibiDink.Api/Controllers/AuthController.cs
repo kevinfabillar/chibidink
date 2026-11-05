@@ -34,10 +34,15 @@ public sealed class AuthController(
     public sealed record GuestRequest(string InviteCode, string DisplayName, bool AcceptTerms = false);
     public sealed record ForgotPasswordRequest(string Email);
     public sealed record ResetPasswordRequest(string Email, string Token, string NewPassword);
+    public sealed record VerifyEmailRequest(string Email, string Code);
 
     private const string TermsRequired = "Please agree to the Terms of Service and Privacy Policy to continue.";
 
-    /// <summary>Creates an account and its starter character, then returns a bearer token.</summary>
+    /// <summary>
+    /// Step 1 of sign-up: creates the account (not usable yet) and emails a 6-digit code. The player is signed in
+    /// only after verifying it (verify-email). Signing up again with an email that's still unverified just
+    /// updates the name and password and sends a new code, so a mistyped first try isn't a dead end.
+    /// </summary>
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterRequest request, CancellationToken ct)
     {
@@ -54,9 +59,29 @@ public sealed class AuthController(
             return ValidationProblem(ModelState);
         }
 
+        var email = request.Email?.Trim() ?? "";
+        var existing = await users.FindByEmailAsync(email);
+        if (existing is { EmailConfirmed: false } && await users.HasPasswordAsync(existing))
+        {
+            // Same person trying again before verifying: take the new password and resend the code.
+            var token = await users.GeneratePasswordResetTokenAsync(existing);
+            var changed = await users.ResetPasswordAsync(existing, token, request.Password ?? "");
+            if (!changed.Succeeded)
+            {
+                foreach (var error in changed.Errors) ModelState.AddModelError(error.Code, error.Description);
+                return ValidationProblem(ModelState);
+            }
+            existing.TermsAcceptedAt = DateTimeOffset.UtcNow;
+            existing.TermsVersion = LegalTerms.Version;
+            await users.UpdateAsync(existing);
+            await profiles.EnsureProfileAsync(existing.Id, name, ct);
+            await SendVerificationCodeAsync(existing, ct);
+            return Ok(new { verificationRequired = true });
+        }
+
         var user = new AppUser
         {
-            UserName = request.Email, Email = request.Email,
+            UserName = email, Email = email,
             TermsAcceptedAt = DateTimeOffset.UtcNow, TermsVersion = LegalTerms.Version,
         };
         var result = await users.CreateAsync(user, request.Password);
@@ -67,7 +92,8 @@ public sealed class AuthController(
         }
 
         await profiles.EnsureProfileAsync(user.Id, name, ct);
-        return await IssueTokenAsync(user);
+        await SendVerificationCodeAsync(user, ct);
+        return Ok(new { verificationRequired = true });
     }
 
     /// <summary>
@@ -98,7 +124,7 @@ public sealed class AuthController(
         var id = Guid.NewGuid();
         var user = new AppUser
         {
-            Id = id, UserName = $"guest-{id:N}", Email = $"guest-{id:N}@guest.chibidink.local",
+            Id = id, UserName = $"guest-{id:N}", Email = $"guest-{id:N}@guest.chibidink.local", EmailConfirmed = true,
             TermsAcceptedAt = DateTimeOffset.UtcNow, TermsVersion = LegalTerms.Version,
         };
         var created = await users.CreateAsync(user); // no password: a guest signs in only through this token
@@ -122,11 +148,79 @@ public sealed class AuthController(
         if (user is null) return InvalidLogin();
 
         var check = await signIn.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
+        if (check.IsNotAllowed && !user.EmailConfirmed)
+        {
+            // Right password, but the email isn't confirmed yet: send a code and ask for it.
+            await SendVerificationCodeAsync(user, ct);
+            return Problem(statusCode: StatusCodes.Status403Forbidden, title: "Verify your email",
+                detail: "Confirm your email first. We just sent you a 6-digit code.");
+        }
         if (!check.Succeeded) return InvalidLogin();
 
         // Repairs accounts whose profile creation failed after registration.
         await profiles.EnsureProfileAsync(user.Id, user.Email!.Split('@')[0], ct);
         return await IssueTokenAsync(user);
+    }
+
+    /// <summary>
+    /// Step 2 of sign-up: the 6-digit code from the email confirms the address, completes the account and
+    /// signs the player in. Wrong codes count toward the account's lockout, so codes can't be guessed.
+    /// </summary>
+    [HttpPost("verify-email")]
+    public async Task<IActionResult> VerifyEmail(VerifyEmailRequest request, CancellationToken ct)
+    {
+        const string invalid = "That code isn't right or has expired. Check the email, or send a new code.";
+        var user = string.IsNullOrWhiteSpace(request.Email) ? null : await users.FindByEmailAsync(request.Email.Trim());
+        if (user is null)
+            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Verification failed", detail: invalid);
+        if (await users.IsLockedOutAsync(user))
+            return Problem(statusCode: StatusCodes.Status429TooManyRequests, title: "Too many tries",
+                detail: "Too many wrong codes. Wait a few minutes, then send a new code.");
+        if (!user.EmailConfirmed)
+        {
+            var code = new string((request.Code ?? "").Where(char.IsDigit).ToArray());
+            var result = await users.ConfirmEmailAsync(user, code);
+            if (!result.Succeeded)
+            {
+                await users.AccessFailedAsync(user);
+                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Verification failed", detail: invalid);
+            }
+            await users.ResetAccessFailedCountAsync(user);
+        }
+        await profiles.EnsureProfileAsync(user.Id, user.Email!.Split('@')[0], ct);
+        return await IssueTokenAsync(user);
+    }
+
+    /// <summary>Sends a fresh sign-up code (same answer whether or not the email has an unverified account).</summary>
+    [HttpPost("resend-verification")]
+    public async Task<IActionResult> ResendVerification(ForgotPasswordRequest request, CancellationToken ct)
+    {
+        var user = string.IsNullOrWhiteSpace(request.Email) ? null : await users.FindByEmailAsync(request.Email.Trim());
+        if (user is not null && !user.EmailConfirmed) await SendVerificationCodeAsync(user, ct);
+        return NoContent();
+    }
+
+    private async Task SendVerificationCodeAsync(AppUser user, CancellationToken ct)
+    {
+        // A 6-digit code (no link), because mail services rewrite links for tracking and those can be blocked.
+        var code = await users.GenerateEmailConfirmationTokenAsync(user);
+        var spaced = code.Length == 6 ? $"{code[..3]} {code[3..]}" : code;
+        var text = $"Your ChibiDink code is {spaced}\n\nType it in the app to finish creating your account. It works for about 10 minutes.\n\nIf you didn't sign up, you can ignore this email.";
+        var html =
+            "<div style=\"font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:24px;color:#1A1D24\">" +
+            "<h2 style=\"margin:0 0 12px\">Confirm your email</h2>" +
+            "<p>Type this code in ChibiDink to finish creating your account:</p>" +
+            $"<p style=\"font-size:36px;font-weight:bold;letter-spacing:8px;margin:20px 0;color:#070C14\">{WebUtility.HtmlEncode(spaced)}</p>" +
+            "<p style=\"font-size:13px;color:#5A6474\">It works for about 10 minutes. If you didn't sign up, ignore this email.</p>" +
+            "</div>";
+        try
+        {
+            await email.SendAsync(user.Email!, $"Your ChibiDink code: {spaced}", html, text, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Could not send a sign-up code email");
+        }
     }
 
     /// <summary>
@@ -192,7 +286,12 @@ public sealed class AuthController(
             return ValidationProblem(ModelState);
         }
 
-        // A successful reset also clears a lockout from too many wrong passwords.
+        // A successful reset also clears a lockout from too many wrong passwords, and proves the email is theirs.
+        if (!user.EmailConfirmed)
+        {
+            user.EmailConfirmed = true;
+            await users.UpdateAsync(user);
+        }
         await users.ResetAccessFailedCountAsync(user);
         await users.SetLockoutEndDateAsync(user, null);
         return NoContent();

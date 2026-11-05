@@ -26,8 +26,12 @@ export const authApi = {
   /** Emails a reset link if the account exists (the answer is the same either way). */
   forgotPassword: (email: string) => http.post('/api/auth/forgot-password', { email }),
   resetPassword: (email: string, token: string, newPassword: string) => http.post('/api/auth/reset-password', { email, token, newPassword }),
+  /** Step 1 of sign-up: makes the account and emails a 6-digit code (no sign-in yet). */
   register: (email: string, password: string, displayName: string, acceptTerms: boolean) =>
-    http.post<TokenResponse>('/api/auth/register', { email, password, displayName, acceptTerms }),
+    http.post<{ verificationRequired: boolean }>('/api/auth/register', { email, password, displayName, acceptTerms }),
+  /** Step 2: the code from the email; signs the player in. */
+  verifyEmail: (email: string, code: string) => http.post<TokenResponse>('/api/auth/verify-email', { email, code }),
+  resendVerification: (email: string) => http.post('/api/auth/resend-verification', { email }),
 }
 
 export const profileApi = {

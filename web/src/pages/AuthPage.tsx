@@ -2,6 +2,9 @@ import { useMutation } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { authApi } from '../api/api'
+import { ApiError } from '../api/httpClient'
+import type { TokenResponse } from '../api/types'
+import { VerifyEmailStep } from '../components/auth/VerifyEmailStep'
 import { useAuth } from '../auth/authStore'
 import { Button } from '../components/ui/Button'
 import { JoinCodeForm } from '../components/session/JoinCodeForm'
@@ -17,13 +20,25 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [agreed, setAgreed] = useState(false)
+  // After sign-up (or signing in to an unconfirmed account): the "type your code" step.
+  const [verifying, setVerifying] = useState(false)
+
+  const done = (t: TokenResponse) => {
+    signIn(t.accessToken, t.expiresIn)
+    navigate(next, { replace: true })
+  }
 
   const submit = useMutation({
-    mutationFn: () => (mode === 'login' ? authApi.login(email, password) : authApi.register(email, password, displayName, agreed)),
-    onSuccess: (t) => {
-      signIn(t.accessToken, t.expiresIn)
-      navigate(next, { replace: true })
+    mutationFn: async () => {
+      if (mode === 'register') {
+        await authApi.register(email.trim(), password, displayName, agreed)
+        return null
+      }
+      return authApi.login(email.trim(), password)
     },
+    onSuccess: (t) => (t ? done(t) : setVerifying(true)),
+    // Right password but email not confirmed yet: the server sent a code, so ask for it.
+    onError: (e) => e instanceof ApiError && e.status === 403 && setVerifying(true),
   })
 
   const onSubmit = (e: FormEvent) => {
@@ -52,6 +67,9 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
         </section>
       )}
 
+      {verifying ? (
+        <VerifyEmailStep email={email.trim()} onVerified={done} onBack={() => (submit.reset(), setVerifying(false))} />
+      ) : (
       <form onSubmit={onSubmit} className="card space-y-4 p-5">
         {register && (
           <Field
@@ -88,6 +106,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
           {register ? 'Create account' : 'Sign in'}
         </Button>
       </form>
+      )}
 
       <p className="mt-5 text-center text-sm text-muted">
         {register ? 'Already have an account?' : 'New to ChibiDink?'}{' '}

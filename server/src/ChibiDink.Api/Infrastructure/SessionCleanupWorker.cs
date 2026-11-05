@@ -34,6 +34,8 @@ internal sealed class SessionCleanupWorker(IServiceScopeFactory scopes, IConfigu
                     var removed = await RunOnceAsync(keepDays, keepPerPlayer, dryRun, stoppingToken);
                     logger.LogInformation(dryRun ? "Session cleanup (dry run) would remove {Count} old sessions" : "Session cleanup removed {Count} old sessions", removed);
                     var guests = await RemoveOldGuestsAsync(guestDays, dryRun, stoppingToken);
+                    var unverified = await RemoveUnverifiedAsync(7, dryRun, stoppingToken);
+                    if (unverified > 0) logger.LogInformation("Removed {Count} sign-ups that never confirmed their email", unverified);
                     logger.LogInformation(dryRun ? "Guest cleanup (dry run) would remove {Count} guest accounts" : "Guest cleanup removed {Count} guest accounts", guests);
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
@@ -90,6 +92,25 @@ internal sealed class SessionCleanupWorker(IServiceScopeFactory scopes, IConfigu
             total += ids.Count;
             if (ids.Count < Batch) return total;
         }
+    }
+
+    /// <summary>Sign-ups that never confirmed their email (not guests) are removed after a week.</summary>
+    private async Task<int> RemoveUnverifiedAsync(int keepDays, bool dryRun, CancellationToken ct)
+    {
+        await using var scope = scopes.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var cutoff = DateTimeOffset.UtcNow.AddDays(-keepDays);
+        var ids = await db.Database.SqlQuery<Guid>($"""
+            SELECT u."Id" AS "Value"
+            FROM "AspNetUsers" u
+            JOIN "PlayerProfiles" p ON p."UserId" = u."Id"
+            WHERE u."EmailConfirmed" = false AND u."PasswordHash" IS NOT NULL AND p."CreatedAt" < {cutoff}
+              AND NOT EXISTS (SELECT 1 FROM "PlaySessions" s WHERE s."OrganizerId" = u."Id")
+            LIMIT {Batch}
+            """).ToListAsync(ct);
+        if (ids.Count == 0 || dryRun) return ids.Count;
+        await db.Users.Where(u => ids.Contains(u.Id)).ExecuteDeleteAsync(ct);
+        return ids.Count;
     }
 
     private async Task<int> RunOnceAsync(int keepDays, int keepPerPlayer, bool dryRun, CancellationToken ct)
