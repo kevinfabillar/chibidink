@@ -21,7 +21,7 @@ public sealed record Appearance
     public static readonly string[] HandleShapes = ["slim", "classic", "chunky"];
     public static readonly string[] EndCaps = ["round", "pommel", "ball", "flat", "ring", "gem", "star"];
     public static readonly string[] ShoeColors = ["#F4F6F9", "#1A1D24", "#D93A45", "#2B4579", "#B7F33B", "#FF5CA8", "#8B5CF6", "#F2A65A", "#7A4A22", "#D9AE4A"];
-    public static readonly string[] EndCapColors = ["#1A1D24", "#D9AE4A", "#C9D1DC", "#D93A45", "#2B4579", "#2F9E5B", "#8B5CF6", "#FF5CA8", "#B7F33B", "#F4F6F9"];
+    public static readonly string[] EndCapColors = ["#1A1D24", "#D9AE4A", "#C9D1DC", "#D93A45", "#2B4579", "#2F9E5B", "#8B5CF6", "#FF5CA8", "#B7F33B", "#F4F6F9", "#3A3F4B", "#4A5262", "#1F2A44", "#3B2A78", "#1F4E3D", "#7A1F33", "#5A381F", "#8C5A2B"];
 
     public string BodyColor { get; init; } = BodyColors[0];
     public string EdgeColor { get; init; } = "#1F2A37";

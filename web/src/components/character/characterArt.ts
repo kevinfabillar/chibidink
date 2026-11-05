@@ -93,7 +93,9 @@ export const END_CAPS: Option[] = [
 /** Shoe colours; '' (the first swatch) keeps the outfit's own shoes. */
 export const SHOE_COLORS = ['', '#F4F6F9', '#1A1D24', '#D93A45', '#2B4579', '#B7F33B', '#FF5CA8', '#8B5CF6', '#F2A65A', '#7A4A22', '#D9AE4A']
 /** End cap colours (the pickleball cap keeps its own yellow). */
-export const END_CAP_COLORS = ['#1A1D24', '#D9AE4A', '#C9D1DC', '#D93A45', '#2B4579', '#2F9E5B', '#8B5CF6', '#FF5CA8', '#B7F33B', '#F4F6F9']
+export const END_CAP_COLORS = ['#1A1D24', '#D9AE4A', '#C9D1DC', '#D93A45', '#2B4579', '#2F9E5B', '#8B5CF6', '#FF5CA8', '#B7F33B', '#F4F6F9',
+  // darker caps
+  '#3A3F4B', '#4A5262', '#1F2A44', '#3B2A78', '#1F4E3D', '#7A1F33', '#5A381F', '#8C5A2B']
 
 export const DEFAULT_APPEARANCE: Appearance = {
   bodyColor: BODY_COLORS[0],
