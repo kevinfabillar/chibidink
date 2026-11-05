@@ -91,16 +91,19 @@ function LookForm({ profile, onDone }: { profile: Profile; onDone: () => void })
 
   return (
     <div className="space-y-4">
-      <div className="mx-auto w-44">
-        <Avatar3D look={{ ...lookOf(profile.player), appearance: a }} variant="full" live interactive className="w-full" title="Preview" />
-      </div>
-      <div className="flex justify-center gap-2">
-        <Button variant="dark" size="md" icon={<Dices className="size-4" />} onClick={randomize}>
-          Randomize
-        </Button>
-        <Button variant="ghost" size="md" icon={<RotateCcw className="size-4" />} onClick={() => setA(DEFAULT_APPEARANCE)}>
-          Reset
-        </Button>
+      {/* Live preview stays pinned at the top while you scroll through the options. */}
+      <div className="sticky -top-5 z-10 -mx-5 space-y-2 border-b border-white/8 bg-surface/95 px-5 pt-1 pb-3 backdrop-blur">
+        <div className="mx-auto w-32 min-[400px]:w-40 md:w-44">
+          <Avatar3D look={{ ...lookOf(profile.player), appearance: a }} variant="full" live interactive className="w-full" title="Preview" />
+        </div>
+        <div className="flex justify-center gap-2">
+          <Button variant="dark" size="sm" icon={<Dices className="size-4" />} onClick={randomize}>
+            Randomize
+          </Button>
+          <Button variant="ghost" size="sm" icon={<RotateCcw className="size-4" />} onClick={() => setA(DEFAULT_APPEARANCE)}>
+            Reset
+          </Button>
+        </div>
       </div>
 
       {SECTIONS.map((section) => (
