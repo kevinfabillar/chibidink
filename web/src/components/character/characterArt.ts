@@ -7,10 +7,12 @@ import { shade } from '../../lib/color'
 
 type Option = { id: string; label: string }
 
-export const BODY_COLORS = ['#F2A65A', '#7CC6A4', '#A99BE0', '#6FA8DC', '#F28B9B', '#E8D36A', '#F7B6D2', '#EAD9C6']
-export const EDGE_COLORS = ['#1F2A37', '#B88A2E', '#E9EEF5', '#4A2340']
-export const EYE_COLORS = ['#4A8FD9', '#2F9E5B', '#C27C0E', '#8B5CF6', '#D9465A', '#14A3A3', '#E05CA8', '#6B4A3A']
-export const GRIP_COLORS = ['#2E333E', '#6B4527', '#9E2B3A', '#2B4579', '#2F5D3A', '#D9D2C3']
+export const BODY_COLORS = ['#F2A65A', '#7CC6A4', '#A99BE0', '#6FA8DC', '#F28B9B', '#E8D36A', '#F7B6D2', '#EAD9C6',
+  // darker and neutral bodies
+  '#3A3F4B', '#2B3A55', '#4B2E83', '#2F5D3A', '#7A1F33', '#6B4527', '#1E1F24', '#F4F1EA']
+export const EDGE_COLORS = ['#1F2A37', '#B88A2E', '#E9EEF5', '#4A2340', '#0B0D12', '#7A1F24', '#1F4E3D', '#3B2A78', '#5A381F', '#9AA3B2']
+export const EYE_COLORS = ['#4A8FD9', '#2F9E5B', '#C27C0E', '#8B5CF6', '#D9465A', '#14A3A3', '#E05CA8', '#6B4A3A', '#1E1820', '#2B3A55', '#3B2A78', '#5A381F', '#7A1F24', '#9AA3B2']
+export const GRIP_COLORS = ['#2E333E', '#6B4527', '#9E2B3A', '#2B4579', '#2F5D3A', '#D9D2C3', '#0B0D12', '#4B2E83', '#F2A65A', '#B7F33B', '#FF5CA8', '#7A1F24']
 
 export const EYE_STYLES: Option[] = [
   { id: 'sparkle', label: 'Sparkle' },
@@ -114,7 +116,16 @@ export type FaceShape =
   | { kind: 'path'; d: string; fill?: Paint; stroke?: string; width?: number; opacity?: number; evenodd?: boolean }
   | { kind: 'blush'; cx: number; cy: number; rx: number; ry: number; color: string; opacity: number }
 
-const INK = '#2A2230'
+const DARK_INK = '#2A2230'
+const LIGHT_INK = '#F3EEE6'
+/** Line colour for the face being built: dark on light bodies, light on dark ones (set by faceShapes). */
+let INK = DARK_INK
+
+/** True for dark colours (brightness under about 40%). */
+export const isDarkColor = (hex: string) => {
+  const n = parseInt(hex.slice(1), 16)
+  return (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255 < 0.4
+}
 
 const ellipse = (cx: number, cy: number, rx: number, ry = rx) =>
   `M${cx - rx} ${cy} a${rx} ${ry} 0 1 0 ${rx * 2} 0 a${rx} ${ry} 0 1 0 ${-rx * 2} 0 Z`
@@ -336,6 +347,7 @@ function gearFace(gear?: string): FaceShape[] {
 /** Everything drawn on the paddle face, back to front. `gear` adds face pieces from the outfit. */
 export function faceShapes(input: Partial<Appearance>, gear?: string): FaceShape[] {
   const a = withDefaults(input)
+  INK = isDarkColor(a.bodyColor) && gear !== 'ninja' ? LIGHT_INK : DARK_INK // ninja's slit keeps the body colour visible but its hood is dark: dark ink still reads on the slit
   const brow = BROWS[a.browStyle]
   return [
     ...gearUnder(gear, a.bodyColor),

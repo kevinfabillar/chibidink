@@ -8,9 +8,9 @@ namespace ChibiDink.Domain.Players;
 /// </summary>
 public sealed record Appearance
 {
-    public static readonly string[] BodyColors = ["#F2A65A", "#7CC6A4", "#A99BE0", "#6FA8DC", "#F28B9B", "#E8D36A", "#F7B6D2", "#EAD9C6"];
-    public static readonly string[] EyeColors = ["#4A8FD9", "#2F9E5B", "#C27C0E", "#8B5CF6", "#D9465A", "#14A3A3", "#E05CA8", "#6B4A3A"];
-    public static readonly string[] GripColors = ["#2E333E", "#6B4527", "#9E2B3A", "#2B4579", "#2F5D3A", "#D9D2C3"];
+    public static readonly string[] BodyColors = ["#F2A65A", "#7CC6A4", "#A99BE0", "#6FA8DC", "#F28B9B", "#E8D36A", "#F7B6D2", "#EAD9C6", "#3A3F4B", "#2B3A55", "#4B2E83", "#2F5D3A", "#7A1F33", "#6B4527", "#1E1F24", "#F4F1EA"];
+    public static readonly string[] EyeColors = ["#4A8FD9", "#2F9E5B", "#C27C0E", "#8B5CF6", "#D9465A", "#14A3A3", "#E05CA8", "#6B4A3A", "#1E1820", "#2B3A55", "#3B2A78", "#5A381F", "#7A1F24", "#9AA3B2"];
+    public static readonly string[] GripColors = ["#2E333E", "#6B4527", "#9E2B3A", "#2B4579", "#2F5D3A", "#D9D2C3", "#0B0D12", "#4B2E83", "#F2A65A", "#B7F33B", "#FF5CA8", "#7A1F24"];
 
     public static readonly string[] EyeStyles = ["sparkle", "round", "happy", "sleepy", "star", "dot", "lashes", "wink", "heart", "fierce", "dizzy"];
     public static readonly string[] BrowStyles = ["determined", "soft", "raised", "worried", "arched", "angry", "none"];
