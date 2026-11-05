@@ -18,6 +18,7 @@ public sealed record UpdateSessionRequest(string Title, string Location, DateTim
 
 public sealed record CreateManualMatchRequest(int CourtNumber, Guid[] TeamA, Guid[] TeamB);
 public sealed record ReplacePlayerRequest(Guid OutgoingUserId, Guid IncomingUserId);
+public sealed record SwitchTeamsRequest(Guid FirstUserId, Guid SecondUserId);
 public sealed record MoveMatchRequest(int CourtNumber);
 public sealed record ReportResultRequest(int TeamAScore, int TeamBScore, string? Notes);
 public sealed record ReasonRequest(string? Reason);

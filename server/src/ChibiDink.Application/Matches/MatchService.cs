@@ -21,6 +21,7 @@ public interface IMatchService
     // Organizer overrides
     Task<Guid> CreateManualAsync(Guid sessionId, CreateManualMatchRequest request, CancellationToken ct);
     Task ReplacePlayerAsync(Guid sessionId, Guid matchId, ReplacePlayerRequest request, CancellationToken ct);
+    Task SwitchTeamsAsync(Guid sessionId, Guid matchId, SwitchTeamsRequest request, CancellationToken ct);
     Task MoveAsync(Guid sessionId, Guid matchId, MoveMatchRequest request, CancellationToken ct);
     Task CancelAsync(Guid sessionId, Guid matchId, string? reason, CancellationToken ct);
     Task VoidAsync(Guid sessionId, Guid matchId, string? reason, CancellationToken ct);
@@ -93,6 +94,13 @@ public sealed class MatchService(
             matches.Add(match);
             Audit(session, match, "Manual match", $"Created a match on court {court.Number}");
             return Task.FromResult(match.Id);
+        }, ct);
+
+    public Task SwitchTeamsAsync(Guid sessionId, Guid matchId, SwitchTeamsRequest request, CancellationToken ct) =>
+        AsOrganizer(sessionId, matchId, (session, match) =>
+        {
+            match.SwitchTeams(request.FirstUserId, request.SecondUserId);
+            Audit(session, match, "Switch teams", "Switched two players between the teams on this court");
         }, ct);
 
     public Task ReplacePlayerAsync(Guid sessionId, Guid matchId, ReplacePlayerRequest request, CancellationToken ct) =>

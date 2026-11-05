@@ -28,4 +28,5 @@ public sealed class MatchParticipant : Entity
     internal void Decline() => Confirmation = ConfirmationStatus.Declined;
     internal void ResetConfirmation() => Confirmation = ConfirmationStatus.Pending;
     internal void Deactivate() => IsActive = false;
+    internal void MoveTo(Team team) => Team = team;
 }

@@ -36,6 +36,10 @@ public sealed class MatchesController(IMatchService matches) : ControllerBase
     public Task<IActionResult> Replace(Guid sessionId, Guid matchId, ReplacePlayerRequest request, CancellationToken ct) =>
         Done(matches.ReplacePlayerAsync(sessionId, matchId, request, ct));
 
+    [HttpPost("{matchId:guid}/switch-teams")]
+    public Task<IActionResult> SwitchTeams(Guid sessionId, Guid matchId, SwitchTeamsRequest request, CancellationToken ct) =>
+        Done(matches.SwitchTeamsAsync(sessionId, matchId, request, ct));
+
     [HttpPost("{matchId:guid}/move")]
     public Task<IActionResult> Move(Guid sessionId, Guid matchId, MoveMatchRequest request, CancellationToken ct) =>
         Done(matches.MoveAsync(sessionId, matchId, request, ct));

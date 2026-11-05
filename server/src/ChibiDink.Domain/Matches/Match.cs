@@ -230,6 +230,18 @@ public sealed class Match : Entity
         else _participants.Last().Accept();
     }
 
+    /// <summary>Switches two players on this court between the teams (one from each), before a score is entered.</summary>
+    public void SwitchTeams(Guid firstId, Guid secondId)
+    {
+        Guard.That(Status.IsPrePlay() || Status == MatchStatus.Playing, "Teams can only be changed before a score is entered.");
+        var first = FindPlayer(firstId) ?? throw new DomainException("That player is not in this match.");
+        var second = FindPlayer(secondId) ?? throw new DomainException("That player is not in this match.");
+        Guard.That(first.Team != second.Team, "Pick one player from each team.");
+        var team = first.Team;
+        first.MoveTo(second.Team);
+        second.MoveTo(team);
+    }
+
     public void MoveToCourt(PlaySession session, Court target)
     {
         Guard.That(Status.IsPrePlay() || Status == MatchStatus.Playing, "This match can no longer be moved.");

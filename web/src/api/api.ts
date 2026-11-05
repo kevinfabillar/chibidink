@@ -83,6 +83,8 @@ export const matchApi = {
   replace: (sid: string, mid: string, outgoingUserId: string, incomingUserId: string) =>
     http.post(`${m(sid, mid)}/replace`, { outgoingUserId, incomingUserId }),
   move: (sid: string, mid: string, courtNumber: number) => http.post(`${m(sid, mid)}/move`, { courtNumber }),
+  switchTeams: (sid: string, mid: string, firstUserId: string, secondUserId: string) =>
+    http.post(`${m(sid, mid)}/switch-teams`, { firstUserId, secondUserId }),
   cancel: (sid: string, mid: string, reason?: string) => http.post(`${m(sid, mid)}/cancel`, { reason }),
   void: (sid: string, mid: string, reason?: string) => http.post(`${m(sid, mid)}/void`, { reason }),
 }
