@@ -112,7 +112,7 @@ function ScoreRow({
     <div className={`flex items-center gap-3 rounded-2xl border bg-night/70 p-3 ${accent === 'lime' ? 'border-lime/30' : 'border-grape/40'}`}>
       <div className="min-w-0 flex-1">
         <div className="font-display text-lg font-bold">{label}</div>
-        <div className="truncate text-sm text-muted">{teamNames(players.map((p) => p.player.displayName))}</div>
+        <div className="text-sm text-muted [overflow-wrap:anywhere] leading-tight">{teamNames(players.map((p) => p.player.displayName))}</div>
       </div>
       <button
         type="button"

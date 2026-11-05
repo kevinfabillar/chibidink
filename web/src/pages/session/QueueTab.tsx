@@ -136,7 +136,7 @@ export function PlayerGroup({
             {showPosition && <span className="w-7 text-center font-display text-xl font-extrabold text-lime">{p.queuePosition}</span>}
             <PlayerAvatar player={p.player} size={44} />
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 truncate font-semibold">
+              <div className="flex flex-wrap items-center gap-x-1.5 font-semibold [overflow-wrap:anywhere] leading-tight">
                 {p.player.displayName}
                 {p.role === 'Organizer' && <Crown className="size-3.5 text-lime" aria-label="Organizer" />}
               </div>

@@ -199,7 +199,7 @@ function TeamRow({
           Team {team}
           {won && <Trophy className="ml-1.5 inline size-4 text-lime" />}
         </div>
-        <div className={clsx('truncate text-white/85', full ? 'text-lg' : 'text-sm')}>
+        <div className={clsx('text-white/85 [overflow-wrap:anywhere] leading-tight', full ? 'text-lg' : 'text-sm', score !== undefined && (full ? 'pr-16' : 'pr-10'))}>
           {queued && 'Queued: '}
           {teamNames(players.map((p) => p.player.displayName))}
         </div>

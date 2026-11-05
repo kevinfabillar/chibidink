@@ -28,7 +28,7 @@ function Team({ players, compact }: { players: PlayerCard[]; compact?: boolean }
       {players.map((p) => (
         <div key={p.userId} className="flex min-w-0 items-center gap-2">
           <PlayerAvatar player={p} size={compact ? 28 : 34} />
-          <span className="truncate text-sm font-semibold">{p.displayName}</span>
+          <span className="min-w-0 text-sm font-semibold [overflow-wrap:anywhere] leading-tight">{p.displayName}</span>
         </div>
       ))}
     </div>

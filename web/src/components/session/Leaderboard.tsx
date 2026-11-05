@@ -22,7 +22,7 @@ export function Leaderboard({ players, meId }: { players: Participant[]; meId?: 
           </span>
           <PlayerAvatar player={p.player} size={38} />
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 truncate font-semibold">
+            <div className="flex flex-wrap items-center gap-x-1.5 font-semibold [overflow-wrap:anywhere] leading-tight">
               {p.player.displayName}
               {p.role === 'Organizer' && <Crown className="size-3.5 text-lime" aria-label="Organizer" />}
             </div>
