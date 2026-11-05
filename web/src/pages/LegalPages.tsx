@@ -151,8 +151,9 @@ export function PrivacyPage() {
       <section>
         <h2>4. Where it's stored</h2>
         <p>
-          Data is stored with our database host, Supabase, and may be kept on servers outside the Philippines. We use providers
-          that protect data with encryption and access controls.
+          Data is stored with our database host, Supabase, and the app runs with our hosting provider; both may keep it on
+          servers outside the Philippines. Password reset emails are sent through Brevo, which receives only your email address
+          and the reset message. We use providers that protect data with encryption and access controls.
         </p>
       </section>
       <section>

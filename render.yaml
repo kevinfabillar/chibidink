@@ -13,6 +13,12 @@ services:
     envVars:
       - key: ConnectionStrings__DefaultConnection
         sync: false # you paste your Supabase connection string in Render
+      - key: App__PublicUrl
+        sync: false # your site address, e.g. https://chibidink.onrender.com (used in reset emails)
+      - key: Email__BrevoApiKey
+        sync: false # Brevo -> SMTP & API -> API keys
+      - key: Email__FromAddress
+        sync: false # a sender email verified in Brevo
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
       - key: Database__MigrateOnStartup

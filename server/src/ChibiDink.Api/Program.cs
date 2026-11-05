@@ -33,6 +33,10 @@ services.AddIdentityApiEndpoints<AppUser>(o =>
     .AddRoles<IdentityRole<Guid>>()
     .AddEntityFrameworkStores<AppDbContext>();
 
+// Password reset links work for 1 hour.
+services.Configure<DataProtectionTokenProviderOptions>(o => o.TokenLifespan = TimeSpan.FromHours(1));
+services.AddHttpClient<IEmailSender, BrevoEmailSender>(c => c.Timeout = TimeSpan.FromSeconds(15));
+
 services.Configure<BearerTokenOptions>(IdentityConstants.BearerScheme, o =>
 {
     o.BearerTokenExpiration = TimeSpan.FromDays(7);

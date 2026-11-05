@@ -76,7 +76,13 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
           autoComplete={register ? 'new-password' : 'current-password'}
           hint={register ? 'At least 8 characters with upper, lower case and a number.' : undefined}
         />
-        {register && <TermsCheckbox checked={agreed} onChange={setAgreed} />}
+        {register ? (
+          <TermsCheckbox checked={agreed} onChange={setAgreed} />
+        ) : (
+          <Link to="/forgot-password" className="-mt-2 block text-right text-sm font-semibold text-lime hover:underline">
+            Forgot password?
+          </Link>
+        )}
         <ErrorNote error={submit.error} />
         <Button type="submit" block size="lg" disabled={register && !agreed} loading={submit.isPending}>
           {register ? 'Create account' : 'Sign in'}

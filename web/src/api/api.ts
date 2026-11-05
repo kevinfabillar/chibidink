@@ -23,6 +23,9 @@ export const authApi = {
   /** Play as guest from a session QR: just a name. */
   guest: (inviteCode: string, displayName: string, acceptTerms: boolean) =>
     http.post<TokenResponse>('/api/auth/guest', { inviteCode, displayName, acceptTerms }),
+  /** Emails a reset link if the account exists (the answer is the same either way). */
+  forgotPassword: (email: string) => http.post('/api/auth/forgot-password', { email }),
+  resetPassword: (email: string, token: string, newPassword: string) => http.post('/api/auth/reset-password', { email, token, newPassword }),
   register: (email: string, password: string, displayName: string, acceptTerms: boolean) =>
     http.post<TokenResponse>('/api/auth/register', { email, password, displayName, acceptTerms }),
 }
