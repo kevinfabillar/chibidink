@@ -62,6 +62,7 @@ export function ChibiAvatar({ look, variant = 'bust', pose = 'idle', size, anima
     faceClip: ids.faceClip,
   }
   const face = faceShapes(a, gear)
+  const shoes = a.shoeColor || o.shoes // empty = the outfit's own shoes
   const mitten = gear === 'knight' ? paint.steel : (o.glove ?? '#F4F6F9')
 
   return (
@@ -86,9 +87,9 @@ export function ChibiAvatar({ look, variant = 'bust', pose = 'idle', size, anima
           <stop offset="1" stopColor={shade(a.gripColor, -0.5)} />
         </linearGradient>
         <radialGradient id={ids.shoe} cx="35%" cy="25%" r="85%">
-          <stop offset="0" stopColor={shade(o.shoes, 0.4)} />
-          <stop offset="0.55" stopColor={o.shoes} />
-          <stop offset="1" stopColor={shade(o.shoes, -0.35)} />
+          <stop offset="0" stopColor={shade(shoes, 0.4)} />
+          <stop offset="0.55" stopColor={shoes} />
+          <stop offset="1" stopColor={shade(shoes, -0.35)} />
         </radialGradient>
         <radialGradient id={ids.leg} cx="35%" cy="25%" r="85%">
           <stop offset="0" stopColor="#5A6070" />
@@ -211,6 +212,17 @@ export function ChibiAvatar({ look, variant = 'bust', pose = 'idle', size, anima
   )
 }
 
+/** A five-pointed star centred on (cx, cy): outer radius R, inner radius r. */
+function starPath(cx: number, cy: number, R: number, r: number) {
+  return (
+    Array.from({ length: 10 }, (_, i) => {
+      const t = (i * Math.PI) / 5
+      const rr = i % 2 ? r : R
+      return `${i ? 'L' : 'M'}${(cx + Math.sin(t) * rr).toFixed(1)} ${(cy - Math.cos(t) * rr).toFixed(1)}`
+    }).join(' ') + ' Z'
+  )
+}
+
 function Handle({ hx, hw, grip, wrap, ink, cap, capColor, gold, steel, ball }: { hx: number; hw: number; grip: string; wrap: string; ink: string; cap: string; capColor: string; gold: string; steel: string; ball: string }) {
   const x0 = hx + 3
   const x1 = hx + hw - 3
@@ -253,26 +265,31 @@ function Handle({ hx, hw, grip, wrap, ink, cap, capColor, gold, steel, ball }: {
           <circle cx="300" cy="647" r="6" fill={capColor === '#1A1D24' ? '#D93A45' : capColor} />
         </g>
       ) : cap === 'flat' ? (
-        <rect x={hx - 7} y="634" width={hw + 14} height="24" rx="3" fill={capColor} />
+        // A wide, square-edged block (the round cap is a rounded pill).
+        <g>
+          <rect x={hx - 14} y="630" width={hw + 28} height="32" rx="2" fill={capColor} stroke="#00000040" strokeWidth="2" />
+          <rect x={hx - 10} y="634" width={hw + 20} height="5" rx="2" fill="#FFFFFF" opacity="0.3" />
+        </g>
       ) : cap === 'ring' ? (
         <g>
           <rect x={hx - 4} y="626" width={hw + 8} height="8" rx="4" fill={steel} />
           <rect x={hx - 6} y="636" width={hw + 12} height="22" rx="11" fill={capColor} />
         </g>
       ) : cap === 'gem' ? (
+        // A big faceted jewel hanging under a gold setting.
         <g>
-          <rect x={hx - 6} y="634" width={hw + 12} height="20" rx="10" fill="#1A1D24" />
-          <path d="M300 640 L316 654 L300 676 L284 654 Z" fill={capColor} stroke="#FFFFFF" strokeOpacity="0.5" strokeWidth="2" strokeLinejoin="round" />
-          <path d="M292 652 L300 644 L304 652 Z" fill="#FFFFFF" opacity="0.6" />
+          <rect x={hx - 4} y="632" width={hw + 8} height="14" rx="7" fill={gold} />
+          <path d="M270 644 L330 644 L346 664 L300 722 L254 664 Z" fill={capColor} stroke="#FFFFFF" strokeOpacity="0.6" strokeWidth="3" strokeLinejoin="round" />
+          <path d="M254 664 L346 664 M282 644 L274 664 L300 722 L326 664 L318 644" stroke="#000000" strokeOpacity="0.25" strokeWidth="2.5" fill="none" strokeLinejoin="round" />
+          <path d="M276 649 L296 649 L285 662 Z" fill="#FFFFFF" opacity="0.75" />
         </g>
       ) : cap === 'star' ? (
-        <path
-          d="M300 636 L306 650 L321 651 L309 660 L313 675 L300 667 L287 675 L291 660 L279 651 L294 650 Z"
-          fill={capColor}
-          stroke="#00000055"
-          strokeWidth="2"
-          strokeLinejoin="round"
-        />
+        // A large star, about as wide as the handle, on a short stem.
+        <g>
+          <rect x={hx - 4} y="630" width={hw + 8} height="14" rx="7" fill="#1A1D24" />
+          <path d={starPath(300, 668, 50, 21)} fill={capColor} stroke="#00000066" strokeWidth="3.5" strokeLinejoin="round" />
+          <path d={starPath(300, 668, 50, 21).split('L').slice(0, 3).join('L') + 'Z'} fill="#FFFFFF" opacity="0.3" />
+        </g>
       ) : cap === 'ball' ? (
         <g>
           <circle cx="300" cy="654" r="20" fill={ball} />

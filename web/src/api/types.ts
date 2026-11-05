@@ -42,6 +42,8 @@ export interface Appearance {
   /** round | pommel | ball */
   endCap: string
   endCapColor: string
+  /** Empty = the outfit's own shoes. */
+  shoeColor: string
 }
 
 export interface Loadout {

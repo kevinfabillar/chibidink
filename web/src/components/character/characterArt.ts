@@ -90,6 +90,8 @@ export const END_CAPS: Option[] = [
   { id: 'gem', label: 'Gem cap' },
   { id: 'star', label: 'Star cap' },
 ]
+/** Shoe colours; '' (the first swatch) keeps the outfit's own shoes. */
+export const SHOE_COLORS = ['', '#F4F6F9', '#1A1D24', '#D93A45', '#2B4579', '#B7F33B', '#FF5CA8', '#8B5CF6', '#F2A65A', '#7A4A22', '#D9AE4A']
 /** End cap colours (the pickleball cap keeps its own yellow). */
 export const END_CAP_COLORS = ['#1A1D24', '#D9AE4A', '#C9D1DC', '#D93A45', '#2B4579', '#2F9E5B', '#8B5CF6', '#FF5CA8', '#B7F33B', '#F4F6F9']
 
@@ -107,6 +109,7 @@ export const DEFAULT_APPEARANCE: Appearance = {
   handleShape: 'classic',
   endCap: 'round',
   endCapColor: '#1A1D24',
+  shoeColor: '',
 }
 
 /** Fills in anything missing (e.g. an older saved look) with the default. */

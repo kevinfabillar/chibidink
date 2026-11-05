@@ -13,6 +13,7 @@ import {
   EDGE_COLORS,
   END_CAPS,
   END_CAP_COLORS,
+  SHOE_COLORS,
   EYE_COLORS,
   EYE_STYLES,
   FACE_MARKS,
@@ -59,6 +60,7 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
       { key: 'handleShape', label: 'Handle shape', options: HANDLE_SHAPES },
       { key: 'endCap', label: 'End cap', options: END_CAPS },
       { key: 'endCapColor', label: 'End cap color', colors: END_CAP_COLORS },
+      { key: 'shoeColor', label: 'Shoe color', colors: SHOE_COLORS },
     ],
   },
 ]

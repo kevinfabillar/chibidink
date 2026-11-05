@@ -89,7 +89,7 @@ export function buildCharacter(look: CharacterLook, pose: Pose = 'idle', opts: {
   // ---- Legs and feet ----
   for (const side of [-1, 1]) {
     figure.add(mesh(new THREE.CapsuleGeometry(14 * S, 64 * S, 4, 12), toy('#3A3F4B', 0.5, 0.2), [side * 20 * S, wy(666), 0]))
-    figure.add(foot(side, o, a.bodyColor))
+    figure.add(foot(side, o, a.bodyColor, a.shoeColor))
   }
 
   // ---- Arms, with the outfit's item in the raised hand ----
@@ -152,7 +152,7 @@ function arm(side: -1 | 1, color: string, gloveColor: string | null) {
   return { pivot, hand }
 }
 
-function foot(side: number, o: OutfitVisual, body: string) {
+function foot(side: number, o: OutfitVisual, body: string, shoeColor?: string) {
   const g = new THREE.Group()
   g.position.set(side * 28 * S, 0, 0.04)
   if (o.gear === 'knight') {
@@ -161,7 +161,7 @@ function foot(side: number, o: OutfitVisual, body: string) {
     g.add(boot)
     return g
   }
-  const shoe = mesh(new THREE.SphereGeometry(1, 24, 16), toy(o.shoes, 0.45, 0.4), [0, 0.085, 0])
+  const shoe = mesh(new THREE.SphereGeometry(1, 24, 16), toy(shoeColor || o.shoes, 0.45, 0.4), [0, 0.085, 0])
   shoe.scale.set(0.126, 0.078, 0.16)
   const sole = mesh(new THREE.SphereGeometry(1, 24, 12), toy(o.sole ?? body, 0.5, 0.2), [0, 0.035, 0])
   sole.scale.set(0.13, 0.032, 0.165)
@@ -182,24 +182,29 @@ function endCap(kind: string, color: string, r: number) {
       cap.add(mesh(new THREE.CylinderGeometry(r + 0.022, r + 0.022, 0.085, 16), metal, [0, y, 0]))
       cap.add(mesh(new THREE.SphereGeometry(0.026, 12, 10), toy(color === '#1A1D24' ? '#D93A45' : color, 0.2, 0.8), [0, y, r + 0.03]))
       break
-    case 'flat':
-      cap.add(mesh(new THREE.CylinderGeometry(r + 0.026, r + 0.026, 0.08, 8), coloured, [0, y, 0]))
+    case 'flat': {
+      // A square block, wider than the handle (4-sided "cylinder" turned 45°).
+      const block = mesh(new THREE.CylinderGeometry((r + 0.05) * Math.SQRT2, (r + 0.05) * Math.SQRT2, 0.11, 4), coloured, [0, y, 0])
+      block.rotation.y = Math.PI / 4
+      cap.add(block)
       break
+    }
     case 'ring':
       cap.add(mesh(new THREE.CylinderGeometry(r + 0.012, r + 0.012, 0.03, 24), steelMat, [0, wy(630), 0]))
       cap.add(mesh(new THREE.CylinderGeometry(r + 0.022, r + 0.022, 0.08, 16), coloured, [0, y, 0]))
       break
     case 'gem': {
-      cap.add(mesh(new THREE.CylinderGeometry(r + 0.02, r + 0.02, 0.07, 16), toy('#1A1D24', 0.5, 0.2), [0, y, 0]))
-      const gem = mesh(new THREE.OctahedronGeometry(0.06, 0), shiny, [0, wy(664), 0])
-      gem.scale.set(0.9, 1.3, 0.9)
+      cap.add(mesh(new THREE.CylinderGeometry(r + 0.012, r + 0.012, 0.05, 16), metal, [0, wy(639), 0]))
+      // In front of the legs, so it shows.
+      const gem = mesh(new THREE.OctahedronGeometry(0.11, 0), shiny, [0, wy(672), 0.09])
+      gem.scale.set(0.95, 1.3, 0.7)
       cap.add(gem)
       break
     }
     case 'star': {
       const st = new THREE.Shape()
       for (let i = 0; i < 10; i++) {
-        const rr = i % 2 ? 0.035 : 0.08
+        const rr = i % 2 ? 0.07 : 0.17
         const t = (i / 10) * Math.PI * 2
         if (i === 0) st.moveTo(Math.sin(t) * rr, Math.cos(t) * rr)
         else st.lineTo(Math.sin(t) * rr, Math.cos(t) * rr)
@@ -207,7 +212,9 @@ function endCap(kind: string, color: string, r: number) {
       st.closePath()
       const geo = new THREE.ExtrudeGeometry(st, { depth: 0.03, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.01, bevelSegments: 3 })
       geo.translate(0, 0, -0.015)
-      cap.add(mesh(geo, shiny, [0, wy(656), 0]))
+      cap.add(mesh(new THREE.CylinderGeometry(r + 0.012, r + 0.012, 0.05, 16), toy('#1A1D24', 0.5, 0.2), [0, wy(637), 0]))
+      // In front of the legs, so it shows.
+      cap.add(mesh(geo, shiny, [0, wy(668), 0.1]))
       break
     }
     default: // round

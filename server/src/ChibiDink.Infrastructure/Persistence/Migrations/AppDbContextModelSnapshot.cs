@@ -285,6 +285,11 @@ namespace ChibiDink.Infrastructure.Persistence.Migrations
                                 .IsRequired()
                                 .HasMaxLength(16)
                                 .HasColumnType("character varying(16)");
+
+                            b1.Property<string>("ShoeColor")
+                                .IsRequired()
+                                .HasMaxLength(7)
+                                .HasColumnType("character varying(7)");
                         });
 
                     b.ComplexProperty(typeof(Dictionary<string, object>), "Loadout", "ChibiDink.Domain.Players.PlayerProfile.Loadout#Loadout", b1 =>
