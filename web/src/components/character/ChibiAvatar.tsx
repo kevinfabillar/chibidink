@@ -170,7 +170,7 @@ export function ChibiAvatar({ look, variant = 'bust', pose = 'idle', size, anima
           </g>
         )}
 
-        <Handle hx={hx} hw={hw} grip={`url(#${ids.grip})`} wrap={a.gripWrap} ink={wrapInk(a.gripColor)} cap={a.endCap} gold={paint.gold} ball={paint.ball} />
+        <Handle hx={hx} hw={hw} grip={`url(#${ids.grip})`} wrap={a.gripWrap} ink={wrapInk(a.gripColor)} cap={a.endCap} capColor={a.endCapColor} gold={paint.gold} steel={paint.steel} ball={paint.ball} />
         {/* Neckwear (the cowboy's bandana, the ninja's scarf) goes over the neck, so it's drawn after it */}
         <GearBody gear={NECKWEAR.includes(gear) ? 'none' : gear} hx={hx} hw={hw} p={paint} />
         <path d="M246 470 Q300 486 354 470 L340 508 Q300 516 260 508 Z" fill={shade(body, -0.28)} />
@@ -211,22 +211,68 @@ export function ChibiAvatar({ look, variant = 'bust', pose = 'idle', size, anima
   )
 }
 
-function Handle({ hx, hw, grip, wrap, ink, cap, gold, ball }: { hx: number; hw: number; grip: string; wrap: string; ink: string; cap: string; gold: string; ball: string }) {
+function Handle({ hx, hw, grip, wrap, ink, cap, capColor, gold, steel, ball }: { hx: number; hw: number; grip: string; wrap: string; ink: string; cap: string; capColor: string; gold: string; steel: string; ball: string }) {
   const x0 = hx + 3
   const x1 = hx + hw - 3
   let d = ''
   if (wrap === 'diagonal' || wrap === 'cross') for (const y of [560, 590, 620]) d += `M${x0} ${y} L${x1} ${y - 22} `
   if (wrap === 'cross') for (const y of [560, 590, 620]) d += `M${x0} ${y - 22} L${x1} ${y} `
   if (wrap === 'stripes') for (const y of [550, 572, 594, 616]) d += `M${x0} ${y} L${x1} ${y} `
+  if (wrap === 'spiral') for (const y of [540, 556, 572, 588, 604, 620]) d += `M${x0} ${y} L${x1} ${y - 14} `
+  if (wrap === 'zigzag')
+    for (const y of [552, 580, 608]) {
+      const step = (x1 - x0) / 4
+      d += `M${x0} ${y} ` + [1, 2, 3, 4].map((k) => `L${x0 + step * k} ${y + (k % 2 ? -9 : 0)}`).join(' ') + ' '
+    }
+  // Patterns made of shapes rather than lines.
+  const shapes: React.ReactNode[] = []
+  const w = x1 - x0
+  if (wrap === 'dots')
+    [530, 554, 578, 602, 626].forEach((y, r) =>
+      (r % 2 ? [0.5] : [0.25, 0.75]).forEach((f) => shapes.push(<circle key={`${y}${f}`} cx={x0 + w * f} cy={y} r={Math.max(3, w * 0.09)} />)),
+    )
+  if (wrap === 'checker') {
+    const s = w / 4
+    for (let r = 0; r < 6; r++) for (let c = 0; c < 4; c++) if ((r + c) % 2 === 0) shapes.push(<rect key={`${r}-${c}`} x={x0 + c * s} y={522 + r * s} width={s} height={s} />)
+  }
+  if (wrap === 'bands') for (const y of [528, 572, 616]) shapes.push(<rect key={y} x={hx} y={y} width={hw} height="16" />)
+  if (wrap === 'racing') shapes.push(<rect key="r" x={300 - w * 0.14} y="516" width={w * 0.28} height="120" rx="3" />)
   return (
     <g>
       <rect x={hx} y="468" width={hw} height="180" rx={Math.min(24, Math.round(hw / 3))} fill={grip} />
-      {d && <path d={d} stroke={ink} strokeWidth={wrap === 'stripes' ? 6 : 3} fill="none" strokeLinecap="round" opacity="0.22" />}
+      {d && <path d={d} stroke={ink} strokeWidth={wrap === 'stripes' ? 6 : 3} fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.22" />}
+      {shapes.length > 0 && (
+        <g fill={ink} opacity={wrap === 'checker' ? 0.16 : 0.22}>
+          {shapes}
+        </g>
+      )}
       {cap === 'pommel' ? (
+        // Gold pommel; the chosen colour is its gem.
         <g>
           <rect x={hx - 6} y="634" width={hw + 12} height="26" rx="8" fill={gold} />
-          <circle cx="300" cy="647" r="6" fill="#D93A45" />
+          <circle cx="300" cy="647" r="6" fill={capColor === '#1A1D24' ? '#D93A45' : capColor} />
         </g>
+      ) : cap === 'flat' ? (
+        <rect x={hx - 7} y="634" width={hw + 14} height="24" rx="3" fill={capColor} />
+      ) : cap === 'ring' ? (
+        <g>
+          <rect x={hx - 4} y="626" width={hw + 8} height="8" rx="4" fill={steel} />
+          <rect x={hx - 6} y="636" width={hw + 12} height="22" rx="11" fill={capColor} />
+        </g>
+      ) : cap === 'gem' ? (
+        <g>
+          <rect x={hx - 6} y="634" width={hw + 12} height="20" rx="10" fill="#1A1D24" />
+          <path d="M300 640 L316 654 L300 676 L284 654 Z" fill={capColor} stroke="#FFFFFF" strokeOpacity="0.5" strokeWidth="2" strokeLinejoin="round" />
+          <path d="M292 652 L300 644 L304 652 Z" fill="#FFFFFF" opacity="0.6" />
+        </g>
+      ) : cap === 'star' ? (
+        <path
+          d="M300 636 L306 650 L321 651 L309 660 L313 675 L300 667 L287 675 L291 660 L279 651 L294 650 Z"
+          fill={capColor}
+          stroke="#00000055"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
       ) : cap === 'ball' ? (
         <g>
           <circle cx="300" cy="654" r="20" fill={ball} />
@@ -237,7 +283,7 @@ function Handle({ hx, hw, grip, wrap, ink, cap, gold, ball }: { hx: number; hw: 
           </g>
         </g>
       ) : (
-        <rect x={hx - 6} y="636" width={hw + 12} height="22" rx="11" fill="#1A1D24" />
+        <rect x={hx - 6} y="636" width={hw + 12} height="22" rx="11" fill={capColor} />
       )}
     </g>
   )

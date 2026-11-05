@@ -12,6 +12,7 @@ import {
   DEFAULT_APPEARANCE,
   EDGE_COLORS,
   END_CAPS,
+  END_CAP_COLORS,
   EYE_COLORS,
   EYE_STYLES,
   FACE_MARKS,
@@ -57,6 +58,7 @@ const SECTIONS: { title: string; rows: Row[] }[] = [
       { key: 'gripWrap', label: 'Grip wrap', options: GRIP_WRAPS },
       { key: 'handleShape', label: 'Handle shape', options: HANDLE_SHAPES },
       { key: 'endCap', label: 'End cap', options: END_CAPS },
+      { key: 'endCapColor', label: 'End cap color', colors: END_CAP_COLORS },
     ],
   },
 ]

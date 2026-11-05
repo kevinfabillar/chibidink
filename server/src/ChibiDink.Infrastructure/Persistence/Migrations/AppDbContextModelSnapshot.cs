@@ -246,6 +246,11 @@ namespace ChibiDink.Infrastructure.Persistence.Migrations
                                 .HasMaxLength(16)
                                 .HasColumnType("character varying(16)");
 
+                            b1.Property<string>("EndCapColor")
+                                .IsRequired()
+                                .HasMaxLength(7)
+                                .HasColumnType("character varying(7)");
+
                             b1.Property<string>("EyeColor")
                                 .IsRequired()
                                 .HasMaxLength(7)

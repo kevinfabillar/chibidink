@@ -17,9 +17,10 @@ public sealed record Appearance
     public static readonly string[] MouthStyles = ["smirk", "grin", "wow", "cat", "blep", "flat", "lips", "kiss", "fang", "wavy"];
     public static readonly string[] CheekStyles = ["blush", "freckles", "hearts", "shy", "none"];
     public static readonly string[] FaceMarks = ["scar", "bandage", "star", "mole", "heart", "flower", "none"];
-    public static readonly string[] GripWraps = ["diagonal", "stripes", "cross", "plain"];
+    public static readonly string[] GripWraps = ["diagonal", "stripes", "cross", "zigzag", "dots", "checker", "bands", "racing", "spiral", "plain"];
     public static readonly string[] HandleShapes = ["slim", "classic", "chunky"];
-    public static readonly string[] EndCaps = ["round", "pommel", "ball"];
+    public static readonly string[] EndCaps = ["round", "pommel", "ball", "flat", "ring", "gem", "star"];
+    public static readonly string[] EndCapColors = ["#1A1D24", "#D9AE4A", "#C9D1DC", "#D93A45", "#2B4579", "#2F9E5B", "#8B5CF6", "#FF5CA8", "#B7F33B", "#F4F6F9"];
 
     public string BodyColor { get; init; } = BodyColors[0];
     public string EdgeColor { get; init; } = "#1F2A37";
@@ -33,6 +34,7 @@ public sealed record Appearance
     public string GripWrap { get; init; } = "diagonal";
     public string HandleShape { get; init; } = "classic";
     public string EndCap { get; init; } = "round";
+    public string EndCapColor { get; init; } = EndCapColors[0];
 
     /// <summary>Starter look with a few deterministic variations so new players don't all look identical.</summary>
     public static Appearance StarterFor(Guid userId)
@@ -57,6 +59,7 @@ public sealed record Appearance
         Guard.That(GripWraps.Contains(GripWrap), "Unknown grip wrap.");
         Guard.That(HandleShapes.Contains(HandleShape), "Unknown handle shape.");
         Guard.That(EndCaps.Contains(EndCap), "Unknown end cap.");
+        Guard.That(EndCapColors.Contains(EndCapColor), "Unknown end cap color.");
         foreach (var color in new[] { BodyColor, EdgeColor, EyeColor, GripColor })
             Guard.That(IsHexColor(color), "Colors must be #RRGGBB values.");
         return this;

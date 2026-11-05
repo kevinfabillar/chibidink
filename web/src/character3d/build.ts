@@ -76,7 +76,7 @@ export function buildCharacter(look: CharacterLook, pose: Pose = 'idle', opts: {
   const r = (handleWidth(a.handleShape) / 2) * S
   const handle = mesh(new THREE.CylinderGeometry(r, r, 180 * S, 8), new THREE.MeshPhysicalMaterial({ map: gripTexture(a), roughness: 0.6, clearcoat: 0.1 }), [0, wy(558), 0])
   handle.rotation.y = Math.PI / 8
-  figure.add(handle, endCap(a.endCap, r), buildBodyGear(gear, r))
+  figure.add(handle, endCap(a.endCap, a.endCapColor, r), buildBodyGear(gear, r))
   if (o.cape) figure.add(cape(o.cape))
   const back = buildBack(gear)
   if (back) figure.add(back)
@@ -169,13 +169,50 @@ function foot(side: number, o: OutfitVisual, body: string) {
   return g
 }
 
-function endCap(kind: string, r: number) {
+function endCap(kind: string, color: string, r: number) {
   const y = wy(647)
   if (kind === 'ball') return mesh(new THREE.SphereGeometry(0.075, 24, 16), toy('#D8EE3A', 0.5, 0.3), [0, wy(654), 0])
   const cap = new THREE.Group()
   const metal = new THREE.MeshPhysicalMaterial({ color: '#D9AE4A', metalness: 0.9, roughness: 0.3 })
-  cap.add(mesh(new THREE.CylinderGeometry(r + 0.022, r + 0.022, 0.085, 16), kind === 'pommel' ? metal : toy('#1A1D24', 0.5, 0.2), [0, y, 0]))
-  if (kind === 'pommel') cap.add(mesh(new THREE.SphereGeometry(0.026, 12, 10), toy('#D93A45', 0.2, 0.8), [0, y, r + 0.03]))
+  const steelMat = new THREE.MeshPhysicalMaterial({ color: '#C9D1DC', metalness: 0.85, roughness: 0.25 })
+  const coloured = toy(color, 0.45, 0.4)
+  const shiny = new THREE.MeshPhysicalMaterial({ color, roughness: 0.15, clearcoat: 1, metalness: 0.1 })
+  switch (kind) {
+    case 'pommel':
+      cap.add(mesh(new THREE.CylinderGeometry(r + 0.022, r + 0.022, 0.085, 16), metal, [0, y, 0]))
+      cap.add(mesh(new THREE.SphereGeometry(0.026, 12, 10), toy(color === '#1A1D24' ? '#D93A45' : color, 0.2, 0.8), [0, y, r + 0.03]))
+      break
+    case 'flat':
+      cap.add(mesh(new THREE.CylinderGeometry(r + 0.026, r + 0.026, 0.08, 8), coloured, [0, y, 0]))
+      break
+    case 'ring':
+      cap.add(mesh(new THREE.CylinderGeometry(r + 0.012, r + 0.012, 0.03, 24), steelMat, [0, wy(630), 0]))
+      cap.add(mesh(new THREE.CylinderGeometry(r + 0.022, r + 0.022, 0.08, 16), coloured, [0, y, 0]))
+      break
+    case 'gem': {
+      cap.add(mesh(new THREE.CylinderGeometry(r + 0.02, r + 0.02, 0.07, 16), toy('#1A1D24', 0.5, 0.2), [0, y, 0]))
+      const gem = mesh(new THREE.OctahedronGeometry(0.06, 0), shiny, [0, wy(664), 0])
+      gem.scale.set(0.9, 1.3, 0.9)
+      cap.add(gem)
+      break
+    }
+    case 'star': {
+      const st = new THREE.Shape()
+      for (let i = 0; i < 10; i++) {
+        const rr = i % 2 ? 0.035 : 0.08
+        const t = (i / 10) * Math.PI * 2
+        if (i === 0) st.moveTo(Math.sin(t) * rr, Math.cos(t) * rr)
+        else st.lineTo(Math.sin(t) * rr, Math.cos(t) * rr)
+      }
+      st.closePath()
+      const geo = new THREE.ExtrudeGeometry(st, { depth: 0.03, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.01, bevelSegments: 3 })
+      geo.translate(0, 0, -0.015)
+      cap.add(mesh(geo, shiny, [0, wy(656), 0]))
+      break
+    }
+    default: // round
+      cap.add(mesh(new THREE.CylinderGeometry(r + 0.022, r + 0.022, 0.085, 16), coloured, [0, y, 0]))
+  }
   return cap
 }
 

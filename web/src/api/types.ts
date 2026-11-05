@@ -41,6 +41,7 @@ export interface Appearance {
   handleShape: string
   /** round | pommel | ball */
   endCap: string
+  endCapColor: string
 }
 
 export interface Loadout {

@@ -68,6 +68,12 @@ export const GRIP_WRAPS: Option[] = [
   { id: 'diagonal', label: 'Diagonal' },
   { id: 'stripes', label: 'Stripes' },
   { id: 'cross', label: 'Crosshatch' },
+  { id: 'zigzag', label: 'Zigzag' },
+  { id: 'dots', label: 'Polka dots' },
+  { id: 'checker', label: 'Checker' },
+  { id: 'bands', label: 'Bold bands' },
+  { id: 'racing', label: 'Racing stripe' },
+  { id: 'spiral', label: 'Tight spiral' },
   { id: 'plain', label: 'Plain' },
 ]
 export const HANDLE_SHAPES: Option[] = [
@@ -79,7 +85,13 @@ export const END_CAPS: Option[] = [
   { id: 'round', label: 'Round cap' },
   { id: 'pommel', label: 'Gold pommel' },
   { id: 'ball', label: 'Pickleball' },
+  { id: 'flat', label: 'Flat cap' },
+  { id: 'ring', label: 'Steel ring' },
+  { id: 'gem', label: 'Gem cap' },
+  { id: 'star', label: 'Star cap' },
 ]
+/** End cap colours (the pickleball cap keeps its own yellow). */
+export const END_CAP_COLORS = ['#1A1D24', '#D9AE4A', '#C9D1DC', '#D93A45', '#2B4579', '#2F9E5B', '#8B5CF6', '#FF5CA8', '#B7F33B', '#F4F6F9']
 
 export const DEFAULT_APPEARANCE: Appearance = {
   bodyColor: BODY_COLORS[0],
@@ -94,6 +106,7 @@ export const DEFAULT_APPEARANCE: Appearance = {
   gripWrap: 'diagonal',
   handleShape: 'classic',
   endCap: 'round',
+  endCapColor: '#1A1D24',
 }
 
 /** Fills in anything missing (e.g. an older saved look) with the default. */

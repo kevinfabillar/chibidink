@@ -56,6 +56,40 @@ export function gripTexture(a: Appearance): THREE.Texture {
       ctx.stroke()
     }
   }
+  if (a.gripWrap === 'spiral') {
+    ctx.lineWidth = 6
+    for (let i = -12; i <= 14; i++) {
+      ctx.beginPath()
+      ctx.moveTo(i * 22, 256)
+      ctx.lineTo(i * 22 + 160, 0)
+      ctx.stroke()
+    }
+  }
+  if (a.gripWrap === 'zigzag') {
+    ctx.lineWidth = 7
+    ctx.lineJoin = 'round'
+    for (let y = 24; y < 256; y += 46) {
+      ctx.beginPath()
+      for (let x = 0, k = 0; x <= 256; x += 32, k++) (k ? ctx.lineTo.bind(ctx) : ctx.moveTo.bind(ctx))(x, y + (k % 2 ? -14 : 0))
+      ctx.stroke()
+    }
+  }
+  ctx.fillStyle = wrapInk(a.gripColor)
+  if (a.gripWrap === 'dots')
+    for (let r = 0, y = 16; y < 256; y += 32, r++)
+      for (let x = r % 2 ? 32 : 16; x < 256; x += 32) {
+        ctx.beginPath()
+        ctx.arc(x, y, 7, 0, Math.PI * 2)
+        ctx.fill()
+      }
+  if (a.gripWrap === 'checker') {
+    ctx.globalAlpha = 0.16
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) if ((r + c) % 2 === 0) ctx.fillRect(c * 32, r * 32, 32, 32)
+  }
+  if (a.gripWrap === 'bands') for (let y = 12; y < 256; y += 64) ctx.fillRect(0, y, 256, 24)
+  if (a.gripWrap === 'racing')
+    // Two stripes, so one shows on the front and one on the back of the round handle.
+    for (const x of [44, 172]) ctx.fillRect(x, 0, 40, 256)
   return toTexture(c)
 }
 

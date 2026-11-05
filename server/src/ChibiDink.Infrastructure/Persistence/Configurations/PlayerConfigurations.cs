@@ -19,7 +19,7 @@ internal sealed class PlayerProfileConfiguration : IEntityTypeConfiguration<Play
 
         b.ComplexProperty(p => p.Appearance, a =>
         {
-            foreach (var color in new[] { nameof(Appearance.BodyColor), nameof(Appearance.EdgeColor), nameof(Appearance.EyeColor), nameof(Appearance.GripColor) })
+            foreach (var color in new[] { nameof(Appearance.BodyColor), nameof(Appearance.EdgeColor), nameof(Appearance.EyeColor), nameof(Appearance.GripColor), nameof(Appearance.EndCapColor) })
                 a.Property<string>(color).HasMaxLength(7);
             foreach (var style in new[]
                      {
