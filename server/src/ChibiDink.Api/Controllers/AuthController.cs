@@ -180,17 +180,20 @@ public sealed class AuthController(
         if (await users.IsLockedOutAsync(user))
             return Problem(statusCode: StatusCodes.Status429TooManyRequests, title: "Too many tries",
                 detail: "Too many wrong codes. Wait a few minutes, then send a new code.");
-        if (!user.EmailConfirmed)
+        // Only an unverified account can be verified (and signed in) with a code. An already-verified account
+        // must sign in with its password: never hand out a sign-in here without a valid code.
+        if (user.EmailConfirmed)
+            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Already verified",
+                detail: "This email is already verified. Sign in with your password.");
+
+        var code = new string((request.Code ?? "").Where(char.IsDigit).ToArray());
+        var result = await users.ConfirmEmailAsync(user, code);
+        if (!result.Succeeded)
         {
-            var code = new string((request.Code ?? "").Where(char.IsDigit).ToArray());
-            var result = await users.ConfirmEmailAsync(user, code);
-            if (!result.Succeeded)
-            {
-                await users.AccessFailedAsync(user);
-                return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Verification failed", detail: invalid);
-            }
-            await users.ResetAccessFailedCountAsync(user);
+            await users.AccessFailedAsync(user);
+            return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Verification failed", detail: invalid);
         }
+        await users.ResetAccessFailedCountAsync(user);
         await profiles.EnsureProfileAsync(user.Id, user.Email!.Split('@')[0], ct);
         return await IssueTokenAsync(user);
     }
