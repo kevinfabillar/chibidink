@@ -40,6 +40,9 @@ public sealed class SessionService(
         await unitOfWork.ExecuteAsync(async innerCt =>
         {
             var organizer = await profiles.FindAsync(organizerId, innerCt) ?? throw new NotFoundException("Profile");
+            // One session at a time: the current one (open or live) has to be closed first.
+            if (await sessions.FindUnclosedTitleForOrganizerAsync(organizerId, innerCt) is { } current)
+                throw new DomainException($"You're already hosting \"{current}\". Close it before starting a new one.");
             var code = await UniqueInviteCodeAsync(innerCt);
             var session = PlaySession.Create(
                 organizerId, request.Title, request.Location, request.ScheduledAt,
@@ -56,6 +59,12 @@ public sealed class SessionService(
         var code = inviteCode.Trim().ToUpperInvariant();
         var sessionId = await sessions.FindIdByInviteCodeAsync(code, ct) ?? throw new NotFoundException("Session");
         var userId = currentUser.UserId;
+
+        // One session at a time: finish (or leave) the current one before joining another.
+        if (await sessions.FindOtherCurrentSessionAsync(userId, sessionId, ct) is { } other)
+            throw new DomainException(other.IsOrganizer
+                ? $"You're hosting \"{other.Title}\". Close it before joining another session."
+                : $"You're still in \"{other.Title}\". Leave it (Session tab, Leave session) before joining another.");
 
         await runner.RunAsync(sessionId, async (session, innerCt) =>
         {

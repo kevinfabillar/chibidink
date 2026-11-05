@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import clsx from 'clsx'
 import { ChevronRight, LogIn, Megaphone, QrCode, Sparkles, Users } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router'
+import { Navigate, useNavigate } from 'react-router'
 import { sessionApi } from '../api/api'
 import type { SessionSummary } from '../api/types'
 import { PlayerAvatar } from '../components/character/Stage'
@@ -29,6 +29,9 @@ export function FindMatchPage() {
   const choice: Choice = isGuest ? 'join' : (picked ?? (open.length > 0 ? 'join' : 'host'))
 
   if (!me || sessions.isLoading) return <Spinner />
+  // Already in a session (open or live)? Go straight to it: live first, then the newest open one.
+  const current = open.find((s) => s.status === 'Active') ?? open[0]
+  if (current) return <Navigate to={`/sessions/${current.id}`} replace />
 
   return (
     <div className="mx-auto max-w-2xl">

@@ -22,6 +22,12 @@ public interface ISessionRepository
     Task<IReadOnlyList<PlaySession>> ListForUserAsync(Guid userId, int take, CancellationToken ct);
     Task<string?> FindTitleAsync(Guid sessionId, CancellationToken ct);
 
+    /// <summary>The title of a session this organizer hosts that isn't closed yet (open or live), if any.</summary>
+    Task<string?> FindUnclosedTitleForOrganizerAsync(Guid organizerId, CancellationToken ct);
+
+    /// <summary>Another session (not closed) this player is still in (hasn't left), if any: its id, title and whether they host it.</summary>
+    Task<(Guid Id, string Title, bool IsOrganizer)?> FindOtherCurrentSessionAsync(Guid userId, Guid exceptSessionId, CancellationToken ct);
+
     /// <summary>Sessions the background matchmaker should look at right now.</summary>
     /// <summary>Sessions with matchmaking running, and sessions with a match whose confirmation time ran out.</summary>
     Task<(IReadOnlyList<Guid> Active, IReadOnlyList<Guid> Expired)> ListNeedingAttentionAsync(DateTimeOffset now, CancellationToken ct);

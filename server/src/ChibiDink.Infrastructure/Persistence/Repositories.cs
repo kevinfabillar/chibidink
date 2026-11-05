@@ -44,6 +44,21 @@ internal sealed class SessionRepository(AppDbContext db) : ISessionRepository
     public Task<string?> FindTitleAsync(Guid sessionId, CancellationToken ct) =>
         db.PlaySessions.Where(s => s.Id == sessionId).Select(s => s.Title).FirstOrDefaultAsync(ct);
 
+    public Task<string?> FindUnclosedTitleForOrganizerAsync(Guid organizerId, CancellationToken ct) =>
+        db.PlaySessions.Where(s => s.OrganizerId == organizerId && s.Status != SessionStatus.Closed)
+            .OrderByDescending(s => s.CreatedAt).Select(s => s.Title).FirstOrDefaultAsync(ct);
+
+    public async Task<(Guid Id, string Title, bool IsOrganizer)?> FindOtherCurrentSessionAsync(Guid userId, Guid exceptSessionId, CancellationToken ct)
+    {
+        var found = await db.PlaySessions
+            .Where(s => s.Id != exceptSessionId && s.Status != SessionStatus.Closed &&
+                        s.Participants.Any(p => p.UserId == userId && p.Status != ParticipantStatus.Left))
+            .OrderByDescending(s => s.CreatedAt)
+            .Select(s => new { s.Id, s.Title, s.OrganizerId })
+            .FirstOrDefaultAsync(ct);
+        return found is null ? null : (found.Id, found.Title, found.OrganizerId == userId);
+    }
+
     public Task<bool> InviteCodeExistsAsync(string inviteCode, CancellationToken ct) =>
         db.PlaySessions.AnyAsync(s => s.InviteCode == inviteCode, ct);
 

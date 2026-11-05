@@ -10,10 +10,16 @@ import { TopBar } from '../components/ui/TopBar'
 import { queryKeys } from '../hooks/queries'
 import { winRateText } from '../lib/format'
 import { PageError } from '../components/ui/ErrorPage'
+import { Pencil } from 'lucide-react'
+import { useState } from 'react'
+import type { Profile } from '../api/types'
+import { EditProfileSheet } from '../components/profile/EditProfileSheet'
+import { Button } from '../components/ui/Button'
 
 /** Verified pickleball record. Only organizer- or opponent-verified matches count. */
 export function ProfilePage() {
   const { userId } = useParams()
+  const [editing, setEditing] = useState(false)
   const profile = useQuery({
     queryKey: userId ? queryKeys.player(userId) : queryKeys.me,
     queryFn: () => (userId ? profileApi.player(userId) : profileApi.me()),
@@ -27,6 +33,7 @@ export function ProfilePage() {
   return (
     <div className="mx-auto max-w-5xl">
       <TopBar back="/" title={userId ? player.displayName : 'My Record'} sub="Verified real-life matches only." />
+      {!userId && <EditProfileSheet open={editing} onClose={() => setEditing(false)} profile={profile.data as unknown as Profile} />}
 
       <div className="grid gap-5 md:grid-cols-[18rem_1fr]">
         <section className="card flex flex-col items-center p-5">
@@ -34,7 +41,10 @@ export function ProfilePage() {
           <div className="mt-2 font-display text-2xl font-bold">{player.displayName}</div>
           <div className="text-sm text-lime">Character Lv {progress.level}</div>
           {!userId && (
-            <div className="mt-4 w-full">
+            <div className="mt-4 w-full space-y-2">
+              <Button variant="dark" block icon={<Pencil className="size-4" />} onClick={() => setEditing(true)}>
+                Edit profile
+              </Button>
               <SignOutButton />
               <p className="mt-3 text-center text-xs text-muted">
                 <Link to="/terms" className="hover:text-lime">Terms of Service</Link> · <Link to="/privacy" className="hover:text-lime">Privacy Policy</Link>
