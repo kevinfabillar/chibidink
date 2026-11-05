@@ -216,6 +216,9 @@ public sealed class AuthController(
             "<h2 style=\"margin:0 0 12px\">Reset your ChibiDink password</h2>" +
             "<p>Someone (hopefully you) asked to reset your password. Tap the button to choose a new one.</p>" +
             $"<p style=\"margin:24px 0\"><a href=\"{safe}\" style=\"background:#B7F33B;color:#070C14;padding:12px 20px;border-radius:12px;text-decoration:none;font-weight:bold\">Set a new password</a></p>" +
+            // The address written out (not a link), so it can be copied if a mail service's link tracking gets blocked.
+            "<p style=\"font-size:13px;color:#5A6474\">Button not working? Copy this address into your browser:<br>" +
+            $"<span style=\"word-break:break-all;color:#1A1D24\">{safe}</span></p>" +
             "<p style=\"font-size:13px;color:#5A6474\">The link works once and expires in 1 hour. If you didn't ask, ignore this email: your password stays the same.</p>" +
             "</div>";
     }
