@@ -49,6 +49,7 @@ export function VerifyEmailStep({ email, onVerified, onBack }: { email: string; 
         autoFocus
         className="h-16 w-full rounded-2xl border border-white/10 bg-night text-center font-display text-4xl font-extrabold tracking-[0.5em] text-lime placeholder:text-white/20 focus:border-lime/70 focus:outline-none"
       />
+      {digits.length > 0 && digits.length < 6 && <p className="-mt-2 text-xs font-semibold text-amber-200">{digits.length} of 6 digits</p>}
       <ErrorNote error={verify.error ?? resend.error} />
       <Button type="submit" block size="lg" disabled={digits.length !== 6} loading={verify.isPending}>
         Verify and continue
