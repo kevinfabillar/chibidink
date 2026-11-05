@@ -15,8 +15,10 @@ services:
         sync: false # you paste your Supabase connection string in Render
       - key: App__PublicUrl
         sync: false # your site address, e.g. https://chibidink.onrender.com (used in reset emails)
-      - key: Email__BrevoApiKey
-        sync: false # Brevo -> SMTP & API -> API keys
+      - key: Email__SmtpLogin
+        sync: false # Brevo -> SMTP & API -> SMTP: the Login (like 123abc@smtp-brevo.com)
+      - key: Email__SmtpPassword
+        sync: false # Brevo -> SMTP & API -> SMTP: an SMTP key (xsmtpsib-...)
       - key: Email__FromAddress
         sync: false # a sender email verified in Brevo
       - key: ASPNETCORE_ENVIRONMENT
