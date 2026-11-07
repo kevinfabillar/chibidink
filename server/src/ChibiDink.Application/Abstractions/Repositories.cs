@@ -47,8 +47,8 @@ public interface IMatchRepository
     Task<IReadOnlyList<Match>> ListCompletedForUserAsync(Guid userId, int take, CancellationToken ct);
     Task<IReadOnlyList<Match>> ListCompletedForUserInSessionAsync(Guid userId, Guid sessionId, CancellationToken ct);
 
-    /// <summary>Every completed match in the session, newest first.</summary>
-    Task<IReadOnlyList<Match>> ListCompletedInSessionAsync(Guid sessionId, CancellationToken ct);
+    /// <summary>Live and completed matches of a session in one round trip (read-only, for views).</summary>
+    Task<IReadOnlyList<Match>> ListLiveAndCompletedInSessionAsync(Guid sessionId, CancellationToken ct);
 
     /// <summary>The player's one live match, if any (the database allows at most one).</summary>
     Task<Match?> FindLiveForUserAsync(Guid userId, CancellationToken ct);

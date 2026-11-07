@@ -23,7 +23,7 @@ export function Sheet({ open, onClose, title, children }: Props) {
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" role="dialog" aria-modal aria-label={title}>
           <motion.div
-            className="absolute inset-0 bg-ink/75 backdrop-blur-sm"
+            className="absolute inset-0 bg-[#070c14]/70 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

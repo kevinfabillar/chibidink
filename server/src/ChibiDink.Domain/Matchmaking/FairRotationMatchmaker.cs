@@ -14,6 +14,7 @@ namespace ChibiDink.Domain.Matchmaking;
 /// 3. The player at the front of the line is always included, so nobody is skipped forever.
 /// 4. Among nearby candidates, prefer groups with balanced teams and fresh partner/opponent pairs.
 /// A court is never left empty just because the best group is imperfectly balanced.
+/// Fixed partners (both waiting) always go on together, on the same team.
 /// </summary>
 public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weights = null) : IMatchmakingStrategy
 {
@@ -32,14 +33,20 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
     public IReadOnlyList<ProposedLineup> FindLineups(MatchmakingRequest request)
     {
         var needed = request.Format.PlayersPerMatch();
-        var queue = QueuePriority.Order(request.Candidates, request.Now, request.WaitProtection).ToList();
+        // A fixed partner only counts when the other half is waiting too (callers drop the rest).
+        var present = request.Candidates.Select(c => c.UserId).ToHashSet();
+        var queue = QueuePriority.Order(
+            request.Candidates.Select(c => c.PartnerId is { } p && !present.Contains(p) ? c with { PartnerId = null } : c),
+            request.Now, request.WaitProtection).ToList();
         var lineups = new List<ProposedLineup>();
 
         var skillBased = request.Mode == Sessions.QueueMode.SkillBased;
         for (var court = 0; court < request.FreeCourts && queue.Count >= needed; court++)
         {
             var pool = skillBased ? SameTierPool(queue, needed) : null;
-            var best = BestLineupAnchoredOnFront(pool ?? queue, request, needed, skillBased, mixed: skillBased && pool is null);
+            var best = BestLineup(pool ?? queue, request, needed, skillBased, mixed: skillBased && pool is null)
+                       ?? (pool is null ? null : BestLineup(queue, request, needed, skillBased, mixed: true));
+            if (best is null) break; // only pairs and an odd one out left: nothing valid to make
             lineups.Add(best);
             var used = best.TeamA.Concat(best.TeamB).ToHashSet();
             queue.RemoveAll(c => used.Contains(c.UserId));
@@ -58,10 +65,26 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
         return null;
     }
 
-    private ProposedLineup BestLineupAnchoredOnFront(List<QueueCandidate> queue, MatchmakingRequest request, int needed, bool skillBased, bool mixed)
+    /// <summary>
+    /// The best group that includes the front of the line. If fixed pairs make that impossible (e.g. the front
+    /// player is alone and only pairs are left), the next player in line anchors instead.
+    /// </summary>
+    private ProposedLineup? BestLineup(List<QueueCandidate> queue, MatchmakingRequest request, int needed, bool skillBased, bool mixed)
     {
-        var anchor = queue[0];
-        var window = queue.Skip(1).Take(needed - 1 + _w.LookAhead).ToList();
+        for (var i = 0; i < queue.Count; i++)
+            if (BestLineupAnchoredOn(queue, i, request, needed, skillBased, mixed) is { } lineup)
+                return lineup;
+        return null;
+    }
+
+    private ProposedLineup? BestLineupAnchoredOn(List<QueueCandidate> queue, int anchorIndex, MatchmakingRequest request, int needed, bool skillBased, bool mixed)
+    {
+        var anchor = queue[anchorIndex];
+        var rest = queue.Where((_, i) => i != anchorIndex).ToList();
+        var window = rest.Take(needed - 1 + _w.LookAhead).ToList();
+        // Someone's partner may be further back in line: bring partners of the window into it.
+        foreach (var partner in rest.Skip(window.Count).Where(c => c.PartnerId is { } p && (p == anchor.UserId || window.Any(w => w.UserId == p))).ToList())
+            window.Add(partner);
         var minGames = queue.Min(c => c.CompletedGames);
         var position = queue.Select((c, i) => (c.UserId, i)).ToDictionary(x => x.UserId, x => x.i);
 
@@ -71,12 +94,14 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
         foreach (var others in Combinations(window, needed - 1))
         {
             var group = others.Prepend(anchor).ToList();
+            if (!KeepsPairsTogether(group)) continue;
             var rotationCost = group.Sum(c => (c.CompletedGames - minGames) * _w.ExtraGames + position[c.UserId] * _w.QueuePosition);
 
             // A mixed group (no tier had four) prefers the smallest spread of tiers.
             var tierSpread = mixed ? group.Max(c => SkillLevel.TierOf(c.Skill)) - group.Min(c => SkillLevel.TierOf(c.Skill)) : 0;
             foreach (var (teamA, teamB) in TeamSplits(group))
             {
+                if (!SameTeam(teamA, teamB)) continue;
                 var lineup = Evaluate(teamA, teamB, skillBased, mixed);
                 var cost = rotationCost
                            + (skillBased ? lineup.SkillGap * _w.SkillGap : 0)
@@ -89,8 +114,16 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
                 }
             }
         }
-        return best!;
+        return best;
     }
+
+    /// <summary>Every fixed partner in the group has their partner in it too.</summary>
+    private static bool KeepsPairsTogether(List<QueueCandidate> group) =>
+        group.All(c => c.PartnerId is not { } p || group.Any(o => o.UserId == p));
+
+    /// <summary>Fixed partners are on the same team.</summary>
+    private static bool SameTeam(List<QueueCandidate> teamA, List<QueueCandidate> teamB) =>
+        teamA.All(c => c.PartnerId is not { } p || teamB.All(o => o.UserId != p));
 
     private static ProposedLineup Evaluate(List<QueueCandidate> teamA, List<QueueCandidate> teamB, bool skillBased, bool mixed)
     {
@@ -106,8 +139,9 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
     private double RepeatCost(List<QueueCandidate> teamA, List<QueueCandidate> teamB, PairingHistory history)
     {
         double cost = 0;
-        if (teamA.Count == 2) cost += history.PartnerCount(teamA[0].UserId, teamA[1].UserId) * _w.RepeatPartner;
-        if (teamB.Count == 2) cost += history.PartnerCount(teamB[0].UserId, teamB[1].UserId) * _w.RepeatPartner;
+        // Fixed partners always play together, so that's never a "repeat" to avoid.
+        if (teamA.Count == 2 && teamA[0].PartnerId != teamA[1].UserId) cost += history.PartnerCount(teamA[0].UserId, teamA[1].UserId) * _w.RepeatPartner;
+        if (teamB.Count == 2 && teamB[0].PartnerId != teamB[1].UserId) cost += history.PartnerCount(teamB[0].UserId, teamB[1].UserId) * _w.RepeatPartner;
         foreach (var a in teamA)
             foreach (var b in teamB)
                 cost += history.OpponentCount(a.UserId, b.UserId) * _w.RepeatOpponent;

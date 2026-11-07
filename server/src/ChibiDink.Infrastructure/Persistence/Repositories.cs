@@ -128,10 +128,10 @@ internal sealed class MatchRepository(AppDbContext db) : IMatchRepository
             .OrderByDescending(m => m.EndedAt)
             .ToListAsync(ct);
 
-    public async Task<IReadOnlyList<Match>> ListCompletedInSessionAsync(Guid sessionId, CancellationToken ct) =>
+    public async Task<IReadOnlyList<Match>> ListLiveAndCompletedInSessionAsync(Guid sessionId, CancellationToken ct) =>
         await WithPlayers
             .AsNoTracking()
-            .Where(m => m.SessionId == sessionId && m.Status == MatchStatus.Completed)
+            .Where(m => m.SessionId == sessionId && (m.IsActive || m.Status == MatchStatus.Completed))
             .OrderByDescending(m => m.EndedAt)
             .ToListAsync(ct);
 

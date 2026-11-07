@@ -12,7 +12,7 @@ export function Logo({ className, large }: { className?: string; large?: boolean
       src={large ? logoFull : logoSmall}
       alt="ChibiDink"
       draggable={false}
-      className={clsx('w-auto select-none', large ? 'h-44' : 'h-14', className)}
+      className={clsx('logo w-auto select-none', large ? 'h-44' : 'h-14', className)}
     />
   )
 }

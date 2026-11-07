@@ -68,9 +68,13 @@ export const sessionApi = {
   setCourtAvailable: (id: string, court: number, available: boolean) =>
     http.put(`${s(id)}/courts/${court}/availability`, { available }),
   setSkill: (id: string, userId: string, skill: number) => http.put(`${s(id)}/players/${userId}/skill`, { skill }),
+  /** Organizer: set a player's fixed partner (null unpairs them). */
+  setPartner: (id: string, userId: string, partnerId: string | null) => http.put(`${s(id)}/players/${userId}/partner`, { partnerId }),
   setQueued: (id: string, userId: string, queued: boolean) => http.put(`${s(id)}/players/${userId}/queue`, { queued }),
   leave: (id: string) => http.post(`${s(id)}/leave`),
   audit: (id: string) => http.get<AuditEntry[]>(`${s(id)}/audit`),
+  /** Organizer: save the hand-lined-up queue groups, in order. An empty list goes back to automatic. */
+  setPlannedGroups: (id: string, groups: { teamA: string[]; teamB: string[] }[]) => http.put(`${s(id)}/up-next`, { groups }),
 }
 
 const m = (sessionId: string, matchId: string) => `${s(sessionId)}/matches/${matchId}`
@@ -86,6 +90,8 @@ export const matchApi = {
   verify: (sid: string, mid: string) => http.post(`${m(sid, mid)}/verify`),
   replace: (sid: string, mid: string, outgoingUserId: string, incomingUserId: string) =>
     http.post(`${m(sid, mid)}/replace`, { outgoingUserId, incomingUserId }),
+  /** Organizer: set who plays on this court. Newcomers come from the waitlist or trade places with another court. */
+  setLineup: (sid: string, mid: string, teamA: string[], teamB: string[]) => http.put(`${m(sid, mid)}/lineup`, { teamA, teamB }),
   move: (sid: string, mid: string, courtNumber: number) => http.post(`${m(sid, mid)}/move`, { courtNumber }),
   switchTeams: (sid: string, mid: string, firstUserId: string, secondUserId: string) =>
     http.post(`${m(sid, mid)}/switch-teams`, { firstUserId, secondUserId }),

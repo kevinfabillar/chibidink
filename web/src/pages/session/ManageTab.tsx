@@ -8,6 +8,7 @@ import { InviteCard } from './InviteCard'
 import { AuditLog } from './manage/AuditLog'
 import { CloseSession } from './manage/CloseSession'
 import { ManualMatchBuilder } from './manage/ManualMatchBuilder'
+import { PartnersAdmin } from './manage/PartnersAdmin'
 import { PlayersAdmin } from './manage/PlayersAdmin'
 import { SettingsForm } from './manage/SettingsForm'
 
@@ -30,6 +31,7 @@ export function ManageTab({ session }: { session: SessionDetail }) {
       </div>
       <div className="space-y-5">
         <PlayersAdmin session={session} />
+        {session.format === 'Doubles' && <PartnersAdmin session={session} />}
         <SettingsForm session={session} />
         <AuditLog sessionId={session.id} />
         <CloseSession session={session} />

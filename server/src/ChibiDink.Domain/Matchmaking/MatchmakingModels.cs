@@ -3,11 +3,13 @@ using ChibiDink.Domain.Common;
 namespace ChibiDink.Domain.Matchmaking;
 
 /// <summary>A waiting player as the matchmaker sees them.</summary>
+/// <param name="PartnerId">Fixed partner, when they're also a candidate: the two must play together, on one team.</param>
 public sealed record QueueCandidate(
     Guid UserId,
     int Skill,
     int CompletedGames,
-    DateTimeOffset WaitingSince);
+    DateTimeOffset WaitingSince,
+    Guid? PartnerId = null);
 
 /// <summary>Everything the matchmaker needs to fill courts. Contains no database or framework types.</summary>
 public sealed record MatchmakingRequest(

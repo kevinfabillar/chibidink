@@ -7,7 +7,7 @@ export const friendlyFormat = (f: MatchFormat) => `Friendly ${f}`
 export const matchStatusLabel: Record<MatchStatus, string> = {
   Proposed: 'Proposed',
   AwaitingConfirmation: 'Next Match',
-  Ready: 'Ready',
+  Ready: 'Ready to start',
   Playing: 'Playing',
   PendingResult: 'Score Pending',
   Completed: 'Completed',

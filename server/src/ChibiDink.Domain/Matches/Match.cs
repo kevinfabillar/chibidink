@@ -41,8 +41,9 @@ public sealed class Match : Entity
     private Match() { } // EF
 
     /// <summary>
-    /// Reserves the players and the court. With automatic queueing (no confirmation window) the match
-    /// is live straight away; otherwise it waits for the players to accept.
+    /// Reserves the players and the court. With automatic queueing (no confirmation window) the group is
+    /// put on the court as Ready and waits there until the organizer (or a player) taps Start match;
+    /// otherwise it waits for the players to accept first.
     /// </summary>
     public static Match Propose(
         PlaySession session, Court court,
@@ -81,9 +82,7 @@ public sealed class Match : Entity
         }
         else
         {
-            match.MarkAllAccepted();
-            match.Status = MatchStatus.Playing;
-            match.StartedAt = now;
+            match.MarkAllAccepted(); // Ready: on court, waiting for Start match
         }
         return match;
     }
@@ -149,6 +148,8 @@ public sealed class Match : Entity
 
     public void ReportResult(IScoringRule rule, int teamAScore, int teamBScore, Guid reporterId, string? notes, DateTimeOffset now)
     {
+        // A score for a game nobody tapped Start on: it was played, so start it now.
+        if (Status == MatchStatus.Ready) Start(now, byOrganizer: false);
         RequireStatus(MatchStatus.Playing, MatchStatus.PendingResult);
         rule.Validate(teamAScore, teamBScore);
         var trimmedNotes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim()[..Math.Min(notes.Trim().Length, 280)];
@@ -228,6 +229,75 @@ public sealed class Match : Entity
         _participants.Add(new MatchParticipant(Id, incomingId, outgoing.Team));
         if (Status.IsPrePlay()) RestartConfirmation(session, now);
         else _participants.Last().Accept();
+    }
+
+    /// <summary>
+    /// Sets who plays on this court, side by side, in one go (before a score is entered). Each player not
+    /// already here comes from the waitlist (the player they replace goes back to it, keeping their spot) or
+    /// from another court in <paramref name="otherLive"/> (the two trade places and both games keep going).
+    /// Players already here may change sides.
+    /// </summary>
+    public void SetLineup(PlaySession session, IReadOnlyList<Guid> teamA, IReadOnlyList<Guid> teamB,
+        IReadOnlyCollection<Match> otherLive, DateTimeOffset now)
+    {
+        Guard.That(Status.IsPrePlay() || Status == MatchStatus.Playing, "Players can only be changed before a score is entered.");
+        var perTeam = Format.PlayersPerTeam();
+        Guard.That(teamA.Count == perTeam && teamB.Count == perTeam, $"Each side needs {perTeam} player(s).");
+        var wanted = teamA.Concat(teamB).ToList();
+        Guard.That(wanted.Distinct().Count() == wanted.Count, "Each player can only be picked once.");
+
+        // Pair each newcomer with the player whose spot they took (by position), then anyone left over.
+        var before = TeamA.Concat(TeamB).Select(p => p.UserId).ToList();
+        var leaving = before.Where(id => !wanted.Contains(id)).ToList();
+        var pairs = new List<(Guid Out, Guid In)>();
+        for (var i = 0; i < wanted.Count; i++)
+            if (i < before.Count && !Involves(wanted[i]) && leaving.Remove(before[i]))
+                pairs.Add((before[i], wanted[i]));
+        foreach (var incoming in wanted.Where(id => !Involves(id) && pairs.All(p => p.In != id)))
+        {
+            pairs.Add((leaving[0], incoming));
+            leaving.RemoveAt(0);
+        }
+
+        foreach (var (outgoing, incoming) in pairs)
+        {
+            var otherCourt = otherLive.FirstOrDefault(m => m.Id != Id && m.Involves(incoming));
+            if (otherCourt is not null) ExchangePlayer(otherCourt, outgoing, incoming);
+            else ReplacePlayer(session, outgoing, incoming, now);
+        }
+
+        foreach (var p in _participants) p.MoveTo(teamA.Contains(p.UserId) ? Team.A : Team.B);
+    }
+
+    /// <summary>
+    /// Trades one of this court's players with a player on another court, before a score is entered on either.
+    /// Both stay on court, each taking the other's team spot.
+    /// </summary>
+    public void ExchangePlayer(Match other, Guid mineId, Guid theirsId)
+    {
+        Guard.That(other.Id != Id, "Pick a player from a different court.");
+        Guard.That(other.SessionId == SessionId, "Both courts must be in the same session.");
+        Guard.That((Status.IsPrePlay() || Status == MatchStatus.Playing) && (other.Status.IsPrePlay() || other.Status == MatchStatus.Playing),
+            "Players can only be swapped before a score is entered.");
+        var mine = FindPlayer(mineId) ?? throw new DomainException("That player is not in this match.");
+        var theirs = other.FindPlayer(theirsId) ?? throw new DomainException("That player is not on the other court.");
+
+        var (myTeam, theirTeam) = (mine.Team, theirs.Team);
+        _participants.Remove(mine);
+        other._participants.Remove(theirs);
+        mine.MoveToMatch(other.Id, theirTeam);
+        theirs.MoveToMatch(Id, myTeam);
+        other._participants.Add(mine);
+        _participants.Add(theirs);
+        ReadyIfAllAccepted();
+        other.ReadyIfAllAccepted();
+    }
+
+    private void ReadyIfAllAccepted()
+    {
+        if (Status != MatchStatus.AwaitingConfirmation || _participants.Any(p => p.Confirmation != ConfirmationStatus.Accepted)) return;
+        Status = MatchStatus.Ready;
+        ConfirmationDeadline = null;
     }
 
     /// <summary>Switches two players on this court between the teams (one from each), before a score is entered.</summary>

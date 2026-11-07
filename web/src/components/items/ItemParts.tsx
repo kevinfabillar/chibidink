@@ -22,7 +22,7 @@ export function ItemCard({ item, onClick, showPrice }: { item: CosmeticItem; onC
         item.equipped && 'border-lime shadow-glow-lime',
       )}
       style={{
-        background: `radial-gradient(120% 70% at 50% 100%, ${color}38, transparent 70%), #111A24`,
+        background: `radial-gradient(120% 70% at 50% 100%, ${color}38, transparent 70%), var(--color-tile)`,
         ...(item.equipped ? null : { borderColor: `${color}B0`, boxShadow: `0 0 18px -8px ${color}` }),
       }}
     >

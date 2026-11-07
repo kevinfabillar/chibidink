@@ -54,7 +54,14 @@ function MatchActionsFor({ session, match }: Props) {
           </>
         )}
         {can.start && (
-          <Button icon={<Play className="size-5" />} loading={start.isPending} onClick={() => start.mutate()} pill className="flex-1">
+          <Button
+            size={match.status === 'Ready' ? 'lg' : 'md'}
+            icon={<Play className="size-5 fill-current" />}
+            loading={start.isPending}
+            onClick={() => start.mutate()}
+            pill
+            className="min-w-40 flex-1 basis-full"
+          >
             {match.status === 'AwaitingConfirmation' ? 'Start now' : 'Start match'}
           </Button>
         )}
@@ -101,6 +108,8 @@ function MatchMeta({ match }: { match: Match }) {
       </p>
     )
   }
+  if (match.status === 'Ready')
+    return <p className="text-center text-sm text-lime">On court and ready. Tap Start match when they begin.</p>
   if (match.status === 'Playing' && match.startedAt)
     return <p className="text-center text-sm text-lime">Game time {durationText(now - new Date(match.startedAt).getTime())}</p>
   if (match.status === 'PendingResult' && match.result)

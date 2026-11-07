@@ -11,7 +11,8 @@ import { glowTexture, gripTexture, paddleCharacterFaceTexture } from './textures
 // The paddle character (the "Sprout" design) in 3D. Sizes come straight from the design's
 // 600 × 770 artwork (see gear.ts for the unit conversion), with the feet on y = 0.
 
-export type Pose = 'idle' | 'swing' | 'victory'
+/** idle, swing and victory are everyday poses; champion, cheer and clap are the podium's celebrations. */
+export type Pose = 'idle' | 'swing' | 'victory' | 'champion' | 'cheer' | 'clap'
 
 const wx = (x: number) => (x - 300) * S
 const ARM = { length: 90 * S, radius: 18 * S, shoulderX: wx(470), shoulderY: wy(352) }
@@ -21,6 +22,25 @@ const POSES: Record<Pose, { right: number; left: number }> = {
   idle: { right: 2.27, left: -0.52 },
   swing: { right: 1.57, left: -0.7 },
   victory: { right: 2.48, left: -0.35 },
+  champion: { right: 2.75, left: -2.6 }, // both arms up
+  cheer: { right: 2.85, left: -0.6 }, // paddle high, waving
+  clap: { right: 1.2, left: -1.2 }, // arms in front
+}
+
+/** Per-frame motion for each pose: arm swing on top of the base angles, a hop, and a sway. */
+function motion(pose: Pose, t: number) {
+  switch (pose) {
+    case 'idle':
+      return { right: Math.sin(t * 4.8) * 0.16, left: Math.sin(t * 2.2) * 0.03, hop: 0, sway: 0 }
+    case 'champion': // jumping with fists pumping
+      return { right: Math.sin(t * 7) * 0.18, left: -Math.sin(t * 7) * 0.18, hop: Math.abs(Math.sin(t * 3.5)) * 0.14, sway: 0 }
+    case 'cheer': // big wave and a small hop
+      return { right: Math.sin(t * 6) * 0.35, left: Math.sin(t * 2.2) * 0.05, hop: Math.abs(Math.sin(t * 3)) * 0.06, sway: Math.sin(t * 3) * 0.04 }
+    case 'clap': // arms swinging in and out, side to side
+      return { right: Math.sin(t * 9) * 0.22, left: -Math.sin(t * 9) * 0.22, hop: 0, sway: Math.sin(t * 2.4) * 0.06 }
+    default:
+      return { right: Math.sin(t * 2.2) * 0.03, left: Math.sin(t * 2.2) * 0.03, hop: 0, sway: 0 }
+  }
 }
 const IDLE = POSES.idle
 
@@ -129,10 +149,12 @@ export function buildCharacter(look: CharacterLook, pose: Pose = 'idle', opts: {
   return {
     root,
     update(t) {
-      figure.position.y = Math.sin(t * 2.2) * 0.025
+      const m = motion(pose, t)
+      figure.position.y = Math.sin(t * 2.2) * 0.025 + m.hop
+      figure.rotation.z = m.sway
       head.rotation.z = Math.sin(t * 1.1) * 0.02
-      right.pivot.rotation.z = p.right + (pose === 'idle' ? Math.sin(t * 4.8) * 0.16 : Math.sin(t * 2.2) * 0.03)
-      left.pivot.rotation.z = p.left + Math.sin(t * 2.2) * 0.03
+      right.pivot.rotation.z = p.right + m.right
+      left.pivot.rotation.z = p.left + m.left
       for (const step of fx) step(t)
       premium?.update(t)
       aura?.update(t)

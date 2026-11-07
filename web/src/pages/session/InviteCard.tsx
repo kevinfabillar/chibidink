@@ -68,22 +68,22 @@ export function InviteCard({ session }: { session: SessionDetail }) {
       <SectionTitle>Check-in</SectionTitle>
       <p className="-mt-1 mb-3 text-sm text-muted">Show this at the courts, or save and send it. Players scan the QR or type the code to check in and join the line.</p>
       <div className="flex flex-col items-center gap-5 sm:flex-row">
-        <div className="rounded-2xl bg-white p-3">
+        <div className="rounded-2xl bg-snow p-3 light:shadow-[0_6px_20px_-10px_rgb(90_50_160/0.4)]">
           <QRCodeSVG value={url} size={148} level="M" />
         </div>
         <div className="min-w-0 flex-1 text-center sm:text-left">
           <div className="text-sm text-muted">Session code</div>
-          <div className="font-display text-4xl font-extrabold tracking-[0.14em] break-all text-lime min-[420px]:text-5xl">{session.inviteCode}</div>
+          <div className="font-display text-4xl font-extrabold tracking-[0.14em] break-all text-lime min-[420px]:text-5xl light:rounded-full light:bg-[linear-gradient(90deg,#B7F33B,#DDFF8F)] light:px-6 light:py-1 light:!text-[#1b1035]">{session.inviteCode}</div>
           <button onClick={copyCode} className="mt-1 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm font-semibold text-white/75 hover:bg-white/8 hover:text-white">
             {copied ? <Check className="size-4 text-lime" /> : <Copy className="size-4" />} {copied ? 'Copied' : 'Copy code'}
           </button>
         </div>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2">
-        <Button variant="dark" icon={<Download className="size-5" />} onClick={download}>
+        <Button variant="dark" icon={<Download className="size-5" />} onClick={download} className="px-3 text-[15px] whitespace-nowrap">
           Download QR
         </Button>
-        <Button icon={<Share2 className="size-5" />} loading={busy} onClick={share}>
+        <Button icon={<Share2 className="size-5" />} loading={busy} onClick={share} className="px-3 text-[15px] whitespace-nowrap">
           {canShareFiles ? 'Share QR' : 'Save QR'}
         </Button>
       </div>

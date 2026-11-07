@@ -13,7 +13,7 @@ public sealed record SessionSettings
 
     /// <summary>
     /// Seconds players have to accept a proposed match. 0 (the default) is automatic queueing:
-    /// the next four go straight on court and the game is live, no accepting or starting.
+    /// the next four go straight onto a free court (no accepting) and wait there until Start match.
     /// </summary>
     public int ConfirmationWindowSeconds { get; init; } = 0;
 

@@ -22,6 +22,7 @@ public static class DependencyInjection
         services.AddScoped<ISessionCommandRunner, SessionCommandRunner>();
         services.AddScoped<ISessionService, SessionService>();
         services.AddScoped<IQueueService, QueueService>();
+        services.AddScoped<IUpNextService, UpNextService>();
         services.AddScoped<ISessionQueries, SessionQueries>();
         services.AddScoped<IMatchService, MatchService>();
         services.AddScoped<IMatchmakingService, MatchmakingService>();

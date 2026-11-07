@@ -149,7 +149,7 @@ function BigButton({ to, tone, icon, label }: { to: string; tone: 'lime' | 'grap
         'flex h-24 flex-col items-center justify-center gap-1 rounded-2xl font-display text-xl font-extrabold transition active:scale-[0.97]',
         tone === 'lime'
           ? 'bg-gradient-to-b from-[#D4FF6A] to-lime text-ink shadow-[0_8px_28px_-8px_rgb(183_243_59/0.9),inset_0_-3px_0_rgb(0_0_0/0.15)]'
-          : 'border border-[#C084FC]/60 bg-gradient-to-b from-[#B56BFF] to-grape-deep text-white shadow-[0_8px_28px_-8px_rgb(163_72_250/0.9),inset_0_-3px_0_rgb(0_0_0/0.2)]',
+          : 'border border-[#C084FC]/60 bg-gradient-to-b from-[#B56BFF] to-grape-deep text-snow shadow-[0_8px_28px_-8px_rgb(163_72_250/0.9),inset_0_-3px_0_rgb(0_0_0/0.2)]',
       )}
     >
       {icon}

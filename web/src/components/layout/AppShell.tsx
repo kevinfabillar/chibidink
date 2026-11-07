@@ -50,7 +50,7 @@ export function AppShell() {
       {/* Desktop sidebar */}
       <aside
         className={clsx(
-          'sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-white/8 bg-night/80 p-3 backdrop-blur md:flex',
+          'sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-white/8 bg-night/80 p-3 backdrop-blur lg:flex',
           collapsed ? 'w-20' : 'w-64',
         )}
       >
@@ -80,14 +80,29 @@ export function AppShell() {
             </NavLink>
           ))}
         </nav>
-        <div className="mt-auto flex items-center gap-2 rounded-2xl border border-white/8 bg-surface/60 p-2">
-          {me && <PlayerAvatar player={me.player} size={40} />}
-          {!collapsed && (
-            <>
+        {/* Your profile: tap the card. Sign out sits next to it. */}
+        <div className="mt-auto flex items-center gap-1 rounded-2xl border border-white/8 bg-surface/60 p-1.5">
+          <NavLink
+            to="/profile"
+            title="My profile"
+            className={({ isActive }) =>
+              clsx(
+                'flex min-w-0 flex-1 items-center gap-2 rounded-xl p-1 transition hover:bg-white/8',
+                isActive && 'bg-lime/15 ring-1 ring-lime/60',
+                collapsed && 'justify-center',
+              )
+            }
+          >
+            {me && <PlayerAvatar player={me.player} size={40} />}
+            {!collapsed && (
               <div className="min-w-0 flex-1">
                 <div className="truncate font-semibold">{me?.player.displayName}</div>
-                <div className="text-xs text-muted">Lv {me?.progress.level ?? 1}</div>
+                <div className="text-xs text-muted">Lv {me?.progress.level ?? 1} · My profile</div>
               </div>
+            )}
+          </NavLink>
+          {!collapsed && (
+            <>
               <button onClick={signOut} className="rounded-xl p-2 text-white/60 hover:bg-white/8" aria-label="Sign out" title="Sign out">
                 <LogOut className="size-4.5" />
               </button>
@@ -96,7 +111,7 @@ export function AppShell() {
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[calc(7rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] md:px-8 md:pt-8 md:pb-10">
+      <main className="min-w-0 flex-1 pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[calc(7rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] md:px-8 md:pt-8 lg:pb-10">
         <Outlet />
       </main>
 
@@ -116,7 +131,7 @@ interface NavItem {
 /** Phone bottom navigation. The active tab is a lime tile, as in the mockups. */
 export function BottomNav({ items }: { items: NavItem[] }) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/8 bg-[#0A0F17]/95 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur md:hidden">
+    <nav className="bottom-nav fixed inset-x-0 bottom-0 z-40 border-t border-white/8 bg-ink/95 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
       <div className="mx-auto flex max-w-md justify-between">
         {items.map(({ to, label, icon: Icon, end, active }) => (
           <NavLink

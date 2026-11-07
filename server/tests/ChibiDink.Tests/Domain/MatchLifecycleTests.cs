@@ -18,16 +18,33 @@ public sealed class MatchLifecycleTests
     }
 
     [Fact]
-    public void Automatic_queueing_puts_the_match_straight_into_play()
+    public void Automatic_queueing_puts_the_group_on_court_ready_to_start()
     {
         var (session, _, players) = TestData.DoublesSession();
 
         var match = Match.Propose(session, session.GetCourt(1), players[..2], players[2..4], TestData.Now, isManual: false);
 
-        Assert.Equal(MatchStatus.Playing, match.Status);
-        Assert.Equal(TestData.Now, match.StartedAt);
+        Assert.Equal(MatchStatus.Ready, match.Status);
+        Assert.Null(match.StartedAt);
         Assert.Null(match.ConfirmationDeadline);
+        Assert.Equal(match.Id, session.GetCourt(1).CurrentMatchId);
         Assert.All(players[..4], p => Assert.Equal(ParticipantStatus.InMatch, session.GetParticipant(p).Status));
+
+        match.Start(TestData.Now.AddMinutes(1), byOrganizer: true);
+        Assert.Equal(MatchStatus.Playing, match.Status);
+        Assert.Equal(TestData.Now.AddMinutes(1), match.StartedAt);
+    }
+
+    [Fact]
+    public void A_score_for_a_game_nobody_started_still_counts()
+    {
+        var (session, organizer, players) = TestData.DoublesSession();
+        var match = Match.Propose(session, session.GetCourt(1), players[..2], players[2..4], TestData.Now, isManual: false);
+
+        match.ReportResult(Rule, 11, 7, organizer, null, TestData.Now.AddMinutes(12));
+
+        Assert.Equal(MatchStatus.PendingResult, match.Status);
+        Assert.NotNull(match.StartedAt);
     }
 
     [Fact]

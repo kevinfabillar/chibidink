@@ -17,7 +17,10 @@ export function Leaderboard({ players, meId }: { players: Participant[]; meId?: 
     <ol className="card divide-y divide-white/8 overflow-hidden">
       {ranked.map((p, i) => (
         <li key={p.player.userId} className={clsx('flex items-center gap-3 px-3 py-2.5', p.player.userId === meId && 'bg-lime/8')}>
-          <span className="grid w-8 place-items-center font-display text-lg font-extrabold" style={{ color: MEDAL[i] ?? 'rgb(255 255 255 / 0.6)' }}>
+          <span
+            className={clsx('grid w-8 place-items-center font-display text-lg font-extrabold', !MEDAL[i] && 'text-white/60')}
+            style={MEDAL[i] ? { color: MEDAL[i] } : undefined}
+          >
             {i < 3 ? <Trophy className="size-5" /> : i + 1}
           </span>
           <PlayerAvatar player={p.player} size={38} />

@@ -1,4 +1,7 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ChibiDink.Domain.Sessions;
 using ChibiDink.Infrastructure.Identity;
@@ -19,11 +22,33 @@ internal sealed class PlaySessionConfiguration : IEntityTypeConfiguration<PlaySe
 
         b.ComplexProperty(s => s.Settings);
 
+        // A handful of small groups, always read and written with the session: one JSON column.
+        b.Ignore(s => s.PlannedGroups);
+        b.Property<List<PlannedGroup>>("_plannedGroups")
+            .HasColumnName("PlannedGroups")
+            .HasConversion(PlannedGroupsJson.Converter, PlannedGroupsJson.Comparer)
+            .HasDefaultValueSql("'[]'")
+            .IsRequired();
+
         b.HasMany(s => s.Courts).WithOne().HasForeignKey(c => c.SessionId).OnDelete(DeleteBehavior.Cascade);
         b.HasMany(s => s.Participants).WithOne().HasForeignKey(p => p.SessionId).OnDelete(DeleteBehavior.Cascade);
         b.Navigation(s => s.Courts).UsePropertyAccessMode(PropertyAccessMode.Field);
         b.Navigation(s => s.Participants).UsePropertyAccessMode(PropertyAccessMode.Field);
     }
+}
+
+internal static class PlannedGroupsJson
+{
+    public static readonly ValueConverter<List<PlannedGroup>, string> Converter = new(
+        v => Write(v), v => Read(v));
+
+    public static readonly ValueComparer<List<PlannedGroup>> Comparer = new(
+        (a, b) => Write(a!) == Write(b!), v => Write(v).GetHashCode(), v => Read(Write(v)));
+
+    private static string Write(List<PlannedGroup> groups) => JsonSerializer.Serialize(groups);
+
+    private static List<PlannedGroup> Read(string json) =>
+        string.IsNullOrWhiteSpace(json) ? [] : JsonSerializer.Deserialize<List<PlannedGroup>>(json) ?? [];
 }
 
 internal sealed class CourtConfiguration : IEntityTypeConfiguration<Court>

@@ -16,9 +16,9 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants: Record<Variant, string> = {
-  lime: 'bg-gradient-to-b from-[#CCFF5C] to-lime text-ink shadow-[0_6px_24px_-8px_rgb(183_243_59/0.8),inset_0_-2px_0_rgb(0_0_0/0.12)] hover:brightness-105',
-  grape: 'bg-gradient-to-b from-[#B56BFF] to-grape-deep text-white shadow-[0_6px_24px_-8px_rgb(163_72_250/0.8),inset_0_-2px_0_rgb(0_0_0/0.15)] hover:brightness-110',
-  dark: 'bg-surface-2 text-white border border-white/12 hover:bg-white/10',
+  lime: 'bg-gradient-to-b from-lime-hi to-lime text-ink shadow-[0_6px_24px_-8px_rgb(183_243_59/0.8),inset_0_-2px_0_rgb(0_0_0/0.12)] hover:brightness-105',
+  grape: 'bg-gradient-to-b from-[#B56BFF] to-grape-deep text-snow shadow-[0_6px_24px_-8px_rgb(163_72_250/0.8),inset_0_-2px_0_rgb(0_0_0/0.15)] hover:brightness-110',
+  dark: 'bg-surface-2 text-white border border-white/12 hover:bg-white/10 light:bg-[#F6F0FE] light:border-[#C9A8F5] light:text-[#5B21B6] light:hover:bg-[#EFE4FD]',
   ghost: 'bg-transparent text-white/80 hover:bg-white/8 hover:text-white',
   danger: 'bg-danger/15 text-danger border border-danger/40 hover:bg-danger/25',
 }

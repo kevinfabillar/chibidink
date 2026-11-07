@@ -1,9 +1,10 @@
 import clsx from 'clsx'
-import { Bell, ChevronLeft, Plus } from 'lucide-react'
+import { Bell, ChevronLeft, Moon, Plus, Sun } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useCosmetics, useMe } from '../../hooks/queries'
 import { matchStatusLabel } from '../../lib/format'
+import { setTheme, useTheme } from '../../lib/theme'
 import { PlayerAvatar } from '../character/Stage'
 import { Button } from './Button'
 import { CoinIcon } from './icons'
@@ -38,12 +39,30 @@ export function TopBar({ title, sub, back, logo }: Props) {
         </div>
         <div className="flex shrink-0 items-center gap-1.5 min-[400px]:gap-2">
           <CoinPill />
+          <ThemeToggle />
           <AlertBell />
           <AccountButton />
         </div>
       </div>
       {sub && <p className="mt-1.5 text-sm text-white/75">{sub}</p>}
     </header>
+  )
+}
+
+/** Sun / moon button: switches light and dark mode, remembered on this device. */
+export function ThemeToggle() {
+  const theme = useTheme()
+  const next = theme === 'dark' ? 'light' : 'dark'
+  return (
+    <button
+      type="button"
+      onClick={() => setTheme(next)}
+      className="grid size-9 place-items-center rounded-full text-white/90 hover:bg-white/10"
+      aria-label={`Switch to ${next} mode`}
+      title={`Switch to ${next} mode`}
+    >
+      {theme === 'dark' ? <Sun className="size-5.5" /> : <Moon className="size-5.5" />}
+    </button>
   )
 }
 
@@ -54,7 +73,7 @@ export function CoinPill() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex h-9 items-center gap-1.5 rounded-full border border-white/10 bg-ink/70 pr-1 pl-1 hover:border-white/25"
+        className="flex h-9 items-center gap-1.5 rounded-full border border-white/10 bg-ink/70 pr-1 pl-1 hover:border-white/25 light:bg-surface"
         aria-label={`${coins} coins. How to earn more`}
       >
         <CoinIcon className="size-6" />
@@ -99,12 +118,12 @@ function EarnCoinsSheet({ open, onClose }: { open: boolean; onClose: () => void 
 }
 
 /** Red badge when your current match needs you (confirm, head to court, or verify the score). */
-/** Phones only (the desktop sidebar has its own): your character's face, opening your profile and Sign out. */
+/** Your character's face, opening your profile and Sign out (the desktop sidebar's profile card does the same). */
 function AccountButton() {
   const player = useMe().data?.player
   if (!player) return null
   return (
-    <Link to="/profile" className="grid size-10 place-items-center overflow-hidden rounded-full border border-white/15 bg-surface-2 md:hidden" aria-label="My profile and sign out">
+    <Link to="/profile" className="grid size-10 place-items-center overflow-hidden rounded-full border border-white/15 bg-surface-2" aria-label="My profile and sign out">
       <PlayerAvatar player={player} size={44} />
     </Link>
   )
@@ -127,7 +146,7 @@ export function AlertBell() {
           <span
             className={clsx(
               'absolute -top-0.5 -right-0.5 grid min-w-4.5 place-items-center rounded-full px-1 text-[11px] leading-4.5 font-bold',
-              active.needsAction ? 'bg-danger text-white' : 'size-2.5 min-w-0 bg-lime p-0',
+              active.needsAction ? 'bg-danger text-snow' : 'size-2.5 min-w-0 bg-lime p-0',
             )}
           >
             {active.needsAction ? '1' : ''}

@@ -24,7 +24,8 @@ export function allowedActions(match: Match, viewer: Viewer): AllowedActions {
     confirm: match.status === 'AwaitingConfirmation' && mine?.confirmation === 'Pending',
     start: (match.status === 'Ready' && involved) || (match.status === 'AwaitingConfirmation' && viewer.isOrganizer),
     // Continuous play: only the organizer enters scores, and that ends the game.
-    report: viewer.isOrganizer && (match.status === 'Playing' || match.status === 'PendingResult'),
+    // A Ready game that nobody started still gets a score (the server starts it then).
+    report: viewer.isOrganizer && ['Ready', 'Playing', 'PendingResult'].includes(match.status),
     verify: false,
     edit: viewer.isOrganizer && !terminal,
   }

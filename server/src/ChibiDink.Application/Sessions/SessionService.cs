@@ -18,6 +18,7 @@ public interface ISessionService
     Task CloseAsync(Guid sessionId, bool voidUnfinished, CancellationToken ct);
     Task SetCourtAvailabilityAsync(Guid sessionId, int courtNumber, bool available, CancellationToken ct);
     Task SetPlayerSkillAsync(Guid sessionId, Guid userId, int skill, CancellationToken ct);
+    Task SetPartnerAsync(Guid sessionId, Guid userId, Guid? partnerId, CancellationToken ct);
 }
 
 public sealed class SessionService(
@@ -120,6 +121,10 @@ public sealed class SessionService(
     public Task SetPlayerSkillAsync(Guid sessionId, Guid userId, int skill, CancellationToken ct) =>
         AsOrganizer(sessionId, "Skill", $"Set a player's skill to {SkillLevel.Name(skill)}",
             s => s.GetParticipant(userId).SetSkillEstimate(new SkillLevel(skill)), ct);
+
+    public Task SetPartnerAsync(Guid sessionId, Guid userId, Guid? partnerId, CancellationToken ct) =>
+        AsOrganizer(sessionId, "Partner", partnerId is null ? "Unpaired a fixed partner" : "Paired two players as fixed partners",
+            s => s.SetPartner(userId, partnerId), ct);
 
     private Task AsOrganizer(Guid sessionId, string action, string details, Action<PlaySession> change, CancellationToken ct) =>
         runner.RunAsync(sessionId, (session, _) =>

@@ -171,6 +171,8 @@ export interface Participant {
   wins: number
   losses: number
   winRate: number | null
+  /** Fixed doubles partner for this session, set by the organizer. */
+  partnerId: string | null
 }
 
 export interface MatchHistoryItem {
@@ -212,6 +214,10 @@ export interface UpNextGroup {
   /** Skill-based sessions: the tier this group plays at. */
   tier: string | null
   isMixedSkill: boolean
+  /** Lined up by the organizer (kept as edited) instead of picked by the matchmaker. */
+  isPlanned: boolean
+  /** Everyone in the group is off court, so it can start now. */
+  isReady: boolean
 }
 
 export interface AuditEntry {

@@ -132,7 +132,11 @@ function Wardrobe({ tab, onTab, profile }: { tab: WardrobeTab; onTab: (t: Wardro
 
 /** Card art: your character (with everything else you have on) wearing this item. Scenes show you standing in them. */
 function WearingArt({ look, slot, id }: { look: CharacterLook; slot: WardrobeSlot; id: string | null }) {
-  if (slot !== 'Background') return <ChibiAvatar look={lookWith(look, slot, id)} variant="full" className="relative h-full w-auto" />
+  if (slot !== 'Background') {
+    // Only the Auras tab shows auras; elsewhere the glow would hide the item you're picking.
+    const tried = lookWith(look, slot, id)
+    return <ChibiAvatar look={slot === 'CharacterAura' ? tried : { ...tried, aura: null }} variant="full" className="relative h-full w-auto" />
+  }
   // Scenes: a smaller character standing at the bottom, so the scene itself shows.
   return (
     <div className="relative size-full overflow-hidden rounded-xl">

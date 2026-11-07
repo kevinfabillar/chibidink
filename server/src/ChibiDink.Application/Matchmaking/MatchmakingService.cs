@@ -70,6 +70,7 @@ public sealed class MatchmakingService(
 
     private async Task<int> FillAsync(PlaySession session, CancellationToken ct)
     {
+        session.PrunePlannedGroups();
         var freeCourts = session.FreeCourts().ToList();
         if (freeCourts.Count == 0) return 0;
 
@@ -77,10 +78,25 @@ public sealed class MatchmakingService(
         // Someone still playing (here or in another session) is never called to a court.
         var waiting = session.WaitingPlayers().ToList();
         var busy = await matches.FindPlayersInLiveMatchesAsync(waiting.Select(p => p.UserId).ToList(), ct);
+
+        // The organizer's lined-up groups go first, once all four are free.
+        var created = 0;
+        foreach (var group in session.PlannedGroups.ToList())
+        {
+            if (created == freeCourts.Count) break;
+            if (!session.IsPlannedGroupReady(group) || group.Players.Any(busy.Contains)) continue;
+            matches.Add(Match.Propose(session, freeCourts[created], group.TeamA, group.TeamB, now, isManual: true));
+            session.RemovePlannedGroupsWith(group.Players);
+            created++;
+        }
+        if (created == freeCourts.Count) return created;
+
+        // Players held for a lined-up group (still waiting on a teammate's game) aren't picked for another.
+        var held = session.PlannedGroups.SelectMany(g => g.Players).ToHashSet();
         var request = new MatchmakingRequest(
             session.Format,
-            freeCourts.Count,
-            waiting.Where(p => !busy.Contains(p.UserId)).Select(ToCandidate).ToList(),
+            freeCourts.Count - created,
+            MatchmakingCandidates.Build(session, busy, held),
             await RecentHistoryAsync(session.Id, ct),
             now,
             session.Settings.SkillTolerance,
@@ -88,13 +104,13 @@ public sealed class MatchmakingService(
             session.Settings.Mode);
 
         var lineups = strategy.FindLineups(request);
-        foreach (var (lineup, court) in lineups.Zip(freeCourts))
+        foreach (var (lineup, court) in lineups.Zip(freeCourts.Skip(created)))
         {
             var match = Match.Propose(session, court, lineup.TeamA, lineup.TeamB, now,
                 isManual: false, isMixedSkill: lineup.ExceedsSkillTolerance);
             matches.Add(match);
         }
-        return lineups.Count;
+        return created + lineups.Count;
     }
 
     private async Task<PairingHistory> RecentHistoryAsync(Guid sessionId, CancellationToken ct)
@@ -105,6 +121,4 @@ public sealed class MatchmakingService(
         return history;
     }
 
-    private static QueueCandidate ToCandidate(SessionParticipant p) =>
-        new(p.UserId, p.SkillEstimate, p.CompletedGames, p.WaitingSince ?? p.JoinedAt);
 }

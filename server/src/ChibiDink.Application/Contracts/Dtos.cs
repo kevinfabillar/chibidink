@@ -20,6 +20,12 @@ public sealed record CreateManualMatchRequest(int CourtNumber, Guid[] TeamA, Gui
 public sealed record ReplacePlayerRequest(Guid OutgoingUserId, Guid IncomingUserId);
 public sealed record SwitchTeamsRequest(Guid FirstUserId, Guid SecondUserId);
 public sealed record MoveMatchRequest(int CourtNumber);
+/// <summary>The players on a court, side by side. Newcomers come from the waitlist or trade places with another court.</summary>
+public sealed record SetLineupRequest(Guid[] TeamA, Guid[] TeamB);
+public sealed record SetPartnerRequest(Guid? PartnerId);
+public sealed record PlannedGroupRequest(Guid[] TeamA, Guid[] TeamB);
+public sealed record SetPlannedGroupsRequest(PlannedGroupRequest[] Groups);
+
 public sealed record ReportResultRequest(int TeamAScore, int TeamBScore, string? Notes);
 public sealed record ReasonRequest(string? Reason);
 public sealed record SetSkillRequest(int Skill);
@@ -72,14 +78,19 @@ public sealed record SessionDetailDto(
     IReadOnlyList<UpNextDto> UpNext);
 
 /// <summary>A predicted group of four, in the order they will go on court. `Tier` is set in skill-based sessions.</summary>
-public sealed record UpNextDto(int Order, IReadOnlyList<PlayerCardDto> TeamA, IReadOnlyList<PlayerCardDto> TeamB, string? Tier, bool IsMixedSkill);
+/// <param name="IsPlanned">Set up by the organizer (kept as edited) rather than picked by the matchmaker.</param>
+/// <param name="IsReady">All four are off court and waiting, so the group can start now.</param>
+public sealed record UpNextDto(
+    int Order, IReadOnlyList<PlayerCardDto> TeamA, IReadOnlyList<PlayerCardDto> TeamB, string? Tier, bool IsMixedSkill,
+    bool IsPlanned, bool IsReady);
 
 public sealed record CourtDto(int Number, CourtStatus Status, MatchDto? Match);
 
 public sealed record ParticipantDto(
     PlayerCardDto Player, SessionRole Role, ParticipantStatus Status, int SkillEstimate,
     DateTimeOffset? WaitingSince, int? QueuePosition,
-    int CompletedGames, int Wins, int Losses, double? WinRate);
+    int CompletedGames, int Wins, int Losses, double? WinRate,
+    Guid? PartnerId);
 
 // ---- Matches --------------------------------------------------------------------------------
 

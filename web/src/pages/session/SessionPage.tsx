@@ -36,7 +36,7 @@ export function SessionPage() {
       {s.myMatch && tab !== 'courts' && tab !== 'games' && <MyMatchBanner session={s} match={s.myMatch} />}
 
       {/* Desktop tabs; phones use the bottom nav */}
-      <div role="tablist" className="mb-5 hidden gap-1.5 rounded-2xl border border-white/8 bg-night/70 p-1.5 md:flex">
+      <div role="tablist" className="mb-5 hidden gap-1.5 rounded-2xl border border-white/8 bg-night/70 p-1.5 lg:flex">
         {sessionTabs.map((t) => (
           <button
             key={t.id}
@@ -85,13 +85,13 @@ function SessionHeader({ session: s, live }: { session: SessionDetail; live: Liv
 
   return (
     <header className="mb-4">
-      <div className="flex items-center justify-between gap-2 md:hidden">
+      <div className="flex items-center justify-between gap-2 lg:hidden">
         <Link to="/" aria-label="Home">
           <Logo className="h-12" />
         </Link>
         <div className="flex gap-1.5">{status}</div>
       </div>
-      <div className="mt-3 flex flex-col items-center text-center md:mt-0 md:flex-row md:justify-between md:text-left">
+      <div className="mt-3 flex flex-col items-center text-center lg:mt-0 lg:flex-row lg:justify-between lg:text-left">
         <div>
           <h1 className="font-display text-[1.75rem] leading-tight font-extrabold md:text-4xl">{s.title}</h1>
           <p className="text-white/80">
@@ -100,7 +100,7 @@ function SessionHeader({ session: s, live }: { session: SessionDetail; live: Liv
         </div>
         <div className="mt-2 flex gap-2 md:mt-0">
           {players}
-          <span className="hidden md:inline-flex">{status}</span>
+          <span className="hidden lg:inline-flex">{status}</span>
         </div>
       </div>
     </header>

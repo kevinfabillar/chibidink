@@ -44,7 +44,7 @@ export function ItemsHubPage() {
             <Link
               key={slot}
               to={slotInfo[slot].path}
-              className="flex flex-col items-center rounded-3xl border border-white/10 bg-[radial-gradient(120%_80%_at_50%_100%,rgb(163_72_250/0.25),transparent_70%),#111A24] p-3 transition hover:border-lime/60"
+              className="flex flex-col items-center rounded-3xl border border-white/10 bg-[radial-gradient(120%_80%_at_50%_100%,rgb(163_72_250/0.25),transparent_70%),var(--color-tile)] p-3 transition hover:border-lime/60"
             >
               {shown && <ItemArt item={shown} className="aspect-square w-[70%]" />}
               <div className="mt-1 font-display text-lg font-bold">{slotInfo[slot].title}</div>
@@ -107,7 +107,7 @@ export function EffectsPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <TopBar back="/items" title="Effects" sub="A glow on your outfit's item." />
-      <section className="grid grid-cols-[minmax(0,1fr)_9.5rem] items-center gap-3 rounded-3xl border border-white/10 bg-[radial-gradient(90%_70%_at_40%_60%,rgb(163_72_250/0.25),transparent_70%),#0E1520] p-3">
+      <section className="grid grid-cols-[minmax(0,1fr)_9.5rem] items-center gap-3 rounded-3xl border border-white/10 bg-[radial-gradient(90%_70%_at_40%_60%,rgb(163_72_250/0.25),transparent_70%),var(--color-tile)] p-3">
         <Avatar3D look={look} variant="full" pose="swing" live interactive className="w-full max-w-72" />
         <InfoCard item={item} emptyTitle="None" emptyText="No effect" cosmetics={cosmetics} me={me} slot="PaddleEffect" />
       </section>
@@ -150,7 +150,7 @@ export function AurasPage() {
     <div className="mx-auto max-w-3xl">
       <TopBar back="/items" title="Auras" />
       <Chips value="All" options={['All']} onChange={() => undefined} />
-      <section className="grid grid-cols-[minmax(0,1fr)_9.5rem] items-center gap-3 rounded-3xl border border-white/10 bg-[radial-gradient(90%_70%_at_40%_60%,rgb(163_72_250/0.25),transparent_70%),#0E1520] p-3">
+      <section className="grid grid-cols-[minmax(0,1fr)_9.5rem] items-center gap-3 rounded-3xl border border-white/10 bg-[radial-gradient(90%_70%_at_40%_60%,rgb(163_72_250/0.25),transparent_70%),var(--color-tile)] p-3">
         <div className="relative">
           {locked && !previewing ? (
             <>

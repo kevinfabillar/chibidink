@@ -49,7 +49,7 @@ export function CourtCard({ court, format, size = 'card', onOpen, actions, waiti
     <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={clsx('rounded-[1.75rem] p-[2px]', FRAME[state])}>
       <article
         className={clsx(
-          'relative overflow-hidden rounded-[calc(1.75rem-2px)] bg-[linear-gradient(180deg,#0F2A1E_0%,#0C1A26_42%,#170F2E_78%,#2B0F47_100%)]',
+          'relative h-full overflow-hidden rounded-[calc(1.75rem-2px)] bg-[linear-gradient(180deg,#0F2A1E_0%,#0C1A26_42%,#170F2E_78%,#2B0F47_100%)] light:bg-[linear-gradient(180deg,#FFFFFF_0%,#FBF8FF_55%,#F5EEFE_100%)]',
           full ? 'p-5 md:p-8' : 'p-3.5 sm:p-4',
         )}
         aria-label={`Court ${court.number}`}
@@ -60,13 +60,13 @@ export function CourtCard({ court, format, size = 'card', onOpen, actions, waiti
         <header className="relative flex flex-wrap items-center gap-2">
           <span
             className={clsx(
-              'rounded-full border-2 border-lime bg-ink/70 px-3.5 py-0.5 font-display font-extrabold shadow-[0_0_12px_-4px_rgb(183_243_59/0.9)]',
+              'rounded-full border-2 border-lime bg-ink/70 px-3.5 py-0.5 font-display font-extrabold shadow-[0_0_12px_-4px_rgb(183_243_59/0.9)] light:bg-lime light:!text-[#1b1035]',
               full ? 'text-2xl' : 'text-lg',
             )}
           >
             Court {court.number}
           </span>
-          <span className="rounded-full border border-white/15 bg-ink/50 px-3 py-1 text-sm font-semibold text-white/90">
+          <span className="rounded-full border border-white/15 bg-ink/50 px-3 py-1 text-sm font-semibold text-white/90 light:border-transparent light:bg-night">
             {formatLabel(match?.format ?? format)}
           </span>
           <span className="ml-auto flex items-center gap-1">
@@ -110,12 +110,19 @@ function StatusPill({ state }: { state: State }) {
       </span>
     )
 
-  if (state === 'Playing' || state === 'Ready' || state === 'Completed')
+  if (state === 'Playing' || state === 'Completed')
     return (
-      <span className="pill border-lime/70 bg-ink/60 font-display text-base text-lime">
-        <span className="grid size-5 place-items-center rounded-full bg-lime text-ink">
+      <span className="pill border-lime/70 bg-ink/60 font-display text-base text-lime light:border-transparent light:bg-lime light:!text-[#1b1035] light:shadow-[0_6px_16px_-8px_rgb(130_190_20/0.9)]">
+        <span className="grid size-5 place-items-center rounded-full bg-lime text-ink light:bg-[#1b1035] light:!text-lime">
           <Play className="ml-px size-3 fill-current" />
         </span>
+        {matchStatusLabel[state]}
+      </span>
+    )
+  if (state === 'Ready')
+    return (
+      <span className="pill animate-pulse border-lime/70 bg-ink/60 font-display text-base text-lime light:border-transparent light:bg-lime light:!text-[#1b1035]">
+        <Play className="size-4 fill-current" />
         {matchStatusLabel[state]}
       </span>
     )
@@ -190,7 +197,7 @@ function TeamRow({
       {/* Slanted name plate */}
       <div
         className={clsx(
-          'relative min-w-0 rounded-2xl border bg-[#0A1220]/80 pr-3 pl-6 shadow-[inset_0_1px_0_rgb(255_255_255/0.06)] [clip-path:polygon(16px_0,100%_0,100%_100%,0_100%)]',
+          'relative min-w-0 rounded-2xl border bg-[#0A1220]/80 light:bg-[#F7F2FE] pr-3 pl-6 shadow-[inset_0_1px_0_rgb(255_255_255/0.06)] [clip-path:polygon(16px_0,100%_0,100%_100%,0_100%)]',
           lime ? 'border-lime/30' : 'border-grape/40',
           full ? 'py-4' : 'py-2',
         )}

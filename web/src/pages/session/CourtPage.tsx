@@ -3,10 +3,12 @@ import { Link, useParams } from 'react-router'
 import { CourtCard } from '../../components/court/CourtCard'
 import { MatchActions } from '../../components/court/MatchActions'
 import { UpNextCard } from '../../components/session/UpNext'
+import { UpNextActions } from '../../components/session/UpNextActions'
 import { SectionTitle, Spinner } from '../../components/ui/primitives'
 import { useSession } from '../../hooks/queries'
 import { friendlyFormat, useNow } from '../../lib/format'
 import { PlayerGroup } from './QueueTab'
+import { partnerNames } from '../../lib/queue'
 import { useSessionHub } from '../../realtime/useSessionHub'
 import { SessionBottomNav } from './SessionNav'
 import { ErrorPage, PageError } from '../../components/ui/ErrorPage'
@@ -59,7 +61,7 @@ export function CourtPage() {
           {s.upNext[0] ? (
             <section>
               <SectionTitle>Next in queue</SectionTitle>
-              <UpNextCard group={s.upNext[0]} highlight />
+              <UpNextCard group={s.upNext[0]} highlight actions={s.isOrganizer ? <UpNextActions session={s} group={s.upNext[0]} /> : undefined} />
               <p className="mt-1.5 text-xs text-muted">They take the next court that frees up.</p>
             </section>
           ) : (
@@ -70,12 +72,12 @@ export function CourtPage() {
               <SectionTitle>After that</SectionTitle>
               <div className="grid gap-2.5 sm:grid-cols-2">
                 {s.upNext.slice(1).map((g) => (
-                  <UpNextCard key={g.order} group={g} compact />
+                  <UpNextCard key={g.order} group={g} compact actions={s.isOrganizer ? <UpNextActions session={s} group={g} /> : undefined} />
                 ))}
               </div>
             </section>
           )}
-          <PlayerGroup title={`Waitlist (${waiting.length})`} players={waiting} now={now} showPosition skillBased={s.settings.mode === 'SkillBased'} />
+          <PlayerGroup title={`Waitlist (${waiting.length})`} players={waiting} now={now} showPosition skillBased={s.settings.mode === 'SkillBased'} partners={partnerNames(s)} />
         </div>
       )}
       <SessionBottomNav sessionId={s.id} tab="courts" />

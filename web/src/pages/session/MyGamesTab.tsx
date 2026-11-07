@@ -4,11 +4,15 @@ import { MatchActions } from '../../components/court/MatchActions'
 import { Leaderboard } from '../../components/session/Leaderboard'
 import { MatchHistoryList } from '../../components/session/MatchHistoryList'
 import { SectionTitle, StatTile } from '../../components/ui/primitives'
+import { CoinIcon } from '../../components/ui/icons'
+import { useCosmetics } from '../../hooks/queries'
 import { winRateText } from '../../lib/format'
+import { sessionEarnings } from '../../lib/rewards'
 
 /** Standings: the session leaderboard, your record and court, and your verified games. */
 export function MyGamesTab({ session }: { session: SessionDetail }) {
   const me = session.me
+  const earned = sessionEarnings(me, useCosmetics().data?.rewards)
   const myCourt = session.myMatch ? session.courts.find((c) => c.number === session.myMatch!.courtNumber) : undefined
 
   return (
@@ -27,6 +31,15 @@ export function MyGamesTab({ session }: { session: SessionDetail }) {
           <StatTile label="Losses" value={me?.losses ?? 0} />
           <StatTile label="Win rate" value={winRateText(me?.winRate ?? null)} />
         </div>
+        {earned && (
+          <div className="card mt-2 flex items-center justify-around gap-3 p-3" aria-label="Earned this session">
+            <span className="text-sm font-semibold text-muted">Earned this session</span>
+            <span className="font-display text-xl font-extrabold text-lime">+{earned.xp} XP</span>
+            <span className="flex items-center gap-1 font-display text-xl font-extrabold">
+              <CoinIcon className="size-5" />+{earned.coins}
+            </span>
+          </div>
+        )}
       </section>
 
       {myCourt && session.myMatch && (

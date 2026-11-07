@@ -1,14 +1,16 @@
 import clsx from 'clsx'
-import { Clock, Crown, LogIn, QrCode } from 'lucide-react'
+import { Clock, Crown, Link2, LogIn, QrCode } from 'lucide-react'
 import { sessionApi } from '../../api/api'
 import type { Participant, SessionDetail } from '../../api/types'
 import { PlayerAvatar } from '../../components/character/Stage'
 import { UpNextCard } from '../../components/session/UpNext'
+import { UpNextActions } from '../../components/session/UpNextActions'
 import { Button } from '../../components/ui/Button'
 import { ErrorNote, SectionTitle } from '../../components/ui/primitives'
-import { useSessionAction } from '../../hooks/queries'
+import { useCosmetics, useSessionAction } from '../../hooks/queries'
 import { minutesAgo, useNow } from '../../lib/format'
-import { modeText } from '../../lib/queue'
+import { modeText, partnerNames } from '../../lib/queue'
+import { sessionEarnings } from '../../lib/rewards'
 import { tierName } from '../../lib/skill'
 
 
@@ -24,6 +26,8 @@ export function QueueTab({ session }: { session: SessionDetail }) {
   const stillWaiting = waiting.filter((p) => !grouped.has(p.player.userId))
   const closed = session.status === 'Closed'
   const skillBased = session.settings.mode === 'SkillBased'
+  const partners = partnerNames(session)
+  const earned = sessionEarnings(me, useCosmetics().data?.rewards)
   const myGroup = me && session.upNext.find((g) => [...g.teamA, ...g.teamB].some((p) => p.userId === me.player.userId))
 
   return (
@@ -35,6 +39,11 @@ export function QueueTab({ session }: { session: SessionDetail }) {
           <p className="text-sm text-muted">
             {skillBased && `${tierName(me.skillEstimate)} · `}This session: {me.completedGames} games · {me.wins}W {me.losses}L
           </p>
+          {earned && (
+            <p className="mt-1 text-sm font-semibold">
+              <span className="text-lime">+{earned.xp} XP</span> · +{earned.coins} coins this session
+            </p>
+          )}
           <div className="my-4 font-display text-xl font-bold">
             {me.status === 'Waiting' && (
               <span className="text-lime">
@@ -64,10 +73,18 @@ export function QueueTab({ session }: { session: SessionDetail }) {
         {session.upNext.length > 0 ? (
           <section>
             <SectionTitle>Next in queue</SectionTitle>
-            <p className="-mt-1 mb-2 text-sm text-muted">These groups go on court in this order as courts free up.</p>
+            <p className="-mt-1 mb-2 text-sm text-muted">
+              These groups go on court in this order as courts free up.
+              {session.isOrganizer && ' Edit a group to choose its players. When a court frees up, the next group is put on it, ready to start.'}
+            </p>
             <div className="grid gap-2.5 sm:grid-cols-2">
               {session.upNext.map((g) => (
-                <UpNextCard key={g.order} group={g} highlight={g.order === 1} />
+                <UpNextCard
+                  key={g.order}
+                  group={g}
+                  highlight={g.order === 1}
+                  actions={session.isOrganizer && !closed ? <UpNextActions session={session} group={g} /> : undefined}
+                />
               ))}
             </div>
           </section>
@@ -84,8 +101,8 @@ export function QueueTab({ session }: { session: SessionDetail }) {
             </section>
           )
         )}
-        <PlayerGroup title={`Waitlist (${stillWaiting.length})`} players={stillWaiting} now={now} showPosition skillBased={skillBased} />
-        <PlayerGroup title={`Checked out (${checkedOut.length})`} players={checkedOut} now={now} dim skillBased={skillBased} />
+        <PlayerGroup title={`Waitlist (${stillWaiting.length})`} players={stillWaiting} now={now} showPosition skillBased={skillBased} partners={partners} />
+        <PlayerGroup title={`Checked out (${checkedOut.length})`} players={checkedOut} now={now} dim skillBased={skillBased} partners={partners} />
         {waiting.length === 0 && playing.length === 0 && (
           <p className="card p-5 text-center text-sm text-muted">Nobody is checked in yet. Share the code or QR from the Session tab.</p>
         )}
@@ -118,6 +135,7 @@ export function PlayerGroup({
   showPosition,
   dim,
   skillBased,
+  partners,
 }: {
   title: string
   players: Participant[]
@@ -125,6 +143,8 @@ export function PlayerGroup({
   showPosition?: boolean
   dim?: boolean
   skillBased?: boolean
+  /** userId -> fixed partner's name. */
+  partners?: Map<string, string>
 }) {
   if (players.length === 0) return null
   return (
@@ -139,6 +159,12 @@ export function PlayerGroup({
               <div className="flex flex-wrap items-center gap-x-1.5 font-semibold [overflow-wrap:anywhere] leading-tight">
                 {p.player.displayName}
                 {p.role === 'Organizer' && <Crown className="size-3.5 text-lime" aria-label="Organizer" />}
+                {partners?.has(p.player.userId) && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-lime/40 px-1.5 py-px text-[11px] font-semibold text-lime">
+                    <Link2 className="size-3" />
+                    with {partners.get(p.player.userId)}
+                  </span>
+                )}
               </div>
               <div className="text-xs text-muted">
                 {skillBased && `${tierName(p.skillEstimate)} · `}

@@ -13,6 +13,7 @@ public sealed class SessionsController(
     ISessionService sessions,
     ISessionQueries queries,
     IQueueService queue,
+    IUpNextService upNext,
     IMatchmakingService matchmaking) : ControllerBase
 {
     [HttpGet]
@@ -51,6 +52,11 @@ public sealed class SessionsController(
     public async Task<IActionResult> FillCourts(Guid sessionId, CancellationToken ct) =>
         Ok(new { created = await matchmaking.FillCourtsNowAsync(sessionId, ct) });
 
+    /// <summary>Organizer: replace the hand-lined-up queue groups (an empty list goes back to automatic).</summary>
+    [HttpPut("{sessionId:guid}/up-next")]
+    public Task<IActionResult> SetPlannedGroups(Guid sessionId, SetPlannedGroupsRequest request, CancellationToken ct) =>
+        Done(upNext.SetPlannedGroupsAsync(sessionId, request, ct));
+
     [HttpPut("{sessionId:guid}/courts/{courtNumber:int}/availability")]
     public Task<IActionResult> SetCourtAvailability(Guid sessionId, int courtNumber, CourtAvailabilityRequest request, CancellationToken ct) =>
         Done(sessions.SetCourtAvailabilityAsync(sessionId, courtNumber, request.Available, ct));
@@ -58,6 +64,11 @@ public sealed class SessionsController(
     [HttpPut("{sessionId:guid}/players/{userId:guid}/skill")]
     public Task<IActionResult> SetSkill(Guid sessionId, Guid userId, SetSkillRequest request, CancellationToken ct) =>
         Done(sessions.SetPlayerSkillAsync(sessionId, userId, request.Skill, ct));
+
+    /// <summary>Organizer: set (or clear with null) a player's fixed doubles partner.</summary>
+    [HttpPut("{sessionId:guid}/players/{userId:guid}/partner")]
+    public Task<IActionResult> SetPartner(Guid sessionId, Guid userId, SetPartnerRequest request, CancellationToken ct) =>
+        Done(sessions.SetPartnerAsync(sessionId, userId, request.PartnerId, ct));
 
     [HttpPut("{sessionId:guid}/players/{userId:guid}/queue")]
     public Task<IActionResult> SetQueued(Guid sessionId, Guid userId, SetQueuedRequest request, CancellationToken ct) =>

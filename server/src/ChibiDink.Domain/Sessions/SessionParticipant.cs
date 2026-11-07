@@ -24,6 +24,9 @@ public sealed class SessionParticipant : Entity
     public int Losses { get; private set; }
     public DateTimeOffset? LastPlayedAt { get; private set; }
 
+    /// <summary>Fixed doubles partner for this session (set by the organizer). The link is kept on both sides.</summary>
+    public Guid? PartnerId { get; private set; }
+
     public bool IsOrganizer => Role == SessionRole.Organizer;
     public bool IsAvailableForMatch => Status is ParticipantStatus.Waiting or ParticipantStatus.Paused;
 
@@ -62,6 +65,8 @@ public sealed class SessionParticipant : Entity
     }
 
     public void SetSkillEstimate(SkillLevel skill) => SkillEstimate = skill;
+
+    internal void LinkPartner(Guid? partnerId) => PartnerId = partnerId;
 
     internal void Rejoin()
     {

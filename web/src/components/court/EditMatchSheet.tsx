@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { matchApi } from '../../api/api'
-import type { Match, SessionDetail } from '../../api/types'
+import type { Match, PlayerCard, SessionDetail } from '../../api/types'
 import { useSessionAction } from '../../hooks/queries'
 import { Button } from '../ui/Button'
 import { ErrorNote, SectionTitle } from '../ui/primitives'
 import { Sheet } from '../ui/Sheet'
+import { LineupEditor, type PickSource } from './LineupEditor'
 
 interface Props {
   open: boolean
@@ -14,105 +15,64 @@ interface Props {
 }
 
 const selectCls =
-  'h-11 w-full rounded-xl border border-white/10 bg-night px-3 text-white focus:border-lime/70 focus:outline-none'
+  'h-11 w-full min-w-0 rounded-xl border border-white/10 bg-night px-3 text-base text-white focus:border-lime/70 focus:outline-none'
+
+const EDITABLE = ['Proposed', 'AwaitingConfirmation', 'Ready', 'Playing']
 
 /** Organizer overrides for one match. Every change is recorded in the audit log. */
 export function EditMatchSheet({ open, onClose, session, match }: Props) {
   const prePlay = ['Proposed', 'AwaitingConfirmation', 'Ready'].includes(match.status)
   const started = ['Playing', 'PendingResult'].includes(match.status)
-  const inMatch = [...match.teamA, ...match.teamB].map((p) => p.player)
-  const waitlist = session.participants.filter((p) => p.status === 'Waiting')
-  const checkedOut = session.participants.filter((p) => p.status === 'Paused')
+  const canChange = EDITABLE.includes(match.status)
+  const perTeam = match.teamA.length
+  const original = [...match.teamA, ...match.teamB].map((p) => p.player.userId)
   const freeCourts = session.courts.filter((c) => c.status === 'Available' && !c.match)
 
-  const [outgoing, setOutgoing] = useState(inMatch[0]?.userId ?? '')
-  const [incoming, setIncoming] = useState('')
   const [court, setCourt] = useState(freeCourts[0]?.number ?? 0)
-  const [fromA, setFromA] = useState(match.teamA[0]?.player.userId ?? '')
-  const [fromB, setFromB] = useState(match.teamB[0]?.player.userId ?? '')
 
-  const replace = useSessionAction(session.id, () => matchApi.replace(session.id, match.id, outgoing, incoming))
+  // Everyone who can come onto this court, and where they'd come from.
+  const otherCourts = session.courts.filter((c) => c.match && c.match.id !== match.id && EDITABLE.includes(c.match.status))
+  const people = new Map<string, PlayerCard>(session.participants.map((p) => [p.player.userId, p.player]))
+  for (const c of session.courts) for (const p of [...(c.match?.teamA ?? []), ...(c.match?.teamB ?? [])]) people.set(p.player.userId, p.player)
+  const sources: PickSource[] = [
+    { label: 'Waitlist', ids: session.participants.filter((p) => p.status === 'Waiting').map((p) => p.player.userId) },
+    ...otherCourts.map((c) => ({
+      label: `On court ${c.number} (they trade places)`,
+      ids: [...c.match!.teamA, ...c.match!.teamB].map((p) => p.player.userId),
+      tag: () => `Court ${c.number}`,
+    })),
+    { label: 'Checked out', ids: session.participants.filter((p) => p.status === 'Paused').map((p) => p.player.userId), tag: () => 'Checked out' },
+  ]
+
+  const save = useSessionAction(session.id, ({ a, b }: { a: string[]; b: string[] }) => matchApi.setLineup(session.id, match.id, a, b))
   const move = useSessionAction(session.id, () => matchApi.move(session.id, match.id, court))
-  const switchTeams = useSessionAction(session.id, () => matchApi.switchTeams(session.id, match.id, fromA, fromB))
   const cancel = useSessionAction(session.id, () => matchApi.cancel(session.id, match.id))
   const voidMatch = useSessionAction(session.id, () => matchApi.void(session.id, match.id))
-  const error = replace.error ?? switchTeams.error ?? move.error ?? cancel.error ?? voidMatch.error
-  const canChange = prePlay || match.status === 'Playing'
+  const error = save.error ?? move.error ?? cancel.error ?? voidMatch.error
   const done = { onSuccess: onClose }
 
   return (
     <Sheet open={open} onClose={onClose} title={`Edit court ${match.courtNumber}`}>
       <div className="space-y-6">
-        {/* Games go straight on court (Playing), so changes are allowed until a score is entered. */}
-        {canChange && (
-          <section>
-            <SectionTitle>Switch players between teams</SectionTitle>
-            <p className="mb-3 text-sm text-muted">Same four players, new teams: one from Team A and one from Team B trade places.</p>
-            <div className="grid grid-cols-2 gap-2">
-              <select value={fromA} onChange={(e) => setFromA(e.target.value)} className={selectCls} aria-label="Team A player">
-                {match.teamA.map((p) => (
-                  <option key={p.player.userId} value={p.player.userId}>
-                    A: {p.player.displayName}
-                  </option>
-                ))}
-              </select>
-              <select value={fromB} onChange={(e) => setFromB(e.target.value)} className={selectCls} aria-label="Team B player">
-                {match.teamB.map((p) => (
-                  <option key={p.player.userId} value={p.player.userId}>
-                    B: {p.player.displayName}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <Button className="mt-3" variant="dark" block disabled={!fromA || !fromB} loading={switchTeams.isPending} onClick={() => switchTeams.mutate(undefined, done)}>
-              Switch teams
-            </Button>
-          </section>
+        {canChange ? (
+          <LineupEditor
+            title="On Court"
+            original={original}
+            perTeam={perTeam}
+            people={people}
+            sources={sources}
+            partnerOf={new Map(session.participants.filter((p) => p.partnerId).map((p) => [p.player.userId, p.partnerId!]))}
+            saving={save.isPending}
+            onSave={(a, b) => save.mutate({ a, b }, done)}
+            onCancel={onClose}
+          />
+        ) : (
+          <p className="text-sm text-muted">A score has been entered, so the players can't be changed.</p>
         )}
 
-        {canChange && (
+        {canChange && freeCourts.length > 0 && (
           <section>
-            <SectionTitle>Swap with the waitlist</SectionTitle>
-            <p className="mb-3 text-sm text-muted">Someone from the waitlist comes on court. The player taken off goes back to the waitlist and keeps their spot.</p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              <select value={outgoing} onChange={(e) => setOutgoing(e.target.value)} className={selectCls} aria-label="Player to replace">
-                {inMatch.map((p) => (
-                  <option key={p.userId} value={p.userId}>
-                    Out: {p.displayName}
-                  </option>
-                ))}
-              </select>
-              <select value={incoming} onChange={(e) => setIncoming(e.target.value)} className={selectCls} aria-label="Replacement player">
-                <option value="">In: choose player</option>
-                {waitlist.length > 0 && (
-                  <optgroup label="Waitlist">
-                    {waitlist.map((p) => (
-                      <option key={p.player.userId} value={p.player.userId}>
-                        In: {p.player.displayName}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-                {checkedOut.length > 0 && (
-                  <optgroup label="Checked out">
-                    {checkedOut.map((p) => (
-                      <option key={p.player.userId} value={p.player.userId}>
-                        In: {p.player.displayName} (checked out)
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-              </select>
-            </div>
-            <Button className="mt-3" variant="dark" block disabled={!incoming} loading={replace.isPending} onClick={() => replace.mutate(undefined, done)}>
-              Swap player
-            </Button>
-          </section>
-        )}
-
-        {(prePlay || match.status === 'Playing') && freeCourts.length > 0 && (
-          <section>
-            <SectionTitle>Move to another court</SectionTitle>
+            <SectionTitle>Move this game to another court</SectionTitle>
             <div className="flex gap-2">
               <select value={court} onChange={(e) => setCourt(Number(e.target.value))} className={selectCls} aria-label="Target court">
                 {freeCourts.map((c) => (

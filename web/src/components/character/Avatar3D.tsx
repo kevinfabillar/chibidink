@@ -4,6 +4,9 @@ import { peekSnapshot, requestSnapshot } from '../../character3d/snapshotCache'
 import type { CharacterLook } from '../../cosmetics/visuals'
 import { ChibiAvatar } from './ChibiAvatar'
 
+/** The drawn fallback (no WebGL) has the three everyday poses; celebrations map onto them. */
+const drawnPose = (pose: Pose) => (pose === 'champion' || pose === 'cheer' ? 'victory' : pose === 'clap' ? 'idle' : pose)
+
 const Character3D = lazy(() => import('../../character3d/Character3D'))
 
 const RATIO = { bust: 132 / 120, full: 214 / 204 }
@@ -32,7 +35,7 @@ export interface Avatar3DProps {
  */
 export function Avatar3D({ look, variant = 'bust', pose = 'idle', live, interactive, pedestal, animated, size, flip, className, title }: Avatar3DProps) {
   if (live && variant === 'full') {
-    const drawn = <ChibiAvatar look={look} variant="full" pose={pose} animated={animated} className="size-full" title={title} />
+    const drawn = <ChibiAvatar look={look} variant="full" pose={drawnPose(pose)} animated={animated} className="size-full" title={title} />
     return (
       <div className={className} style={{ aspectRatio: '204 / 214', width: size }} role="img" aria-label={title ?? 'Player character'}>
         <WebGLBoundary fallback={drawn}>
@@ -44,7 +47,7 @@ export function Avatar3D({ look, variant = 'bust', pose = 'idle', live, interact
     )
   }
 
-  const drawn = <ChibiAvatar look={look} variant={variant} pose={pose} animated={animated} size={size} flip={flip} className={className} title={title} />
+  const drawn = <ChibiAvatar look={look} variant={variant} pose={drawnPose(pose)} animated={animated} size={size} flip={flip} className={className} title={title} />
   return <Snapshot look={look} variant={variant} pose={pose} size={size} flip={flip} className={className} title={title} fallback={drawn} />
 }
 

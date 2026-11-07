@@ -432,6 +432,13 @@ namespace ChibiDink.Infrastructure.Persistence.Migrations
                         .HasMaxLength(80)
                         .HasColumnType("character varying(80)");
 
+                    b.Property<string>("_plannedGroups")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasColumnName("PlannedGroups")
+                        .HasDefaultValueSql("'[]'");
+
                     b.ComplexProperty(typeof(Dictionary<string, object>), "Settings", "ChibiDink.Domain.Sessions.PlaySession.Settings#SessionSettings", b1 =>
                         {
                             b1.IsRequired();
@@ -494,6 +501,9 @@ namespace ChibiDink.Infrastructure.Persistence.Migrations
 
                     b.Property<int>("Losses")
                         .HasColumnType("integer");
+
+                    b.Property<Guid?>("PartnerId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Role")
                         .IsRequired()

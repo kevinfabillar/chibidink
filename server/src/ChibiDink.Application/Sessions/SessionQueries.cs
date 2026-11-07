@@ -1,5 +1,6 @@
 using ChibiDink.Application.Abstractions;
 using ChibiDink.Application.Common;
+using ChibiDink.Application.Matchmaking;
 using ChibiDink.Application.Contracts;
 using ChibiDink.Domain.Common;
 using ChibiDink.Domain.Matches;
@@ -62,8 +63,10 @@ public sealed class SessionQueries(
     {
         var ct = CancellationToken.None;
         var session = await sessions.FindAsync(sessionId, ct) ?? throw new NotFoundException("Session");
-        var live = await matches.ListLiveAsync(sessionId, ct);
-        var completed = await matches.ListCompletedInSessionAsync(sessionId, ct);
+        // One query for both (each database round trip is the slow part of a session view).
+        var sessionMatches = await matches.ListLiveAndCompletedInSessionAsync(sessionId, ct);
+        var live = sessionMatches.Where(m => m.IsActive).ToList();
+        var completed = sessionMatches.Where(m => m.Status == MatchStatus.Completed).ToList();
         var people = await profiles.GetManyAsync(session.Participants.Select(p => p.UserId), ct);
 
         var positions = QueuePositions(session);
@@ -73,7 +76,7 @@ public sealed class SessionQueries(
             .OrderBy(p => p.QueuePosition ?? int.MaxValue)
             .ThenBy(p => p.Player.DisplayName)
             .ToList();
-        var upNext = session.IsClosed ? [] : await UpNextAsync(session, completed, people, ct);
+        var upNext = session.IsClosed ? [] : UpNext(session, live, completed, people);
         return new SessionSnapshot(session, live, completed, people, participants, upNext);
     }
 
@@ -109,29 +112,38 @@ public sealed class SessionQueries(
     /// The next groups of four, in order, as the matchmaker would pick them right now (one per court).
     /// The first group goes on the next court that frees up.
     /// </summary>
-    private async Task<IReadOnlyList<UpNextDto>> UpNextAsync(PlaySession session, IReadOnlyList<Match> completed, IReadOnlyDictionary<Guid, PlayerProfile> people, CancellationToken ct)
+    private IReadOnlyList<UpNextDto> UpNext(PlaySession session, IReadOnlyList<Match> live, IReadOnlyList<Match> completed, IReadOnlyDictionary<Guid, PlayerProfile> people)
     {
         var history = new PairingHistory();
         foreach (var match in completed.Take(30))
             history.AddMatch(match.TeamA.Select(p => p.UserId).ToList(), match.TeamB.Select(p => p.UserId).ToList());
 
-        var waiting = session.WaitingPlayers().ToList();
-        var busy = await matches.FindPlayersInLiveMatchesAsync(waiting.Select(p => p.UserId).ToList(), ct);
-        var candidates = waiting
-            .Where(p => !busy.Contains(p.UserId)) // still playing somewhere: not in the next groups
-            .Select(p => new QueueCandidate(p.UserId, p.SkillEstimate, p.CompletedGames, p.WaitingSince ?? p.JoinedAt))
-            .ToList();
+        var planned = session.ActivePlannedGroups().ToList();
+        var held = planned.SelectMany(g => g.Players).ToHashSet();
+        // Who's on a court comes from this session's live matches, already loaded. (Players are in one session
+        // at a time; the matchmaker still checks every session before it actually puts anyone on a court.)
+        IReadOnlySet<Guid> busy = live.SelectMany(m => m.PlayerIds).ToHashSet();
+        // Not still playing, not held for a lined-up group, and fixed partners together.
+        var candidates = MatchmakingCandidates.Build(session, busy, held);
         var request = new MatchmakingRequest(
             session.Format, Math.Max(1, session.Courts.Count), candidates, history, clock.UtcNow,
             session.Settings.SkillTolerance, TimeSpan.FromMinutes(session.Settings.WaitProtectionMinutes), session.Settings.Mode);
         var skillOf = session.Participants.ToDictionary(p => p.UserId, p => p.SkillEstimate);
-        return strategy.FindLineups(request)
-            .Select((l, i) => new UpNextDto(
+
+        // The organizer's lined-up groups first, in their order, then the matchmaker's picks from everyone else.
+        var plannedViews = planned.Select(g => (
+            TeamA: (IReadOnlyList<Guid>)g.TeamA, TeamB: (IReadOnlyList<Guid>)g.TeamB, Tier: (string?)null, Mixed: false,
+            Planned: true, Ready: session.IsPlannedGroupReady(g) && !g.Players.Any(busy.Contains)));
+        var pickedViews = strategy.FindLineups(request).Select(l => (
+            l.TeamA, l.TeamB,
+            Tier: session.Settings.Mode == QueueMode.SkillBased && !l.ExceedsSkillTolerance ? SkillLevel.Name(skillOf[l.TeamA[0]]) : null,
+            Mixed: l.ExceedsSkillTolerance, Planned: false, Ready: true));
+        return plannedViews.Concat(pickedViews)
+            .Select((g, i) => new UpNextDto(
                 i + 1,
-                l.TeamA.Select(id => ViewMapper.Card(id, people)).ToList(),
-                l.TeamB.Select(id => ViewMapper.Card(id, people)).ToList(),
-                session.Settings.Mode == QueueMode.SkillBased && !l.ExceedsSkillTolerance ? SkillLevel.Name(skillOf[l.TeamA[0]]) : null,
-                l.ExceedsSkillTolerance))
+                g.TeamA.Select(id => ViewMapper.Card(id, people)).ToList(),
+                g.TeamB.Select(id => ViewMapper.Card(id, people)).ToList(),
+                g.Tier, g.Mixed, g.Planned, g.Ready))
             .ToList();
     }
 
@@ -147,5 +159,5 @@ public sealed class SessionQueries(
     private static ParticipantDto Participant(SessionParticipant p, IReadOnlyDictionary<Guid, PlayerProfile> people, Dictionary<Guid, int> positions) =>
         new(ViewMapper.Card(p.UserId, people), p.Role, p.Status, p.SkillEstimate,
             p.WaitingSince, positions.TryGetValue(p.UserId, out var pos) ? pos : null,
-            p.CompletedGames, p.Wins, p.Losses, PlayerStatistics.WinRateOf(p.Wins, p.Losses));
+            p.CompletedGames, p.Wins, p.Losses, PlayerStatistics.WinRateOf(p.Wins, p.Losses), p.PartnerId);
 }

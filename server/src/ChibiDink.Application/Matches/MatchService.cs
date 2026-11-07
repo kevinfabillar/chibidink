@@ -22,6 +22,7 @@ public interface IMatchService
     Task<Guid> CreateManualAsync(Guid sessionId, CreateManualMatchRequest request, CancellationToken ct);
     Task ReplacePlayerAsync(Guid sessionId, Guid matchId, ReplacePlayerRequest request, CancellationToken ct);
     Task SwitchTeamsAsync(Guid sessionId, Guid matchId, SwitchTeamsRequest request, CancellationToken ct);
+    Task SetLineupAsync(Guid sessionId, Guid matchId, SetLineupRequest request, CancellationToken ct);
     Task MoveAsync(Guid sessionId, Guid matchId, MoveMatchRequest request, CancellationToken ct);
     Task CancelAsync(Guid sessionId, Guid matchId, string? reason, CancellationToken ct);
     Task VoidAsync(Guid sessionId, Guid matchId, string? reason, CancellationToken ct);
@@ -108,6 +109,15 @@ public sealed class MatchService(
         {
             match.ReplacePlayer(session, request.OutgoingUserId, request.IncomingUserId, clock.UtcNow);
             Audit(session, match, "Replace player", "Swapped a player; the replaced player kept their queue spot");
+        }, ct);
+
+    public Task SetLineupAsync(Guid sessionId, Guid matchId, SetLineupRequest request, CancellationToken ct) =>
+        WithMatch(sessionId, matchId, async (session, match, innerCt) =>
+        {
+            session.EnsureOrganizer(currentUser.UserId);
+            var live = await matches.ListLiveAsync(session.Id, innerCt);
+            match.SetLineup(session, request.TeamA ?? [], request.TeamB ?? [], live, clock.UtcNow);
+            Audit(session, match, "Edit players", $"Changed the players on court {match.CourtNumber}");
         }, ct);
 
     public Task MoveAsync(Guid sessionId, Guid matchId, MoveMatchRequest request, CancellationToken ct) =>

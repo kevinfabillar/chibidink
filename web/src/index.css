@@ -12,6 +12,12 @@
   --color-ink: #070c14;
   --color-muted: #8ea3b5;
   --color-danger: #ff5c7a;
+  /* Always white, in both themes: text on purple or red buttons. */
+  --color-snow: #ffffff;
+  /* Top of the lime button gradient. */
+  --color-lime-hi: #ccff5c;
+  /* Item and shop tiles. */
+  --color-tile: #111a24;
 
   --font-display: 'Baloo 2', ui-rounded, system-ui, sans-serif;
   --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
@@ -20,6 +26,67 @@
   --shadow-glow-grape: 0 0 0 1.5px rgb(163 72 250 / 0.85), 0 0 22px -4px rgb(163 72 250 / 0.55);
   --shadow-glow-sky: 0 0 0 1.5px rgb(59 198 243 / 0.8), 0 0 22px -6px rgb(59 198 243 / 0.5);
 }
+
+/*
+ * Light mode: soft lavender page, white cards, deep purple-navy text. The app is built on a few tokens
+ * (ink, night, surface, muted) plus white text and white/x overlays, so swapping those flips every screen:
+ * "white" becomes the text color, and border-white/10, bg-white/8 become faint lavender lines and tints.
+ * Lime stays bright as a fill (buttons, pills, progress); only lime *text* gets a darker green below.
+ */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --color-white: #1b1035;
+  --color-ink: #f5f0fc;
+  --color-night: #ece5f7;
+  --color-surface: #ffffff;
+  --color-surface-2: #f4effb;
+  --color-tile: #f7f2fe;
+  --color-muted: #6b6382;
+  --color-sky: #0b7fae;
+  --color-danger: #e0244d;
+  --shadow-glow-lime: 0 0 0 1.5px rgb(150 210 30 / 0.9), 0 6px 18px -6px rgb(130 190 20 / 0.55);
+  --shadow-glow-grape: 0 0 0 1.5px rgb(163 72 250 / 0.7), 0 6px 18px -6px rgb(163 72 250 / 0.4);
+}
+
+/* Accent text that is too pale on a light page. Dark artwork panels keep the originals. */
+:root[data-theme='light'] :is(.text-lime):not(.force-dark *) {
+  color: #4a8500;
+}
+:root[data-theme='light'] :is(.text-ink):not(.force-dark *) {
+  color: #1b1035; /* text on lime: dark, as on the buttons */
+}
+:root[data-theme='light'] :is(.text-amber-100, .text-amber-200, .text-\[\#FDE68A\], .text-\[\#FBBF24\]):not(.force-dark *) {
+  color: #b45309;
+}
+:root[data-theme='light'] :is(.text-\[\#d6a8ff\], .text-\[\#E2B8FF\]):not(.force-dark *) {
+  color: #7b22d6;
+}
+
+/*
+ * Panels that are dark artwork in both themes (the court VS stage, character showcases).
+ * They get the dark tokens back so their text and overlays stay as designed.
+ */
+:root[data-theme='light'] .force-dark {
+  color-scheme: dark;
+  --color-white: #ffffff;
+  --color-ink: #070c14;
+  --color-night: #0b1422;
+  --color-surface: #152630;
+  --color-surface-2: #1c3240;
+  --color-muted: #8ea3b5;
+  --color-lime: #b7f33b;
+  --color-lime-deep: #8fcf14;
+  --color-lime-hi: #ccff5c;
+  /* Item and shop tiles. */
+  --color-tile: #111a24;
+  --color-sky: #3bc6f3;
+  --color-grape: #a348fa;
+  --color-danger: #ff5c7a;
+  color: var(--color-white);
+}
+
+/* Lets components say "in light mode": light:bg-surface. */
+@custom-variant light (&:where(:root[data-theme='light'] *, :root[data-theme='light']));
 
 @layer base {
   html {
@@ -45,6 +112,28 @@
     background-image:
       radial-gradient(60rem 30rem at 110% -10%, rgb(163 72 250 / 0.16), transparent 60%),
       radial-gradient(50rem 30rem at -20% 110%, rgb(183 243 59 / 0.08), transparent 60%);
+  }
+  :root[data-theme='light'] body::before {
+    background-image:
+      radial-gradient(40rem 26rem at 105% -5%, rgb(196 160 255 / 0.35), transparent 65%),
+      radial-gradient(36rem 26rem at -15% 105%, rgb(205 175 255 / 0.30), transparent 65%),
+      linear-gradient(180deg, #f8f4fe 0%, #f2ecfb 100%);
+  }
+  /* The logo's white glow is made for a dark page: on light, give it a thin dark outline instead. */
+  :root[data-theme='light'] .logo {
+    filter: drop-shadow(0 0 0.6px rgb(27 16 53 / 0.95)) drop-shadow(0 0 0.6px rgb(27 16 53 / 0.7))
+      drop-shadow(0 3px 5px rgb(70 30 130 / 0.3)) contrast(1.08) saturate(1.15);
+  }
+  :root[data-theme='light'] .bottom-nav {
+    background-color: rgb(255 255 255 / 0.94);
+    border-color: #ebe3f7;
+    box-shadow: 0 -8px 28px -14px rgb(90 50 160 / 0.3);
+  }
+  /* Cards float on the light page with a soft shadow instead of a glow. */
+  :root[data-theme='light'] .card:not(.force-dark *) {
+    border-color: #e6dcf5;
+    background-color: #ffffff;
+    box-shadow: 0 1px 2px rgb(60 30 110 / 0.05), 0 10px 26px -14px rgb(90 50 160 / 0.28);
   }
   /* A single-column grid never grows wider than its container (one wide child, like a long list,
      would otherwise stretch the column past a phone's edge and clip everything in it). Layouts that
@@ -96,7 +185,65 @@
   filter: drop-shadow(0 0 10px rgb(183 243 59 / 0.55)) drop-shadow(0 2px 0 rgb(7 12 20 / 0.9));
 }
 
+/* ---- Podium celebration ------------------------------------------------------------------------ */
+
+.confetti-piece {
+  position: absolute;
+  top: -16px;
+  opacity: 0.9;
+  animation-name: confetti-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+@keyframes confetti-fall {
+  0% {
+    transform: translate3d(0, -10px, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(18px, 220px, 0) rotate(240deg);
+  }
+  100% {
+    transform: translate3d(-12px, 460px, 0) rotate(520deg);
+    opacity: 0.85;
+  }
+}
+/* Light beam behind the winner. */
+.podium-spotlight {
+  background: radial-gradient(50% 60% at 50% 45%, rgb(251 191 36 / 0.45), transparent 70%);
+  animation: podium-glow 2.6s ease-in-out infinite;
+}
+@keyframes podium-glow {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+.podium-twinkle {
+  animation: podium-twinkle 1.6s ease-in-out infinite;
+}
+@keyframes podium-twinkle {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.7) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1) rotate(20deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .confetti-piece {
+    display: none;
+  }
+
   *,
   *::before,
   *::after {
