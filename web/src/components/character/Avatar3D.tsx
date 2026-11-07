@@ -4,8 +4,22 @@ import { peekSnapshot, requestSnapshot } from '../../character3d/snapshotCache'
 import type { CharacterLook } from '../../cosmetics/visuals'
 import { ChibiAvatar } from './ChibiAvatar'
 
-/** The drawn fallback (no WebGL) has the three everyday poses; celebrations map onto them. */
-const drawnPose = (pose: Pose) => (pose === 'champion' || pose === 'cheer' ? 'victory' : pose === 'clap' ? 'idle' : pose)
+/** The drawn fallback (no WebGL) has three poses; the rest map onto the closest one. */
+const DRAWN: Record<Pose, 'idle' | 'swing' | 'victory'> = {
+  idle: 'idle',
+  swing: 'swing',
+  victory: 'victory',
+  champion: 'victory',
+  cheer: 'victory',
+  clap: 'idle',
+  dance: 'victory',
+  flex: 'victory',
+  spin: 'idle',
+  serve: 'swing',
+  bow: 'idle',
+  jump: 'victory',
+}
+const drawnPose = (pose: Pose) => DRAWN[pose]
 
 const Character3D = lazy(() => import('../../character3d/Character3D'))
 

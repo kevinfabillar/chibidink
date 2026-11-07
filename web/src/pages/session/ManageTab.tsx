@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button'
 import { ErrorNote, SectionTitle, Toggle } from '../../components/ui/primitives'
 import { useSessionAction } from '../../hooks/queries'
 import { InviteCard } from './InviteCard'
+import { SessionRules } from './SessionInfoTab'
 import { AuditLog } from './manage/AuditLog'
 import { CloseSession } from './manage/CloseSession'
 import { ManualMatchBuilder } from './manage/ManualMatchBuilder'
@@ -16,7 +17,10 @@ export function ManageTab({ session }: { session: SessionDetail }) {
   if (session.status === 'Closed')
     return (
       <div className="grid gap-5 lg:grid-cols-2">
-        <p className="card p-5 text-muted">This session is closed. Results are saved to every player's record.</p>
+        <div className="space-y-5">
+          <p className="card p-5 text-muted">This session is closed. Results are saved to every player's record.</p>
+          <SessionRules session={session} />
+        </div>
         <AuditLog sessionId={session.id} />
       </div>
     )
@@ -25,6 +29,7 @@ export function ManageTab({ session }: { session: SessionDetail }) {
     <div className="grid gap-5 lg:grid-cols-2">
       <div className="space-y-5">
         <InviteCard session={session} />
+        <SessionRules session={session} />
         <MatchmakingControls session={session} />
         <CourtAvailability session={session} />
         <ManualMatchBuilder session={session} />

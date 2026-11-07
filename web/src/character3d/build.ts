@@ -11,8 +11,8 @@ import { glowTexture, gripTexture, paddleCharacterFaceTexture } from './textures
 // The paddle character (the "Sprout" design) in 3D. Sizes come straight from the design's
 // 600 × 770 artwork (see gear.ts for the unit conversion), with the feet on y = 0.
 
-/** idle, swing and victory are everyday poses; champion, cheer and clap are the podium's celebrations. */
-export type Pose = 'idle' | 'swing' | 'victory' | 'champion' | 'cheer' | 'clap'
+/** Poses a player can pick on their character; the podium uses champion, cheer and clap. */
+export type Pose = 'idle' | 'swing' | 'victory' | 'champion' | 'cheer' | 'clap' | 'dance' | 'flex' | 'spin' | 'serve' | 'bow' | 'jump'
 
 const wx = (x: number) => (x - 300) * S
 const ARM = { length: 90 * S, radius: 18 * S, shoulderX: wx(470), shoulderY: wy(352) }
@@ -25,10 +25,16 @@ const POSES: Record<Pose, { right: number; left: number }> = {
   champion: { right: 2.75, left: -2.6 }, // both arms up
   cheer: { right: 2.85, left: -0.6 }, // paddle high, waving
   clap: { right: 1.2, left: -1.2 }, // arms in front
+  dance: { right: 2.0, left: -2.0 }, // arms up and swaying
+  flex: { right: 1.57, left: -1.57 }, // arms straight out
+  spin: { right: 1.45, left: -1.45 }, // arms out, twirling
+  serve: { right: 0.55, left: -1.9 }, // paddle back, toss hand up
+  bow: { right: 0.15, left: -0.15 }, // arms at the sides
+  jump: { right: 2.9, left: -2.9 }, // both arms high
 }
 
-/** Per-frame motion for each pose: arm swing on top of the base angles, a hop, and a sway. */
-function motion(pose: Pose, t: number) {
+/** Per-frame motion for each pose: arm swing on top of the base angles, a hop, a sway, a forward lean and a turn. */
+function motion(pose: Pose, t: number): { right: number; left: number; hop: number; sway: number; lean?: number; spin?: number } {
   switch (pose) {
     case 'idle':
       return { right: Math.sin(t * 4.8) * 0.16, left: Math.sin(t * 2.2) * 0.03, hop: 0, sway: 0 }
@@ -38,6 +44,18 @@ function motion(pose: Pose, t: number) {
       return { right: Math.sin(t * 6) * 0.35, left: Math.sin(t * 2.2) * 0.05, hop: Math.abs(Math.sin(t * 3)) * 0.06, sway: Math.sin(t * 3) * 0.04 }
     case 'clap': // arms swinging in and out, side to side
       return { right: Math.sin(t * 9) * 0.22, left: -Math.sin(t * 9) * 0.22, hop: 0, sway: Math.sin(t * 2.4) * 0.06 }
+    case 'dance': // arms wave together, hips sway, little bounce
+      return { right: Math.sin(t * 5) * 0.5, left: Math.sin(t * 5) * 0.5, hop: Math.abs(Math.sin(t * 5)) * 0.05, sway: Math.sin(t * 5) * 0.09 }
+    case 'flex': // arms pumping out to the sides
+      return { right: Math.sin(t * 3) * 0.14, left: -Math.sin(t * 3) * 0.14, hop: 0, sway: 0 }
+    case 'spin': // twirling on the spot
+      return { right: Math.sin(t * 5) * 0.08, left: -Math.sin(t * 5) * 0.08, hop: Math.abs(Math.sin(t * 2.5)) * 0.04, sway: 0, spin: t * 2.5 }
+    case 'serve': // getting ready to serve, rocking slightly
+      return { right: Math.sin(t * 2) * 0.08, left: Math.sin(t * 2) * 0.1, hop: 0, sway: 0, lean: 0.06 + Math.sin(t * 2) * 0.03 }
+    case 'bow': // a slow, polite bow
+      return { right: 0, left: 0, hop: 0, sway: 0, lean: 0.18 + Math.sin(t * 1.6) * 0.14 }
+    case 'jump': // big jumps with arms flapping
+      return { right: Math.sin(t * 6) * 0.15, left: -Math.sin(t * 6) * 0.15, hop: Math.abs(Math.sin(t * 3)) * 0.3, sway: 0 }
     default:
       return { right: Math.sin(t * 2.2) * 0.03, left: Math.sin(t * 2.2) * 0.03, hop: 0, sway: 0 }
   }
@@ -152,6 +170,8 @@ export function buildCharacter(look: CharacterLook, pose: Pose = 'idle', opts: {
       const m = motion(pose, t)
       figure.position.y = Math.sin(t * 2.2) * 0.025 + m.hop
       figure.rotation.z = m.sway
+      figure.rotation.x = m.lean ?? 0
+      figure.rotation.y = m.spin ?? 0
       head.rotation.z = Math.sin(t * 1.1) * 0.02
       right.pivot.rotation.z = p.right + m.right
       left.pivot.rotation.z = p.left + m.left

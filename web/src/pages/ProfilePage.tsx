@@ -9,6 +9,7 @@ import { Spinner } from '../components/ui/primitives'
 import { TopBar } from '../components/ui/TopBar'
 import { queryKeys } from '../hooks/queries'
 import { winRateText } from '../lib/format'
+import { usePose } from '../lib/pose'
 import { PageError } from '../components/ui/ErrorPage'
 import clsx from 'clsx'
 import { BarChart3, CalendarDays, ChartNoAxesColumnIncreasing, Layers, Pencil, Swords, Trophy, User, Users, X } from 'lucide-react'
@@ -21,6 +22,7 @@ import { Button } from '../components/ui/Button'
 export function ProfilePage() {
   const { userId } = useParams()
   const [editing, setEditing] = useState(false)
+  const myPose = usePose()
   const profile = useQuery({
     queryKey: userId ? queryKeys.player(userId) : queryKeys.me,
     queryFn: () => (userId ? profileApi.player(userId) : profileApi.me()),
@@ -39,7 +41,7 @@ export function ProfilePage() {
       <div className="grid gap-5 md:grid-cols-[17rem_minmax(0,1fr)] md:items-start">
         {/* Character card (stays in view on desktop) */}
         <section className="card flex flex-col items-center p-5 md:sticky md:top-6">
-          <PlayerAvatar player={player} variant="full" live pedestal animated className="w-56" />
+          <PlayerAvatar player={player} variant="full" pose={userId ? 'idle' : myPose} live pedestal animated className="w-56" />
           <div className="mt-2 font-display text-2xl font-bold">{player.displayName}</div>
           <div className="mt-1 rounded-full bg-lime/20 px-3 py-0.5 text-sm font-semibold text-lime">Character Lv {progress.level}</div>
           {!userId && (

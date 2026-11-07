@@ -4,7 +4,7 @@ import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import type { Profile } from '../api/types'
 import { Avatar3D } from '../components/character/Avatar3D'
-import type { Pose } from '../components/character/ChibiAvatar'
+import { POSES, setPose, usePose } from '../lib/pose'
 import { AuraArt, EffectArt, OutfitArt } from '../components/character/ItemArt'
 import { Scene } from '../components/character/Backgrounds'
 import { Spinner } from '../components/ui/primitives'
@@ -17,12 +17,6 @@ import { WardrobeSheet, type WardrobeTab } from './character/WardrobeSheet'
 import { EditProfileSheet } from '../components/profile/EditProfileSheet'
 import { PageError } from '../components/ui/ErrorPage'
 
-const POSES: { id: Pose; label: string }[] = [
-  { id: 'idle', label: 'Ready' },
-  { id: 'swing', label: 'Swing' },
-  { id: 'victory', label: 'Victory' },
-]
-
 export function CharacterPage() {
   const me = useMe()
   if (!me.data) return me.error ? <PageError error={me.error} onRetry={() => me.refetch()} /> : <Spinner />
@@ -30,7 +24,7 @@ export function CharacterPage() {
 }
 
 function CharacterScreen({ profile }: { profile: Profile }) {
-  const [pose, setPose] = useState<Pose>('idle')
+  const pose = usePose()
   const [sheet, setSheet] = useState<'edit' | 'face' | 'poses' | 'wardrobe' | null>(null)
   const [wardrobeTab, setWardrobeTab] = useState<WardrobeTab>('Outfits')
   const openWardrobe = (t: WardrobeTab) => {
@@ -39,7 +33,7 @@ function CharacterScreen({ profile }: { profile: Profile }) {
   }
   const look = lookOf(profile.player)
   const cycle = (step: number) =>
-    setPose((p) => POSES[(POSES.findIndex((x) => x.id === p) + step + POSES.length) % POSES.length].id)
+    setPose(POSES[(POSES.findIndex((x) => x.id === pose) + step + POSES.length) % POSES.length].id)
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -110,7 +104,7 @@ function CharacterScreen({ profile }: { profile: Profile }) {
               className={clsx('rounded-2xl border-2 bg-night/70 p-2', pose === p.id ? 'border-lime' : 'border-white/10')}
             >
               <Avatar3D look={look} variant="full" pose={p.id} className="w-full" />
-              <span className="font-display font-bold">{p.label}</span>
+              <span className="font-display text-sm font-bold">{p.label}</span>
             </button>
           ))}
         </div>
