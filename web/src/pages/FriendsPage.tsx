@@ -166,8 +166,8 @@ function Row({ friend, note, children }: { friend: Friend; note: string; childre
       <Link to={`/players/${friend.player.userId}`} className="flex min-w-0 flex-1 items-center gap-3">
         <PlayerAvatar player={friend.player} size={44} />
         <div className="min-w-0">
-          <div className="truncate font-semibold">
-            <PlayerName player={friend.player} />
+          <div className="flex min-w-0 font-semibold">
+            <PlayerName player={friend.player} truncate />
           </div>
           <div className="text-xs text-muted">{note}</div>
         </div>

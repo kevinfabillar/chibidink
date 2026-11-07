@@ -37,7 +37,7 @@ export function QueueTab({ session }: { session: SessionDetail }) {
         <section className="card h-fit p-5 text-center">
           <PlayerAvatar player={me.player} variant="full" size={130} className="mx-auto" />
           <h2 className="mt-1 font-display text-2xl font-bold">
-            <PlayerName player={me.player} size="lg" />
+            <PlayerName player={me.player} size="md" />
           </h2>
           <p className="text-sm text-muted">
             {skillBased && `${tierName(me.skillEstimate)} · `}This session: {me.completedGames} games · {me.wins}W {me.losses}L

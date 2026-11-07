@@ -48,8 +48,8 @@ export function Podium({ players, title = 'Session champions' }: { players: Part
                     className={clsx('relative', step.place === 1 ? 'w-28 sm:w-40' : 'w-24 sm:w-32')}
                   />
                   </div>
-                  <div className="mt-1 max-w-full truncate text-center font-semibold">
-                    <PlayerName player={p.player} />
+                  <div className="mt-1.5 flex max-w-full min-w-0 justify-center text-center font-semibold">
+                    <PlayerName player={p.player} truncate />
                   </div>
                   <div className="text-xs text-muted">
                     {p.wins}W {p.losses}L · {winRateText(p.winRate)}

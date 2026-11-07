@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/authStore'
 import { useMe } from '../../hooks/queries'
 import { PlayerAvatar } from '../character/Stage'
 import { Logo } from '../ui/primitives'
+import { PlayerName } from '../character/NameTag'
 
 const nav = [
   { to: '/', label: 'Home', icon: Home, end: true },
@@ -102,7 +103,7 @@ export function AppShell() {
             {me && <PlayerAvatar player={me.player} size={40} />}
             {!collapsed && (
               <div className="min-w-0 flex-1">
-                <div className="truncate font-semibold">{me?.player.displayName}</div>
+                <div className="flex min-w-0 font-semibold">{me && <PlayerName player={me.player} truncate />}</div>
                 <div className="text-xs text-muted">Lv {me?.progress.level ?? 1} · My profile</div>
               </div>
             )}

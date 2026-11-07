@@ -13,6 +13,7 @@ import { TopBar } from '../components/ui/TopBar'
 import { useMe, useMySessions } from '../hooks/queries'
 import { winRateText } from '../lib/format'
 import { PageError } from '../components/ui/ErrorPage'
+import { PlayerName } from '../components/character/NameTag'
 
 export function HomePage() {
   const me = useMe()
@@ -38,7 +39,7 @@ export function HomePage() {
         <div className="space-y-2">
           <div className="rounded-2xl border border-white/12 bg-ink/60 p-3">
             <div className="flex items-center justify-between gap-2">
-              <span className="truncate font-display text-[1.6rem] leading-none font-extrabold">{player.displayName}</span>
+              <PlayerName player={player} size="md" className="min-w-0 truncate font-display text-[1.6rem] leading-none font-extrabold" />
               <span className="shrink-0 rounded-lg border border-lime/80 bg-lime/10 px-2 py-0.5 font-display text-base font-bold text-lime">
                 Lv {progress.level}
               </span>

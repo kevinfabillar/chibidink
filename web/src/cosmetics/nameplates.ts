@@ -52,7 +52,6 @@ const NAMEPLATES: Record<string, NameplateVisual> = {
     ring: ['#FDE047', '#F97316', '#DC2626', '#F97316', '#FDE047'],
     glow: '#F97316',
     edge: 'fire',
-    badge: 'flame',
   },
   'name-frost': {
     text: ['#FFFFFF', '#BAE6FD', '#38BDF8', '#FFFFFF'],
@@ -62,7 +61,6 @@ const NAMEPLATES: Record<string, NameplateVisual> = {
     edge: 'ice',
     particle: 'snow',
     particleColor: '#E0F2FE',
-    badge: 'snowflake',
   },
   'name-thunder': {
     text: ['#FFFFFF', '#FDE047', '#FACC15', '#FFFFFF'],
@@ -70,7 +68,6 @@ const NAMEPLATES: Record<string, NameplateVisual> = {
     ring: ['#FACC15', '#818CF8', '#FFFFFF', '#FACC15'],
     glow: '#818CF8',
     edge: 'lightning',
-    badge: 'zap',
   },
   'name-galaxy': {
     text: ['#F0ABFC', '#A5B4FC', '#C4B5FD', '#F0ABFC'],
@@ -87,7 +84,6 @@ const NAMEPLATES: Record<string, NameplateVisual> = {
     glow: '#F59E0B',
     particle: 'glint',
     particleColor: '#FEF3C7',
-    badge: 'crown',
   },
 }
 

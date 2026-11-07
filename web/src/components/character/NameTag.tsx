@@ -14,15 +14,18 @@ interface NameSource {
  * A player's name. With a name skin equipped it's an animated tag (a living border, shining letters,
  * glow, particles); without one it's plain text styled by `className`, exactly as before.
  */
-export function PlayerName({ player, size = 'sm', className }: { player: NameSource; size?: Size; className?: string }) {
+export function PlayerName({ player, size = 'sm', className, truncate }: { player: NameSource; size?: Size; className?: string; truncate?: boolean }) {
   const plate = nameplateVisual(player.loadout?.nameplateId)
-  if (!plate) return <span className={className}>{player.displayName}</span>
-  return <NameTag name={player.displayName} plate={plate} size={size} className={className} />
+  // `truncate`: a long name ends in "…". A skinned tag shortens its letters itself, so its border is never cut off.
+  if (!plate) return <span className={truncate ? `block truncate ${className ?? ''}` : className}>{player.displayName}</span>
+  // A skin looks the same everywhere: its own font and fixed sizes, not the surrounding text style.
+  return <NameTag name={player.displayName} plate={plate} size={size} />
 }
 
+/** sm: lists (queue, courts, standings); md: name cards (home, character); lg: profile and previews. */
 const SIZE: Record<Size, string> = {
-  sm: 'text-[0.95em] px-2.5 py-0.5 gap-1',
-  md: 'text-base px-3 py-1 gap-1.5',
+  sm: 'text-sm px-2.5 py-0.5 gap-1',
+  md: 'text-lg px-3.5 py-1 gap-1.5',
   lg: 'text-2xl px-5 py-1.5 gap-2',
 }
 
@@ -53,7 +56,7 @@ export function NameTag({ name, plate, size = 'sm', className }: { name: string;
   } as CSSProperties
 
   return (
-    <span className={clsx('np-tag relative inline-flex max-w-full min-w-0 items-center rounded-full align-middle font-bold', SIZE[size], plate.flicker && 'np-flicker', className)} style={style}>
+    <span className={clsx('np-tag relative inline-flex max-w-full min-w-0 items-center rounded-full align-middle font-display font-extrabold tracking-wide normal-case !overflow-visible', SIZE[size], plate.flicker && 'np-flicker', className)} style={style}>
       {/* The living border: colors spinning around the tag. */}
       <span className="np-ring" aria-hidden />
       {plate.edge && <Edge kind={plate.edge} />}
@@ -65,7 +68,7 @@ export function NameTag({ name, plate, size = 'sm', className }: { name: string;
         </span>
       )}
       {Badge && <Badge className="relative size-[1em] shrink-0" style={{ color: plate.ring[1], filter: `drop-shadow(0 0 0.25em ${plate.glow})` }} aria-hidden />}
-      <span className="np-letters relative truncate bg-clip-text text-transparent" style={letters}>
+      <span className="np-letters relative truncate bg-clip-text py-[0.06em] leading-[1.2] text-transparent" style={letters}>
         {name}
       </span>
     </span>
@@ -73,17 +76,14 @@ export function NameTag({ name, plate, size = 'sm', className }: { name: string;
 }
 
 // Positions (% along the edge), sizes and delays, hand-spread so the edge looks natural, not stamped.
-const FLAMES: [number, number, number][] = [
-  [4, 0.7, 0.3],
-  [14, 1, 0],
-  [25, 0.8, 0.5],
-  [36, 1.1, 0.2],
-  [47, 0.85, 0.65],
-  [58, 1.05, 0.1],
-  [69, 0.8, 0.45],
-  [80, 1, 0.25],
-  [91, 0.75, 0.55],
-]
+// Fire: many soft, overlapping tongues [x %, height, flicker seconds, delay seconds]; tallest in the middle,
+// lower toward the rounded ends, each on its own rhythm so the blaze never pulses in step.
+const FLAMES: [number, number, number, number][] = Array.from({ length: 15 }, (_, i) => {
+  const x = (i / 14) * 100
+  const middle = 1 - Math.abs(x - 50) / 50 // 1 in the middle, 0 at the ends
+  const wobble = [0.12, -0.08, 0.15, -0.1, 0.05, -0.14, 0.1][i % 7]
+  return [x, 0.6 + middle * 0.45 + wobble, 0.75 + ((i * 7) % 5) * 0.12, ((i * 3) % 7) * 0.13]
+})
 const ICICLES: [number, number][] = [
   [12, 0.9],
   [22, 0.55],
@@ -110,13 +110,12 @@ const BOLTS: { left?: string; right?: string; top?: string; bottom?: string; rot
 function Edge({ kind }: { kind: EdgeKind }) {
   if (kind === 'fire')
     return (
-      <span className="pointer-events-none absolute inset-x-[0.6em] -top-[0.62em] h-[0.8em]" aria-hidden>
-        {FLAMES.map(([x, scale, delay], i) => (
-          <span key={i} className="np-fire" style={{ left: `${x}%`, '--s': scale, animationDelay: `${delay}s` } as CSSProperties} />
+      <span className="np-blaze pointer-events-none absolute inset-x-[0.35em] -top-[0.7em] h-[0.9em]" aria-hidden>
+        {/* Embers glowing along the top of the border: the base the flames rise from. */}
+        <span className="np-embers" />
+        {FLAMES.map(([x, height, speed, delay], i) => (
+          <span key={i} className="np-fire" style={{ left: `${x}%`, '--s': height, animationDuration: `${speed}s`, animationDelay: `-${delay}s` } as CSSProperties} />
         ))}
-        {/* Flames curling up the rounded ends too. */}
-        <span className="np-fire np-fire-side" style={{ left: '-6%', top: '0.55em', '--s': 0.75, animationDelay: '0.35s' } as CSSProperties} />
-        <span className="np-fire np-fire-side" style={{ left: '100%', top: '0.55em', '--s': 0.75, animationDelay: '0.15s' } as CSSProperties} />
       </span>
     )
   if (kind === 'ice')
