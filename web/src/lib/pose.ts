@@ -17,12 +17,13 @@ export const POSES: { id: Pose; label: string }[] = [
   { id: 'champion', label: 'Champion' },
 ]
 
-const KEY = 'chibidink-pose'
+const key = (userId: string) => `chibidink-pose:${userId}`
 const listeners = new Set<() => void>()
+const memory = new Map<string, Pose>()
 
-function read(): Pose {
+function read(userId: string): Pose {
   try {
-    const saved = localStorage.getItem(KEY)
+    const saved = localStorage.getItem(key(userId))
     if (POSES.some((p) => p.id === saved)) return saved as Pose
   } catch {
     // Storage blocked: fall back to the default pose.
@@ -30,26 +31,29 @@ function read(): Pose {
   return 'idle'
 }
 
-/** Remembers the chosen pose on this device so it stays after leaving the page or reloading. */
-export function setPose(pose: Pose) {
+/** Remembers this account's pose on this device so it stays after leaving the page or reloading. */
+export function setPose(userId: string, pose: Pose) {
   try {
-    localStorage.setItem(KEY, pose)
+    localStorage.setItem(key(userId), pose)
   } catch {
     // Private mode or blocked storage: the pose just lasts for this visit.
   }
-  memory = pose
+  memory.set(userId, pose)
   listeners.forEach((l) => l())
 }
 
-let memory: Pose | null = null
-
-export function usePose(): Pose {
+/** The account's equipped pose ('idle' until it's known or one is picked). */
+export function usePose(userId: string | undefined): Pose {
   return useSyncExternalStore(
     (onChange) => {
       listeners.add(onChange)
       return () => listeners.delete(onChange)
     },
-    () => memory ?? (memory = read()),
+    () => {
+      if (!userId) return 'idle'
+      if (!memory.has(userId)) memory.set(userId, read(userId))
+      return memory.get(userId)!
+    },
     () => 'idle' as Pose,
   )
 }

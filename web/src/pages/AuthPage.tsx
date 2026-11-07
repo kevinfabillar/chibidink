@@ -25,7 +25,8 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 
   const done = (t: TokenResponse) => {
     signIn(t.accessToken, t.expiresIn)
-    navigate(next, { replace: true })
+    // Home after signing in; only an invite link (QR / shared /join/CODE) carries on to that session.
+    navigate(next.startsWith('/join/') ? next : '/', { replace: true })
   }
 
   const submit = useMutation({

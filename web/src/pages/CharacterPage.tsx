@@ -8,12 +8,12 @@ import { POSES, setPose, usePose } from '../lib/pose'
 import { AuraArt, EffectArt, OutfitArt } from '../components/character/ItemArt'
 import { Scene } from '../components/character/Backgrounds'
 import { Spinner } from '../components/ui/primitives'
-import { Sheet } from '../components/ui/Sheet'
 import { TopBar } from '../components/ui/TopBar'
 import { lookOf } from '../cosmetics/visuals'
 import { useMe } from '../hooks/queries'
 import { FaceSheet } from './character/FaceSheet'
 import { WardrobeSheet, type WardrobeTab } from './character/WardrobeSheet'
+import { PoseSheet } from './character/PoseSheet'
 import { EditProfileSheet } from '../components/profile/EditProfileSheet'
 import { PageError } from '../components/ui/ErrorPage'
 
@@ -24,7 +24,7 @@ export function CharacterPage() {
 }
 
 function CharacterScreen({ profile }: { profile: Profile }) {
-  const pose = usePose()
+  const pose = usePose(profile.player.userId)
   const [sheet, setSheet] = useState<'edit' | 'face' | 'poses' | 'wardrobe' | null>(null)
   const [wardrobeTab, setWardrobeTab] = useState<WardrobeTab>('Outfits')
   const openWardrobe = (t: WardrobeTab) => {
@@ -33,7 +33,7 @@ function CharacterScreen({ profile }: { profile: Profile }) {
   }
   const look = lookOf(profile.player)
   const cycle = (step: number) =>
-    setPose(POSES[(POSES.findIndex((x) => x.id === pose) + step + POSES.length) % POSES.length].id)
+    setPose(profile.player.userId, POSES[(POSES.findIndex((x) => x.id === pose) + step + POSES.length) % POSES.length].id)
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -92,23 +92,7 @@ function CharacterScreen({ profile }: { profile: Profile }) {
       <EditProfileSheet open={sheet === 'edit'} onClose={() => setSheet(null)} onCustomize={() => setSheet('face')} profile={profile} />
       <FaceSheet open={sheet === 'face'} onClose={() => setSheet(null)} profile={profile} />
       <WardrobeSheet open={sheet === 'wardrobe'} tab={wardrobeTab} onTab={setWardrobeTab} onClose={() => setSheet(null)} profile={profile} />
-      <Sheet open={sheet === 'poses'} onClose={() => setSheet(null)} title="Poses">
-        <div className="grid grid-cols-3 gap-2">
-          {POSES.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => {
-                setPose(p.id)
-                setSheet(null)
-              }}
-              className={clsx('rounded-2xl border-2 bg-night/70 p-2', pose === p.id ? 'border-lime' : 'border-white/10')}
-            >
-              <Avatar3D look={look} variant="full" pose={p.id} className="w-full" />
-              <span className="font-display text-sm font-bold">{p.label}</span>
-            </button>
-          ))}
-        </div>
-      </Sheet>
+      <PoseSheet open={sheet === 'poses'} onClose={() => setSheet(null)} userId={profile.player.userId} look={look} backgroundId={profile.player.loadout.backgroundId} />
     </div>
   )
 }

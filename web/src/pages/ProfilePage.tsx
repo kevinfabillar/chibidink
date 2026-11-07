@@ -22,11 +22,12 @@ import { Button } from '../components/ui/Button'
 export function ProfilePage() {
   const { userId } = useParams()
   const [editing, setEditing] = useState(false)
-  const myPose = usePose()
   const profile = useQuery({
     queryKey: userId ? queryKeys.player(userId) : queryKeys.me,
     queryFn: () => (userId ? profileApi.player(userId) : profileApi.me()),
   })
+  // Your own profile shows the pose you equipped; other players stand ready.
+  const myPose = usePose(userId ? undefined : profile.data?.player.userId)
 
   if (profile.isLoading) return <Spinner />
   if (!profile.data) return <PageError error={profile.error} onRetry={() => profile.refetch()} />
@@ -41,7 +42,7 @@ export function ProfilePage() {
       <div className="grid gap-5 md:grid-cols-[17rem_minmax(0,1fr)] md:items-start">
         {/* Character card (stays in view on desktop) */}
         <section className="card flex flex-col items-center p-5 md:sticky md:top-6">
-          <PlayerAvatar player={player} variant="full" pose={userId ? 'idle' : myPose} live pedestal animated className="w-56" />
+          <PlayerAvatar player={player} variant="full" pose={myPose} live pedestal animated className="w-56" />
           <div className="mt-2 font-display text-2xl font-bold">{player.displayName}</div>
           <div className="mt-1 rounded-full bg-lime/20 px-3 py-0.5 text-sm font-semibold text-lime">Character Lv {progress.level}</div>
           {!userId && (
