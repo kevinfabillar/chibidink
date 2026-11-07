@@ -1,4 +1,4 @@
-import { OrbitControls } from '@react-three/drei'
+import { AdaptiveDpr, OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { useEffect, useMemo } from 'react'
 import type { CharacterLook } from '../cosmetics/visuals'
@@ -29,8 +29,12 @@ export default function Character3D({ look, pose = 'idle', interactive, pedestal
   return (
     <Canvas
       dpr={[1, 1.5]}
+      // While you drag, the view renders at a lower resolution (unnoticeable in motion) so it keeps up on
+      // phones; it sharpens again a moment after you let go. The shiny materials cost per pixel, so this
+      // is where the time goes.
+      performance={{ min: 0.55, debounce: 300 }}
       camera={{ fov: f.fov, position: [...f.position] }}
-      gl={{ antialias: true, alpha: true }}
+      gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       onCreated={({ camera, gl, scene }) => {
         camera.lookAt(...f.target)
         gl.toneMapping = TONE_MAPPING
@@ -46,7 +50,21 @@ export default function Character3D({ look, pose = 'idle', interactive, pedestal
       {stand && <primitive object={stand} />}
       <Animator rig={rig} />
       {interactive && (
-        <OrbitControls target={[...f.target]} enablePan={false} enableZoom={false} minPolarAngle={1.2} maxPolarAngle={1.7} rotateSpeed={0.8} />
+        <>
+          <AdaptiveDpr />
+          {/* Damping: the turn eases out and glides to a stop instead of halting the instant you let go. */}
+          <OrbitControls
+            target={[...f.target]}
+            enablePan={false}
+            enableZoom={false}
+            minPolarAngle={1.2}
+            maxPolarAngle={1.7}
+            rotateSpeed={0.7}
+            enableDamping
+            dampingFactor={0.09}
+            regress
+          />
+        </>
       )}
     </Canvas>
   )

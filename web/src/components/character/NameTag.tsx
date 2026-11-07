@@ -48,7 +48,7 @@ export function NameTag({ name, plate, size = 'sm', className }: { name: string;
     '--np-glow': plate.glow,
     '--np-ring': plate.ring.join(', '),
     background: plate.background,
-    boxShadow: `0 0 0.8em -0.1em ${plate.glow}, inset 0 0 0.7em -0.2em ${plate.glow}88`,
+    boxShadow: `inset 0 0 0.7em -0.2em ${plate.glow}88`,
   } as CSSProperties
   const letters = {
     backgroundImage: `linear-gradient(100deg, ${plate.text.join(', ')})`,
@@ -57,18 +57,19 @@ export function NameTag({ name, plate, size = 'sm', className }: { name: string;
 
   return (
     <span className={clsx('np-tag relative inline-flex max-w-full min-w-0 items-center rounded-full align-middle font-display font-extrabold tracking-wide normal-case !overflow-visible', SIZE[size], plate.flicker && 'np-flicker', className)} style={style}>
-      {/* The living border: colors spinning around the tag. */}
+      {/* The border: a breathing glow and a ring of the skin's colors. */}
+      <span className="np-halo" aria-hidden />
       <span className="np-ring" aria-hidden />
-      {plate.edge && <Edge kind={plate.edge} />}
+      {plate.edge && <Edge kind={plate.edge} light={size === 'sm'} />}
       {plate.particle && (
         <span className="pointer-events-none absolute inset-0 overflow-visible" aria-hidden>
-          {PARTICLES.map(([x, delay], i) => (
+          {(size === 'sm' ? PARTICLES.slice(0, 3) : PARTICLES).map(([x, delay], i) => (
             <span key={i} className={`np-p np-${plate.particle}`} style={{ left: `${x}%`, animationDelay: `${delay}s`, color: plate.particleColor } as CSSProperties} />
           ))}
         </span>
       )}
       {Badge && <Badge className="relative size-[1em] shrink-0" style={{ color: plate.ring[1], filter: `drop-shadow(0 0 0.25em ${plate.glow})` }} aria-hidden />}
-      <span className="np-letters relative truncate bg-clip-text py-[0.06em] leading-[1.2] text-transparent" style={letters}>
+      <span className="relative truncate bg-clip-text py-[0.06em] leading-[1.2] text-transparent" style={letters}>
         {name}
       </span>
     </span>
@@ -107,13 +108,13 @@ const BOLTS: { left?: string; right?: string; top?: string; bottom?: string; rot
 ]
 
 /** The border's own effect: flames along the top, icicles or slime hanging below, lightning on the rim. */
-function Edge({ kind }: { kind: EdgeKind }) {
+function Edge({ kind, light }: { kind: EdgeKind; light: boolean }) {
   if (kind === 'fire')
     return (
-      <span className="np-blaze pointer-events-none absolute inset-x-[0.35em] -top-[0.7em] h-[0.9em]" aria-hidden>
+      <span className="pointer-events-none absolute inset-x-[0.35em] -top-[0.7em] h-[0.9em]" aria-hidden>
         {/* Embers glowing along the top of the border: the base the flames rise from. */}
         <span className="np-embers" />
-        {FLAMES.map(([x, height, speed, delay], i) => (
+        {(light ? FLAMES.filter((_, i) => i % 2 === 0) : FLAMES).map(([x, height, speed, delay], i) => (
           <span key={i} className="np-fire" style={{ left: `${x}%`, '--s': height, animationDuration: `${speed}s`, animationDelay: `-${delay}s` } as CSSProperties} />
         ))}
       </span>

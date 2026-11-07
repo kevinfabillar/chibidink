@@ -440,47 +440,48 @@
   animation: cd-meteor 7s ease-out infinite;
 }
 
-/* ---- Premium name skins (components/character/NameTag.tsx) ---- */
-.np-letters {
-  background-size: 250% 100%;
-  background-position: 0 0;
-  animation: np-shine 3.2s linear infinite;
+/* ---- Premium name skins (components/character/NameTag.tsx) ----
+   Performance: many tags can be on screen at once (a full queue), and some sit over the live 3D
+   character. So every animation here only moves (transform) or fades (opacity): the GPU does those
+   without repainting. Blur, filters, blend modes and animated gradients repaint every frame. */
+.np-halo {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0.9em -0.05em var(--np-glow);
+  animation: np-breathe 2.4s ease-in-out infinite alternate;
+  will-change: opacity;
 }
-@keyframes np-shine {
-  to {
-    background-position: 250% 0;
-  }
+@keyframes np-breathe {
+  from { opacity: 0.45; }
+  to { opacity: 1; }
+}
+.np-ring {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 0.12em;
+  background: conic-gradient(from 200deg, var(--np-ring));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
 }
 .np-flicker {
   animation: np-flicker 4.5s infinite;
 }
 @keyframes np-flicker {
-  0%, 89%, 93%, 97%, 100% { opacity: 1; filter: none; }
-  91%, 95% { opacity: 0.55; filter: brightness(0.6); }
+  0%, 89%, 93%, 97%, 100% { opacity: 1; }
+  91%, 95% { opacity: 0.55; }
 }
 .np-p {
   position: absolute;
   opacity: 0;
   width: 0.3em;
   height: 0.3em;
-  animation: np-rise 2.4s ease-in infinite;
+  will-change: transform, opacity;
 }
-/* Flames: glowing teardrops licking up from the bottom edge. */
-.np-flame {
-  bottom: 0;
-  width: 0.34em;
-  height: 0.5em;
-  border-radius: 50% 50% 50% 50% / 65% 65% 35% 35%;
-  background: radial-gradient(circle at 50% 70%, #fef08a, currentColor 55%, transparent 75%);
-  filter: blur(0.3px) drop-shadow(0 0 0.2em currentColor);
-  animation: np-flame 1.4s ease-out infinite;
-}
-@keyframes np-flame {
-  0% { opacity: 0; transform: translateY(0.1em) scale(0.6); }
-  25% { opacity: 1; }
-  100% { opacity: 0; transform: translateY(-0.95em) scale(0.25) rotate(8deg); }
-}
-/* Bubbles: rings floating up and wobbling. */
 .np-bubble {
   bottom: 0;
   border: 0.06em solid currentColor;
@@ -493,7 +494,6 @@
   50% { transform: translate(0.15em, -0.5em) scale(0.9); }
   100% { opacity: 0; transform: translate(-0.1em, -1.1em) scale(1.1); }
 }
-/* Snow: flakes drifting down past the name. */
 .np-snow {
   top: -0.2em;
   width: 0.2em;
@@ -508,7 +508,6 @@
   15% { opacity: 1; }
   100% { opacity: 0; transform: translate(0.3em, 1.5em); }
 }
-/* Petals: pink ovals tumbling down. */
 .np-petal {
   top: -0.25em;
   width: 0.34em;
@@ -523,26 +522,6 @@
   50% { transform: translate(0.35em, 0.7em) rotate(140deg); }
   100% { opacity: 0; transform: translate(-0.1em, 1.5em) rotate(300deg); }
 }
-/* Sparks: quick electric flashes along the edge. */
-.np-spark {
-  top: 45%;
-  width: 0.55em;
-  height: 0.07em;
-  border-radius: 9999px;
-  background: currentColor;
-  box-shadow: 0 0 0.3em currentColor, 0 0 0.6em #818cf8;
-  animation: np-spark 1.6s steps(1) infinite;
-}
-.np-spark:nth-child(odd) { top: -0.05em; transform: rotate(-25deg); }
-.np-spark:nth-child(even) { top: auto; bottom: -0.05em; transform: rotate(20deg); }
-@keyframes np-spark {
-  0%, 100% { opacity: 0; }
-  8% { opacity: 1; }
-  14% { opacity: 0.2; }
-  18% { opacity: 1; }
-  24% { opacity: 0; }
-}
-/* Stars and glints: twinkling points across the tag. */
 .np-star,
 .np-glint {
   width: 0.16em;
@@ -574,68 +553,38 @@
   0%, 100% { opacity: 0; transform: scale(0.4); }
   50% { opacity: 1; transform: scale(1.15); }
 }
-@media (prefers-reduced-motion: reduce) {
-  .np-letters, .np-flicker { animation: none; }
-  .np-p { display: none; }
+@keyframes np-spark {
+  0%, 100% { opacity: 0; }
+  8% { opacity: 1; }
+  14% { opacity: 0.2; }
+  18% { opacity: 1; }
+  24% { opacity: 0; }
 }
-
-/* Name skin borders: a spinning ring of color, plus each skin's own edge (fire, ice, slime, lightning). */
-@property --np-a {
-  syntax: '<angle>';
-  inherits: false;
-  initial-value: 0deg;
-}
-.np-ring {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 0.12em;
-  background: conic-gradient(from var(--np-a), var(--np-ring));
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-  filter: drop-shadow(0 0 0.18em var(--np-glow));
-  animation: np-spin 3s linear infinite;
-}
-@keyframes np-spin {
-  to {
-    --np-a: 360deg;
-  }
-}
-/* Fire: soft overlapping tongues on a glowing ember base, blended so they melt into one blaze. */
-.np-blaze {
-  filter: blur(0.035em);
-}
+/* Fire: soft tongues on a glowing ember line; the softness is in the gradients, not a blur filter. */
 .np-embers {
   position: absolute;
-  inset: auto 0 -0.08em;
-  height: 0.38em;
+  inset: auto 0 -0.12em;
+  height: 0.42em;
   border-radius: 50%;
-  background: radial-gradient(ellipse at 50% 70%, #fde047 0%, #f97316 45%, rgba(220, 38, 38, 0.5) 70%, transparent 78%);
-  filter: blur(0.06em);
-  animation: np-embers 1.8s ease-in-out infinite alternate;
-}
-@keyframes np-embers {
-  from { opacity: 0.75; }
-  to { opacity: 1; }
+  background: radial-gradient(ellipse at 50% 70%, rgba(253, 224, 71, 0.95) 0%, rgba(249, 115, 22, 0.8) 40%, rgba(220, 38, 38, 0.35) 65%, transparent 75%);
+  animation: np-breathe 1.6s ease-in-out infinite alternate;
+  will-change: opacity;
 }
 .np-fire {
   position: absolute;
   bottom: 0;
-  width: 0.42em;
+  width: 0.46em;
   height: 0.85em;
-  margin-left: -0.21em;
+  margin-left: -0.23em;
   border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
-  background: radial-gradient(ellipse 50% 65% at 50% 92%, #fffbe6 0%, #fde047 20%, #fb923c 46%, rgba(239, 68, 68, 0.75) 66%, transparent 82%);
-  mix-blend-mode: screen;
+  background: radial-gradient(ellipse 50% 65% at 50% 92%, rgba(255, 251, 230, 0.95) 0%, rgba(253, 224, 71, 0.9) 20%, rgba(251, 146, 60, 0.75) 46%, rgba(239, 68, 68, 0.4) 66%, transparent 80%);
   transform-origin: 50% 100%;
   transform: scaleY(var(--s, 1));
   animation: np-burn 1s ease-in-out infinite alternate;
   will-change: transform, opacity;
 }
 @keyframes np-burn {
-  0% { transform: translateX(0) scale(0.92, calc(var(--s, 1) * 0.82)) rotate(-3deg); opacity: 0.8; }
+  0% { transform: scale(0.92, calc(var(--s, 1) * 0.82)) rotate(-3deg); opacity: 0.8; }
   35% { transform: translateX(0.02em) scale(1, calc(var(--s, 1) * 1.02)) rotate(2deg); opacity: 1; }
   70% { transform: translateX(-0.02em) scale(0.95, calc(var(--s, 1) * 1.14)) rotate(-2deg); opacity: 0.95; }
   100% { transform: translateX(0.01em) scale(0.9, calc(var(--s, 1) * 0.95)) rotate(3deg); opacity: 0.88; }
@@ -649,12 +598,12 @@
   margin-left: -0.12em;
   clip-path: polygon(0 0, 100% 0, 50% 100%);
   background: linear-gradient(180deg, #ffffff, #bae6fd 45%, #38bdf8);
-  filter: drop-shadow(0 0 0.1em #7dd3fc);
   animation: np-glimmer 2.4s ease-in-out infinite;
+  will-change: opacity;
 }
 @keyframes np-glimmer {
-  0%, 100% { opacity: 0.8; }
-  50% { opacity: 1; filter: drop-shadow(0 0 0.2em #e0f2fe) brightness(1.3); }
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }
 /* Slime: drops swelling on the bottom edge, then falling. */
 .np-drip {
@@ -665,9 +614,9 @@
   margin-left: -0.11em;
   border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
   background: radial-gradient(circle at 40% 35%, #ecfccb, #a3e635 45%, #4d7c0f);
-  filter: drop-shadow(0 0 0.12em #84cc16);
   transform-origin: 50% 0;
   animation: np-drip 2.8s ease-in infinite;
+  will-change: transform, opacity;
 }
 @keyframes np-drip {
   0% { transform: translateY(0) scale(0.4, 0.4); opacity: 0; }
@@ -676,16 +625,17 @@
   70% { transform: translateY(0.15em) scale(0.9, 1.1); opacity: 1; }
   100% { transform: translateY(0.9em) scale(0.7); opacity: 0; }
 }
-/* Lightning: bolts crackling on the rim. */
+/* Lightning: bolts crackling on the rim (the glow is drawn once; only the opacity animates). */
 .np-bolt {
   position: absolute;
   width: 0.55em;
   height: 0.9em;
   opacity: 0;
-  filter: drop-shadow(0 0 0.15em #fde047) drop-shadow(0 0 0.3em #818cf8);
+  filter: drop-shadow(0 0 0.15em #fde047);
   animation: np-spark 2.4s steps(1) infinite;
+  will-change: opacity;
 }
 @media (prefers-reduced-motion: reduce) {
-  .np-ring, .np-fire, .np-embers, .np-icicle, .np-drip { animation: none; }
-  .np-bolt { display: none; }
+  .np-halo, .np-flicker, .np-embers, .np-fire, .np-icicle, .np-drip { animation: none; }
+  .np-p, .np-bolt { display: none; }
 }

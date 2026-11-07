@@ -47,7 +47,7 @@ function CharacterScreen({ profile }: { profile: Profile }) {
             <ArrowButton side="left" onClick={() => cycle(-1)} />
             <ArrowButton side="right" onClick={() => cycle(1)} />
             <Avatar3D look={look} variant="full" pose={pose} live interactive pedestal animated className="relative z-10 w-[92%] max-w-96" title={profile.player.displayName} />
-            <div className="relative z-10 -mt-6 flex max-w-[92%] items-center gap-2 rounded-full border border-white/15 bg-ink/85 py-1.5 pr-4 pl-4 font-display text-lg font-bold backdrop-blur">
+            <div className="relative z-10 -mt-6 flex max-w-[92%] items-center gap-2 rounded-full border border-white/15 bg-ink/95 py-1.5 pr-4 pl-4 font-display text-lg font-bold">
               <PlayerName player={profile.player} size="md" className="min-w-0 truncate text-lg" />
               <span className="rounded-md border border-lime/70 px-1.5 text-sm text-lime">Lv {profile.progress.level}</span>
             </div>
@@ -106,7 +106,7 @@ function ArrowButton({ side, onClick }: { side: 'left' | 'right'; onClick: () =>
       onClick={onClick}
       aria-label={side === 'left' ? 'Previous pose' : 'Next pose'}
       className={clsx(
-        'absolute top-[42%] z-20 hidden size-11 sm:grid place-items-center rounded-full border border-white/25 bg-ink/70 text-white backdrop-blur hover:border-lime/70',
+        'absolute top-[42%] z-20 hidden size-11 sm:grid place-items-center rounded-full border border-white/25 bg-ink/90 text-white hover:border-lime/70',
         side === 'left' ? 'left-3' : 'right-[5.4rem]',
       )}
     >
@@ -117,7 +117,7 @@ function ArrowButton({ side, onClick }: { side: 'left' | 'right'; onClick: () =>
 
 function MenuTile({ to, onClick, icon, label }: { to?: string; onClick?: () => void; icon: ReactNode; label: string }) {
   const cls =
-    'flex aspect-square w-full flex-col items-center justify-center gap-0.5 rounded-2xl sm:size-[3.9rem] border border-white/15 bg-ink/75 text-[10px] font-semibold text-white/90 backdrop-blur sm:text-[11px] [&_svg]:size-5 sm:[&_svg]:size-6 transition hover:border-lime/70 hover:text-lime'
+    'flex aspect-square w-full flex-col items-center justify-center gap-0.5 rounded-2xl sm:size-[3.9rem] border border-white/15 bg-ink/90 text-[10px] font-semibold text-white/90 sm:text-[11px] [&_svg]:size-5 sm:[&_svg]:size-6 transition hover:border-lime/70 hover:text-lime'
   return to ? (
     <Link to={to} className={cls}>
       {icon}
