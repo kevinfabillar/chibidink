@@ -28,7 +28,7 @@ const POSES: Record<Pose, { right: number; left: number }> = {
   dance: { right: 2.0, left: -2.0 }, // arms up and swaying
   flex: { right: 1.57, left: -1.57 }, // arms straight out
   spin: { right: 1.45, left: -1.45 }, // arms out, twirling
-  serve: { right: 0.55, left: -1.9 }, // paddle back, toss hand up
+  serve: { right: 0.2, left: 0.3 }, // underhand serve: paddle low at the side, ball hand in front (animated in serveMotion)
   bow: { right: 0.15, left: -0.15 }, // arms at the sides
   jump: { right: 2.9, left: -2.9 }, // both arms high
 }
@@ -50,8 +50,6 @@ function motion(pose: Pose, t: number): { right: number; left: number; hop: numb
       return { right: Math.sin(t * 3) * 0.14, left: -Math.sin(t * 3) * 0.14, hop: 0, sway: 0 }
     case 'spin': // twirling on the spot
       return { right: Math.sin(t * 5) * 0.08, left: -Math.sin(t * 5) * 0.08, hop: Math.abs(Math.sin(t * 2.5)) * 0.04, sway: 0, spin: t * 2.5 }
-    case 'serve': // getting ready to serve, rocking slightly
-      return { right: Math.sin(t * 2) * 0.08, left: Math.sin(t * 2) * 0.1, hop: 0, sway: 0, lean: 0.06 + Math.sin(t * 2) * 0.03 }
     case 'bow': // a slow, polite bow
       return { right: 0, left: 0, hop: 0, sway: 0, lean: 0.18 + Math.sin(t * 1.6) * 0.14 }
     case 'jump': // big jumps with arms flapping
@@ -139,11 +137,14 @@ export function buildCharacter(look: CharacterLook, pose: Pose = 'idle', opts: {
   right.pivot.rotation.z = p.right
   figure.add(left.pivot, right.pivot)
 
+  let held: THREE.Group | null = null
   if (withHeld) {
-    const held = buildHeld(gear, look.effect, fx)
-    held.rotation.z = -IDLE.right // upright in the design's pose; turns with the arm in others
+    held = buildHeld(gear, look.effect, fx)
+    // Upright in the design's pose; turns with the arm in others. Serving holds it head-down for an underhand hit.
+    held.rotation.z = pose === 'serve' ? Math.PI * 0.8 - p.right : -IDLE.right
     right.hand.add(held)
   }
+  const serve = pose === 'serve' ? serveMotion(root, figure, left, right) : null
   const offhand = buildOffhand(gear)
   if (offhand) {
     offhand.rotation.z += -p.left
@@ -175,10 +176,89 @@ export function buildCharacter(look: CharacterLook, pose: Pose = 'idle', opts: {
       head.rotation.z = Math.sin(t * 1.1) * 0.02
       right.pivot.rotation.z = p.right + m.right
       left.pivot.rotation.z = p.left + m.left
+      serve?.(t)
       for (const step of fx) step(t)
       premium?.update(t)
       aura?.update(t)
     },
+  }
+}
+
+const SERVE_SECONDS = 2.4
+const lerp = (a: number, b: number, k: number) => a + (b - a) * k
+const ease = (k: number) => k * k * (3 - 2 * k)
+
+/** Piecewise ease through keyframes [phase, value] (phase 0..1, first at 0, last at 1). */
+function keyed(keys: [number, number][], u: number) {
+  for (let i = 1; i < keys.length; i++) {
+    const [u1, v1] = keys[i]
+    const [u0, v0] = keys[i - 1]
+    if (u <= u1) return lerp(v0, v1, ease((u - u0) / (u1 - u0)))
+  }
+  return keys[keys.length - 1][1]
+}
+
+/**
+ * An underhand pickleball serve on a loop: hold the ball out, swing the paddle back, toss the ball low to the
+ * paddle side, swing through and hit it below the waist, follow through high, then the ball arcs away.
+ * Arms swing forward/back around x (the poses' z angles keep them at the sides).
+ */
+function serveMotion(root: THREE.Group, figure: THREE.Group, left: { pivot: THREE.Group; hand: THREE.Group }, right: { pivot: THREE.Group; hand: THREE.Group }) {
+  const DROP = 0.38
+  const HIT = 0.52
+  const GONE = 0.86
+  const ball = mesh(new THREE.SphereGeometry(0.065, 20, 14), toy('#E2F542', 0.55, 0.2))
+  root.add(ball) // not in the figure, so the body turning doesn't drag the ball along
+  const dropFrom = new THREE.Vector3()
+  const hitAt = new THREE.Vector3()
+  const v = new THREE.Vector3()
+  let hasDrop = false
+
+  /** A point in the root's space: the hand, or the paddle's face when there is one. */
+  const local = (obj: THREE.Object3D, y = 0) => root.worldToLocal(obj.localToWorld(v.set(0, y, 0)))
+
+  return (t: number) => {
+    const u = (t % SERVE_SECONDS) / SERVE_SECONDS
+    // Paddle arm (z = out to the side, x = back/forward): back and out on the backswing, low through the ball,
+    // then forward and up on the follow-through: a big arc you can see from the front.
+    right.pivot.rotation.z = keyed([[0, 0.3], [0.3, 1.3], [DROP, 1.35], [HIT, 0.15], [0.68, 0.55], [0.8, 0.5], [1, 0.3]], u)
+    right.pivot.rotation.x = keyed([[0, 0], [0.3, 0.5], [DROP, 0.55], [HIT, -0.45], [0.68, -1.75], [0.8, -1.65], [1, 0]], u)
+    // Ball hand: reaches in front of the body, lets go, drops back, comes back with the next ball.
+    left.pivot.rotation.z = keyed([[0, 0.6], [0.3, 0.9], [DROP, 0.9], [0.6, 0.1], [0.85, 0.1], [1, 0.6]], u)
+    left.pivot.rotation.x = keyed([[0, -0.6], [0.3, -0.9], [DROP, -0.9], [0.6, -0.3], [0.85, -0.3], [1, -0.6]], u)
+    // Turns a little into the shot and leans with it.
+    figure.rotation.y = keyed([[0, 0], [0.3, -0.3], [HIT, 0], [0.7, 0.2], [1, 0]], u)
+    figure.rotation.x = keyed([[0, 0.02], [0.3, 0.06], [HIT, 0.1], [0.7, -0.02], [1, 0.02]], u)
+    figure.rotation.z = keyed([[0, 0], [0.3, -0.05], [HIT, 0.03], [0.7, 0.06], [1, 0]], u)
+    root.updateMatrixWorld(true)
+
+    if (u < DROP) {
+      // In the hand (a fresh ball pops in at the start of each serve).
+      ball.position.copy(local(left.hand)).add(v.set(0, 0.05, 0.04))
+      ball.scale.setScalar(Math.min(1, u / 0.06))
+      dropFrom.copy(ball.position)
+      hasDrop = true
+    } else if (u < HIT) {
+      // Tossed low (under the head, in front of the body) over to the paddle side, meeting the paddle as it swings through.
+      if (!hasDrop) dropFrom.copy(local(left.hand))
+      const k = (u - DROP) / (HIT - DROP)
+      const to = local(right.hand)
+      const cx = (dropFrom.x + to.x) / 2
+      const cy = Math.min(dropFrom.y, to.y) - 0.35
+      const cz = Math.max(dropFrom.z, to.z) + 0.25
+      const a = (1 - k) * (1 - k)
+      const b = 2 * k * (1 - k)
+      const c = k * k
+      ball.position.set(a * dropFrom.x + b * cx + c * to.x, a * dropFrom.y + b * cy + c * to.y, a * dropFrom.z + b * cz + c * to.z)
+      ball.scale.setScalar(1)
+      hitAt.copy(ball.position)
+    } else if (u < GONE) {
+      // Hit: arcs up and away on the paddle side, shrinking into the distance.
+      if (hitAt.lengthSq() === 0) hitAt.copy(local(right.hand))
+      const s = (u - HIT) * SERVE_SECONDS
+      ball.position.set(hitAt.x + s * 2.0, hitAt.y + s * 2.6 - 4.9 * s * s, hitAt.z + s * 1.2)
+      ball.scale.setScalar(1 - ((u - HIT) / (GONE - HIT)) * 0.6)
+    } else ball.scale.setScalar(0)
   }
 }
 

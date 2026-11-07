@@ -23,7 +23,8 @@ export type Framing = keyof typeof FRAMINGS
 
 const PIXELS: Record<Framing, [number, number]> = { bust: [240, 264], full: [408, 428] }
 
-export function renderCharacter(look: CharacterLook, framing: Framing, pose: Pose = 'idle'): string {
+/** `time` picks the moment of the pose's animation to capture. */
+export function renderCharacter(look: CharacterLook, framing: Framing, pose: Pose = 'idle', time = 0.4): string {
   const r = getRenderer()
   const f = FRAMINGS[framing]
   const [w, h] = PIXELS[framing]
@@ -36,7 +37,7 @@ export function renderCharacter(look: CharacterLook, framing: Framing, pose: Pos
 
   const rig = buildCharacter(look, pose, { aura: framing === 'full', paddle: framing === 'full' })
   rig.root.rotation.y = framing === 'bust' ? 0.2 : 0.3
-  rig.update(0.4)
+  rig.update(time)
   scene.add(rig.root)
 
   const camera = new THREE.PerspectiveCamera(f.fov, w / h, 0.1, 50)

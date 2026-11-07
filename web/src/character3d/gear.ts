@@ -750,6 +750,7 @@ export function buildHeld(gear: Gear, effect: EffectVisual | null, fx: EffectUpd
     }
   }
   if (effect) fx.push(addEffect(g, effect, glowAt[0], Math.max(0.55, Math.max(glowAt[1], glowAt[2]) * 0.8)))
+  g.userData.headY = glowAt[0] // where the item's "face" is: the serve pose hits the ball there
   return g
 }
 
