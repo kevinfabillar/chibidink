@@ -5,7 +5,7 @@ import { PlayerAvatar } from '../components/character/Stage'
 import { MatchHistoryList } from '../components/session/MatchHistoryList'
 import { SessionList } from '../components/session/SessionList'
 import { SignOutButton } from '../components/layout/SignOutButton'
-import { Spinner } from '../components/ui/primitives'
+import { Spinner, Toggle } from '../components/ui/primitives'
 import { TopBar } from '../components/ui/TopBar'
 import { queryKeys } from '../hooks/queries'
 import { winRateText } from '../lib/format'
@@ -13,7 +13,7 @@ import { usePose } from '../lib/pose'
 import { FRIENDS_ENABLED } from '../lib/features'
 import { PageError } from '../components/ui/ErrorPage'
 import clsx from 'clsx'
-import { BarChart3, CalendarDays, ChartNoAxesColumnIncreasing, Contact, Layers, Pencil, Swords, Trophy, User, Users, X } from 'lucide-react'
+import { BarChart3, CalendarDays, ChartNoAxesColumnIncreasing, Handshake, Layers, Moon, Sun, Pencil, Swords, Trophy, User, Users, X } from 'lucide-react'
 import { FriendButton } from '../components/profile/FriendButton'
 import { useMe } from '../hooks/queries'
 import { useState, type ReactNode } from 'react'
@@ -21,6 +21,7 @@ import type { Profile } from '../api/types'
 import { EditProfileSheet } from '../components/profile/EditProfileSheet'
 import { Button } from '../components/ui/Button'
 import { PlayerName } from '../components/character/NameTag'
+import { setTheme, useTheme } from '../lib/theme'
 
 /** Verified pickleball record. Only organizer- or opponent-verified matches count. */
 export function ProfilePage() {
@@ -63,7 +64,7 @@ export function ProfilePage() {
                 to="/friends"
                 className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-grape font-display font-bold text-snow transition hover:brightness-110"
               >
-                <Contact className="size-4.5" />
+                <Handshake className="size-4.5" />
                 Friends
                 {profile.data.friendRequests > 0 && (
                   <span className="grid min-w-5.5 place-items-center rounded-full bg-danger px-1.5 text-xs">{profile.data.friendRequests}</span>
@@ -72,6 +73,7 @@ export function ProfilePage() {
               <Button variant="dark" block icon={<Pencil className="size-4" />} onClick={() => setEditing(true)}>
                 Edit profile
               </Button>
+              <ThemeRow />
               <SignOutButton />
               <p className="mt-3 text-center text-xs text-muted">
                 <Link to="/terms" className="hover:text-lime">Terms of Service</Link> · <Link to="/privacy" className="hover:text-lime">Privacy Policy</Link>
@@ -162,6 +164,20 @@ function BreakdownCard({ icon, label, wins, losses, rate }: { icon: ReactNode; l
       <span className="pointer-events-none absolute -right-3 -bottom-5 text-grape/15" aria-hidden>
         {label === 'Doubles' ? <Users className="size-24" /> : <User className="size-24" />}
       </span>
+    </div>
+  )
+}
+
+/** Phones and tablets: light / dark mode lives here (the top bar has Friends instead). */
+function ThemeRow() {
+  const theme = useTheme()
+  return (
+    <div className="flex items-center justify-between rounded-2xl border border-white/10 px-4 py-2.5 lg:hidden">
+      <span className="flex items-center gap-2 font-semibold">
+        {theme === 'dark' ? <Moon className="size-4.5" /> : <Sun className="size-4.5" />}
+        Dark mode
+      </span>
+      <Toggle label="Dark mode" checked={theme === 'dark'} onChange={(on) => setTheme(on ? 'dark' : 'light')} />
     </div>
   )
 }

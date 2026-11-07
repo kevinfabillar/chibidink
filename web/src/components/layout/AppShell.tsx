@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { Backpack, Contact, Home, LogOut, PanelLeftClose, PanelLeftOpen, Store, UserRound, Users } from 'lucide-react'
+import { Backpack, Handshake, Home, LogOut, PanelLeftClose, PanelLeftOpen, Store, UserRound, Users } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router'
 import { useAuth } from '../../auth/authStore'
@@ -62,7 +62,7 @@ export function AppShell() {
           </button>
         </div>
         <nav className="mt-4 flex flex-col gap-1.5">
-          {[...nav, { to: '/friends', label: 'Friends', icon: Contact, end: false }].map(({ to, label, icon: Icon, end }) => (
+          {[...nav, { to: '/friends', label: 'Friends', icon: Handshake, end: false }].map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}

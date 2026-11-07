@@ -10,6 +10,7 @@ import { Button } from './Button'
 import { CoinIcon } from './icons'
 import { Logo } from './primitives'
 import { Sheet } from './Sheet'
+import { FriendsButton } from '../social/FriendsEntry'
 
 interface Props {
   title?: ReactNode
@@ -39,7 +40,9 @@ export function TopBar({ title, sub, back, logo }: Props) {
         </div>
         <div className="flex shrink-0 items-center gap-1.5 min-[400px]:gap-2">
           <CoinPill />
-          <ThemeToggle />
+          {/* Phones and tablets: Friends here, the theme switch lives on the Profile page. Desktop: the reverse. */}
+          <FriendsButton />
+          <ThemeToggle className="hidden lg:grid" />
           <AlertBell />
           <AccountButton />
         </div>
@@ -50,14 +53,14 @@ export function TopBar({ title, sub, back, logo }: Props) {
 }
 
 /** Sun / moon button: switches light and dark mode, remembered on this device. */
-export function ThemeToggle() {
+export function ThemeToggle({ className }: { className?: string }) {
   const theme = useTheme()
   const next = theme === 'dark' ? 'light' : 'dark'
   return (
     <button
       type="button"
       onClick={() => setTheme(next)}
-      className="grid size-9 place-items-center rounded-full text-white/90 hover:bg-white/10"
+      className={clsx('grid size-9 place-items-center rounded-full text-white/90 hover:bg-white/10', className)}
       aria-label={`Switch to ${next} mode`}
       title={`Switch to ${next} mode`}
     >

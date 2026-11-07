@@ -1,4 +1,4 @@
-import { Contact, Gamepad2 } from 'lucide-react'
+import { Gamepad2, Handshake } from 'lucide-react'
 import { FRIENDS_ENABLED } from './lib/features'
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import { useAuth } from './auth/authStore'
@@ -66,7 +66,7 @@ export default function App() {
               ) : (
                 <ComingSoonPage
                   title="Friends"
-                  icon={Contact}
+                  icon={Handshake}
                   blurb="Add friends with a friend code, see their characters and send requests. We're still building this. Check back soon!"
                 />
               )
