@@ -208,6 +208,11 @@ namespace ChibiDink.Infrastructure.Persistence.Migrations
                     b.Property<int>("Experience")
                         .HasColumnType("integer");
 
+                    b.Property<string>("FriendCode")
+                        .HasMaxLength(6)
+                        .HasColumnType("character(6)")
+                        .IsFixedLength();
+
                     b.Property<int>("SkillEstimate")
                         .HasColumnType("integer");
 
@@ -308,6 +313,10 @@ namespace ChibiDink.Infrastructure.Persistence.Migrations
                                 .HasMaxLength(40)
                                 .HasColumnType("character varying(40)");
 
+                            b1.Property<string>("NameplateId")
+                                .HasMaxLength(40)
+                                .HasColumnType("character varying(40)");
+
                             b1.Property<string>("OutfitId")
                                 .IsRequired()
                                 .HasMaxLength(40)
@@ -320,6 +329,9 @@ namespace ChibiDink.Infrastructure.Persistence.Migrations
                         });
 
                     b.HasKey("UserId");
+
+                    b.HasIndex("FriendCode")
+                        .IsUnique();
 
                     b.ToTable("PlayerProfiles", (string)null);
                 });
@@ -538,6 +550,46 @@ namespace ChibiDink.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("SessionParticipants", (string)null);
+                });
+
+            modelBuilder.Entity("ChibiDink.Domain.Social.Friendship", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("AcceptedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("AddresseeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RequesterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid>("UserHighId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserLowId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AddresseeId");
+
+                    b.HasIndex("RequesterId");
+
+                    b.HasIndex("UserLowId", "UserHighId")
+                        .IsUnique();
+
+                    b.ToTable("Friendships", (string)null);
                 });
 
             modelBuilder.Entity("ChibiDink.Infrastructure.Identity.AppUser", b =>
@@ -888,6 +940,21 @@ namespace ChibiDink.Infrastructure.Persistence.Migrations
                     b.HasOne("ChibiDink.Infrastructure.Identity.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ChibiDink.Domain.Social.Friendship", b =>
+                {
+                    b.HasOne("ChibiDink.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("AddresseeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ChibiDink.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("RequesterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

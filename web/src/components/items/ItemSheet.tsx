@@ -2,6 +2,7 @@ import type { CosmeticItem } from '../../api/types'
 import { lookOf, lookWith, rarityColor } from '../../cosmetics/visuals'
 import { useMe } from '../../hooks/queries'
 import { Avatar3D } from '../character/Avatar3D'
+import { PlayerName } from '../character/NameTag'
 import { Scene } from '../character/Backgrounds'
 import { Sheet } from '../ui/Sheet'
 import { ItemAction } from './ItemParts'
@@ -25,6 +26,11 @@ export function ItemSheet({ item, onClose }: { item: CosmeticItem | null; onClos
               className="w-full"
             />
           </div>
+          {item.slot === 'Nameplate' && (
+            <div className="-mt-2 flex justify-center">
+              <PlayerName player={{ displayName: me.player.displayName, loadout: { nameplateId: item.id } }} size="lg" />
+            </div>
+          )}
           <div className="my-4 flex items-center justify-center gap-3 text-sm">
             <span className="font-semibold" style={{ color: rarityColor[item.rarity] }}>
               {item.rarity}

@@ -132,6 +132,8 @@ export function lookWith(base: CharacterLook, slot: CosmeticSlot, itemId: string
       return { ...base, aura: auraVisual(itemId) }
     case 'Background':
       return base // drawn behind the character, not on it
+    case 'Nameplate':
+      return base // on the name, not the character
   }
 }
 
@@ -150,6 +152,7 @@ export const slotInfo: Record<CosmeticSlot, { title: string; path: string }> = {
   PaddleEffect: { title: 'Effects', path: '/items/effects' },
   Background: { title: 'Backgrounds', path: '/items/backgrounds' },
   CharacterAura: { title: 'Auras', path: '/items/auras' },
+  Nameplate: { title: 'Name Skins', path: '/items/names' },
 }
 
 /** Filter tag shown in the outfit grid ("Fun", "Adventure", "Fantasy"). */

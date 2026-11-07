@@ -5,6 +5,7 @@ import { winRateText } from '../../lib/format'
 import { PlayerAvatar } from '../character/Stage'
 import { rankPlayers } from './ranking'
 import { EmptyState } from '../ui/EmptyState'
+import { PlayerName } from '../character/NameTag'
 
 const MEDAL = ['#FBBF24', '#CBD5E1', '#D9925B']
 
@@ -25,8 +26,8 @@ export function Leaderboard({ players, meId }: { players: Participant[]; meId?: 
           </span>
           <PlayerAvatar player={p.player} size={38} />
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-x-1.5 font-semibold [overflow-wrap:anywhere] leading-tight">
-              {p.player.displayName}
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 font-semibold [overflow-wrap:anywhere] leading-tight">
+              <PlayerName player={p.player} />
               {p.role === 'Organizer' && <Crown className="size-3.5 text-lime" aria-label="Organizer" />}
             </div>
             <div className="text-xs text-muted">

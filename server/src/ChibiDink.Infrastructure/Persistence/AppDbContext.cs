@@ -1,3 +1,4 @@
+using ChibiDink.Domain.Social;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -24,6 +25,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<MatchParticipant> MatchParticipants => Set<MatchParticipant>();
     public DbSet<MatchEditAudit> MatchEditAudits => Set<MatchEditAudit>();
     public DbSet<RewardTransaction> RewardTransactions => Set<RewardTransaction>();
+    public DbSet<Friendship> Friendships => Set<Friendship>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

@@ -115,11 +115,37 @@ public sealed record MatchHistoryItemDto(
     bool Won, int MyScore, int OpponentScore,
     IReadOnlyList<string> Partners, IReadOnlyList<string> Opponents);
 
+/// <param name="Friendship">You and this player (None on your own profile).</param>
+/// <param name="FriendRequests">Friend requests waiting for your answer (your own profile only).</param>
 public sealed record ProfileDto(
     PlayerCardDto Player, int SkillEstimate, ProgressDto Progress, StatsDto Stats,
     IReadOnlyList<MatchHistoryItemDto> RecentMatches,
     IReadOnlyList<SessionSummaryDto> Sessions,
-    ActiveMatchDto? ActiveMatch);
+    ActiveMatchDto? ActiveMatch,
+    FriendStatus Friendship = FriendStatus.None,
+    int FriendRequests = 0);
+
+// ---- Friends --------------------------------------------------------------------------------
+
+/// <summary>Where you stand with another player: Outgoing = you asked them, Incoming = they asked you.</summary>
+public enum FriendStatus
+{
+    None,
+    Outgoing,
+    Incoming,
+    Friends,
+}
+
+/// <param name="Since">When you became friends, or when the request was sent.</param>
+public sealed record FriendDto(PlayerCardDto Player, DateTimeOffset Since);
+
+public sealed record FriendsDto(
+    string MyCode, int MaxFriends,
+    IReadOnlyList<FriendDto> Friends, IReadOnlyList<FriendDto> Incoming, IReadOnlyList<FriendDto> Outgoing);
+
+public sealed record AddFriendRequest(string Code);
+
+public sealed record FriendActionDto(PlayerCardDto Player, FriendStatus Status);
 
 /// <summary>The signed-in player's current match, for the notification bell.</summary>
 public sealed record ActiveMatchDto(

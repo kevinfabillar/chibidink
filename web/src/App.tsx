@@ -1,4 +1,5 @@
-import { Gamepad2 } from 'lucide-react'
+import { Contact, Gamepad2 } from 'lucide-react'
+import { FRIENDS_ENABLED } from './lib/features'
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router'
 import { useAuth } from './auth/authStore'
 import { AppShell } from './components/layout/AppShell'
@@ -15,6 +16,8 @@ import { PrivacyPage, TermsPage } from './pages/LegalPages'
 import { ForgotPasswordPage, ResetPasswordPage } from './pages/PasswordPages'
 import { VerifyEmailPage } from './pages/VerifyEmailPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { NameSkinsPage } from './pages/items/NameSkinsPage'
+import { FriendsPage } from './pages/FriendsPage'
 import { CourtPage } from './pages/session/CourtPage'
 import { SessionPage } from './pages/session/SessionPage'
 import { ErrorPage } from './components/ui/ErrorPage'
@@ -51,9 +54,24 @@ export default function App() {
           <Route path="items/backgrounds" element={<ItemGridPage slot="Background" />} />
           <Route path="items/effects" element={<EffectsPage />} />
           <Route path="items/auras" element={<AurasPage />} />
+          <Route path="items/names" element={<NameSkinsPage />} />
           <Route path="shop" element={<ShopPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="players/:userId" element={<ProfilePage />} />
+          <Route
+            path="friends"
+            element={
+              FRIENDS_ENABLED ? (
+                <FriendsPage />
+              ) : (
+                <ComingSoonPage
+                  title="Friends"
+                  icon={Contact}
+                  blurb="Add friends with a friend code, see their characters and send requests. We're still building this. Check back soon!"
+                />
+              )
+            }
+          />
           <Route
             path="drills"
             element={

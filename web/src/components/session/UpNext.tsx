@@ -2,6 +2,7 @@ import clsx from 'clsx'
 import type { ReactNode } from 'react'
 import type { PlayerCard, UpNextGroup } from '../../api/types'
 import { PlayerAvatar } from '../character/Stage'
+import { PlayerName } from '../character/NameTag'
 
 /** One predicted group of four: who goes on court next, split into the two teams. */
 export function UpNextCard({
@@ -42,7 +43,7 @@ function Team({ players, compact }: { players: PlayerCard[]; compact?: boolean }
       {players.map((p) => (
         <div key={p.userId} className="flex min-w-0 items-center gap-2">
           <PlayerAvatar player={p} size={compact ? 28 : 34} />
-          <span className="min-w-0 text-sm font-semibold [overflow-wrap:anywhere] leading-tight">{p.displayName}</span>
+          <PlayerName player={p} className="min-w-0 text-sm font-semibold [overflow-wrap:anywhere] leading-tight" />
         </div>
       ))}
     </div>

@@ -1,6 +1,7 @@
 using ChibiDink.Domain.Cosmetics;
 using ChibiDink.Domain.Players;
 using ChibiDink.Domain.Progression;
+using ChibiDink.Domain.Social;
 using ChibiDink.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -16,6 +17,8 @@ internal sealed class PlayerProfileConfiguration : IEntityTypeConfiguration<Play
         b.HasOne<AppUser>().WithOne().HasForeignKey<PlayerProfile>(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
         b.Property(p => p.DisplayName).HasMaxLength(PlayerProfile.MaxDisplayNameLength).IsRequired();
         b.Property(p => p.Version).IsRowVersion();
+        b.Property(p => p.FriendCode).HasMaxLength(6).IsFixedLength();
+        b.HasIndex(p => p.FriendCode).IsUnique();
 
         b.ComplexProperty(p => p.Appearance, a =>
         {
@@ -37,6 +40,7 @@ internal sealed class PlayerProfileConfiguration : IEntityTypeConfiguration<Play
             l.Property(x => x.EffectId).HasMaxLength(40);
             l.Property(x => x.AuraId).HasMaxLength(40);
             l.Property(x => x.BackgroundId).HasMaxLength(40);
+            l.Property(x => x.NameplateId).HasMaxLength(40);
         });
 
         b.OwnsOne(p => p.Statistics, s =>
@@ -70,5 +74,20 @@ internal sealed class RewardTransactionConfiguration : IEntityTypeConfiguration<
 
         // Database backstop for idempotent rewards and one-time purchases.
         b.HasIndex(t => new { t.UserId, t.Currency, t.SourceKey }).IsUnique();
+    }
+}
+
+internal sealed class FriendshipConfiguration : IEntityTypeConfiguration<Friendship>
+{
+    public void Configure(EntityTypeBuilder<Friendship> b)
+    {
+        b.ToTable("Friendships");
+        b.Property(f => f.Id).ValueGeneratedNever();
+        // Deleting an account removes its requests and friendships.
+        b.HasOne<AppUser>().WithMany().HasForeignKey(f => f.RequesterId).OnDelete(DeleteBehavior.Cascade);
+        b.HasOne<AppUser>().WithMany().HasForeignKey(f => f.AddresseeId).OnDelete(DeleteBehavior.Cascade);
+        // One row per pair, whoever asked first.
+        b.HasIndex(f => new { f.UserLowId, f.UserHighId }).IsUnique();
+        b.HasIndex(f => f.AddresseeId);
     }
 }

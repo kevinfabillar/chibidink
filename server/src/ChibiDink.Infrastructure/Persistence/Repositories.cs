@@ -4,6 +4,7 @@ using ChibiDink.Domain.Matches;
 using ChibiDink.Domain.Players;
 using ChibiDink.Domain.Progression;
 using ChibiDink.Domain.Sessions;
+using ChibiDink.Domain.Social;
 
 namespace ChibiDink.Infrastructure.Persistence;
 
@@ -19,7 +20,41 @@ internal sealed class PlayerProfileRepository(AppDbContext db) : IPlayerProfileR
         return await db.PlayerProfiles.Where(p => ids.Contains(p.UserId)).ToDictionaryAsync(p => p.UserId, ct);
     }
 
+    public Task<PlayerProfile?> FindByFriendCodeAsync(string code, CancellationToken ct) =>
+        db.PlayerProfiles.FirstOrDefaultAsync(p => p.FriendCode == code, ct);
+
+    public Task<bool> FriendCodeExistsAsync(string code, CancellationToken ct) =>
+        db.PlayerProfiles.AnyAsync(p => p.FriendCode == code, ct);
+
     public void Add(PlayerProfile profile) => db.PlayerProfiles.Add(profile);
+}
+
+internal sealed class FriendshipRepository(AppDbContext db) : IFriendshipRepository
+{
+    public Task<Friendship?> FindBetweenAsync(Guid a, Guid b, CancellationToken ct)
+    {
+        var (low, high) = a.CompareTo(b) < 0 ? (a, b) : (b, a);
+        return db.Friendships.FirstOrDefaultAsync(f => f.UserLowId == low && f.UserHighId == high, ct);
+    }
+
+    public async Task<IReadOnlyList<Friendship>> ListForUserAsync(Guid userId, CancellationToken ct) =>
+        await db.Friendships.AsNoTracking()
+            .Where(f => f.RequesterId == userId || f.AddresseeId == userId)
+            .OrderByDescending(f => f.AcceptedAt ?? f.CreatedAt)
+            .ToListAsync(ct);
+
+    public Task<int> CountAcceptedAsync(Guid userId, CancellationToken ct) =>
+        db.Friendships.CountAsync(f => f.Status == FriendshipStatus.Accepted && (f.RequesterId == userId || f.AddresseeId == userId), ct);
+
+    public Task<int> CountPendingSentAsync(Guid userId, CancellationToken ct) =>
+        db.Friendships.CountAsync(f => f.Status == FriendshipStatus.Pending && f.RequesterId == userId, ct);
+
+    public Task<int> CountPendingReceivedAsync(Guid userId, CancellationToken ct) =>
+        db.Friendships.CountAsync(f => f.Status == FriendshipStatus.Pending && f.AddresseeId == userId, ct);
+
+    public void Add(Friendship friendship) => db.Friendships.Add(friendship);
+
+    public void Remove(Friendship friendship) => db.Friendships.Remove(friendship);
 }
 
 internal sealed class SessionRepository(AppDbContext db) : ISessionRepository

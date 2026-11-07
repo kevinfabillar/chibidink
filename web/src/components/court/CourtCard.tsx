@@ -3,8 +3,9 @@ import { CircleSlash, Clock, Hourglass, Maximize2, Play, Trophy } from 'lucide-r
 import { motion } from 'motion/react'
 import type { ReactNode } from 'react'
 import type { Court, MatchFormat, MatchPlayer, MatchStatus, Team } from '../../api/types'
-import { formatLabel, matchStatusLabel, teamNames } from '../../lib/format'
+import { formatLabel, matchStatusLabel } from '../../lib/format'
 import { PlayerAvatar } from '../character/Stage'
+import { PlayerName } from '../character/NameTag'
 
 type Size = 'card' | 'full'
 type State = MatchStatus | 'Empty' | 'Unavailable'
@@ -208,7 +209,12 @@ function TeamRow({
         </div>
         <div className={clsx('text-white/85 [overflow-wrap:anywhere] leading-tight', full ? 'text-lg' : 'text-sm', score !== undefined && (full ? 'pr-16' : 'pr-10'))}>
           {queued && 'Queued: '}
-          {teamNames(players.map((p) => p.player.displayName))}
+          {players.map((p, i) => (
+            <span key={p.player.userId}>
+              {i > 0 && ' & '}
+              <PlayerName player={p.player} />
+            </span>
+          ))}
         </div>
         {score !== undefined && (
           <div

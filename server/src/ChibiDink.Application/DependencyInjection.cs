@@ -4,6 +4,7 @@ using ChibiDink.Application.Matchmaking;
 using ChibiDink.Application.Players;
 using ChibiDink.Application.Progression;
 using ChibiDink.Application.Sessions;
+using ChibiDink.Application.Social;
 using ChibiDink.Domain.Cosmetics;
 using ChibiDink.Domain.Matchmaking;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +28,7 @@ public static class DependencyInjection
         services.AddScoped<IMatchService, MatchService>();
         services.AddScoped<IMatchmakingService, MatchmakingService>();
         services.AddScoped<IProfileService, ProfileService>();
+        services.AddScoped<IFriendService, FriendService>();
         services.AddScoped<IRewardService, RewardService>();
         services.AddScoped<ICosmeticsService, CosmeticsService>();
 

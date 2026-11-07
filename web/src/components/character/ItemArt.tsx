@@ -4,6 +4,8 @@ import { useSvgIds } from '../../lib/svgIds'
 import { Scene } from './Backgrounds'
 import { GearIcon } from './gearArt'
 import { AuraBack, AuraDefs, AuraFront } from './parts/Aura'
+import { NameTag } from './NameTag'
+import { nameplateVisual } from '../../cosmetics/nameplates'
 
 type ArtProps = { className?: string }
 
@@ -22,6 +24,14 @@ export function ItemArt({ item, className }: { item: Pick<CosmeticItem, 'id' | '
     }
     case 'Background':
       return <Scene id={item.id} className={`${className ?? ''} rounded-xl`} />
+    case 'Nameplate': {
+      const plate = nameplateVisual(item.id)
+      return plate ? (
+        <span className={`${className ?? ''} grid place-items-center`}>
+          <NameTag name="Name" plate={plate} size="md" />
+        </span>
+      ) : null
+    }
     default:
       return null // paddles are retired
   }

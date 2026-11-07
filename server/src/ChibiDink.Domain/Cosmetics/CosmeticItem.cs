@@ -8,6 +8,8 @@ public enum CosmeticSlot
     CharacterAura = 4,
     /// <summary>The scene behind the character.</summary>
     Background = 5,
+    /// <summary>A premium skin for the player's name, shown wherever the name appears (queue, courts, standings).</summary>
+    Nameplate = 6,
 }
 
 public enum Rarity

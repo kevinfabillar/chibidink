@@ -2,6 +2,7 @@ using ChibiDink.Domain.Matches;
 using ChibiDink.Domain.Players;
 using ChibiDink.Domain.Progression;
 using ChibiDink.Domain.Sessions;
+using ChibiDink.Domain.Social;
 
 namespace ChibiDink.Application.Abstractions;
 
@@ -9,7 +10,24 @@ public interface IPlayerProfileRepository
 {
     Task<PlayerProfile?> FindAsync(Guid userId, CancellationToken ct);
     Task<IReadOnlyDictionary<Guid, PlayerProfile>> GetManyAsync(IEnumerable<Guid> userIds, CancellationToken ct);
+    Task<PlayerProfile?> FindByFriendCodeAsync(string code, CancellationToken ct);
+    Task<bool> FriendCodeExistsAsync(string code, CancellationToken ct);
     void Add(PlayerProfile profile);
+}
+
+public interface IFriendshipRepository
+{
+    /// <summary>The row between two players (a request either way, or a friendship), if any.</summary>
+    Task<Friendship?> FindBetweenAsync(Guid a, Guid b, CancellationToken ct);
+
+    /// <summary>Every request and friendship this player is part of (read-only).</summary>
+    Task<IReadOnlyList<Friendship>> ListForUserAsync(Guid userId, CancellationToken ct);
+
+    Task<int> CountAcceptedAsync(Guid userId, CancellationToken ct);
+    Task<int> CountPendingSentAsync(Guid userId, CancellationToken ct);
+    Task<int> CountPendingReceivedAsync(Guid userId, CancellationToken ct);
+    void Add(Friendship friendship);
+    void Remove(Friendship friendship);
 }
 
 public interface ISessionRepository

@@ -17,7 +17,7 @@ export type MatchStatus =
 export type Team = 'A' | 'B'
 export type ConfirmationStatus = 'Pending' | 'Accepted' | 'Declined'
 export type Rarity = 'Common' | 'Uncommon' | 'Rare' | 'Epic' | 'Legendary' | 'Mythic'
-export type CosmeticSlot = 'Outfit' | 'Paddle' | 'PaddleEffect' | 'CharacterAura' | 'Background'
+export type CosmeticSlot = 'Outfit' | 'Paddle' | 'PaddleEffect' | 'CharacterAura' | 'Background' | 'Nameplate'
 
 /** The paddle character's body, face and handle. Gear (outfits), glows and auras come from the loadout. */
 export interface Appearance {
@@ -51,6 +51,8 @@ export interface Loadout {
   paddleId: string
   effectId: string | null
   auraId: string | null
+  /** Premium name skin. */
+  nameplateId?: string | null
   /** null = the starter locker room */
   backgroundId?: string | null
 }
@@ -245,6 +247,32 @@ export interface Profile {
   recentMatches: MatchHistoryItem[]
   sessions: SessionSummary[]
   activeMatch: ActiveMatch | null
+  /** You and this player (None on your own profile). */
+  friendship: FriendStatus
+  /** Friend requests waiting for your answer (your own profile only). */
+  friendRequests: number
+}
+
+/** Outgoing = you asked them; Incoming = they asked you. */
+export type FriendStatus = 'None' | 'Outgoing' | 'Incoming' | 'Friends'
+
+export interface Friend {
+  player: PlayerCard
+  /** When you became friends, or when the request was sent. */
+  since: string
+}
+
+export interface Friends {
+  myCode: string
+  maxFriends: number
+  friends: Friend[]
+  incoming: Friend[]
+  outgoing: Friend[]
+}
+
+export interface FriendAction {
+  player: PlayerCard
+  status: FriendStatus
 }
 
 export interface CosmeticItem {

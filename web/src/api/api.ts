@@ -12,6 +12,8 @@ import type {
   SessionSettings,
   SessionSummary,
   TokenResponse,
+  Friends,
+  FriendAction,
 } from './types'
 
 export const API_BASE = import.meta.env.VITE_API_URL ?? ''
@@ -39,6 +41,15 @@ export const profileApi = {
   player: (userId: string) => http.get<Profile>(`/api/players/${userId}`),
   update: (displayName: string, skillEstimate: number) => http.put('/api/me', { displayName, skillEstimate }),
   updateAppearance: (appearance: Appearance) => http.put('/api/me/appearance', appearance),
+}
+
+export const friendsApi = {
+  mine: () => http.get<Friends>('/api/friends'),
+  addByCode: (code: string) => http.post<FriendAction>('/api/friends/code', { code }),
+  add: (userId: string) => http.post<FriendAction>(`/api/friends/${userId}`),
+  accept: (userId: string) => http.post<FriendAction>(`/api/friends/${userId}/accept`),
+  /** Decline, cancel, or unfriend. */
+  remove: (userId: string) => http.delete(`/api/friends/${userId}`),
 }
 
 export const cosmeticsApi = {

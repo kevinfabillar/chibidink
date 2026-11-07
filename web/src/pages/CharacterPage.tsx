@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { ChevronLeft, ChevronRight, Flame, Image as ImageIcon, Pencil, PersonStanding, Shirt, Smile, Sparkles } from 'lucide-react'
+import { BadgeCheck, ChevronLeft, ChevronRight, Flame, Image as ImageIcon, PersonStanding, Shirt, Smile, Sparkles } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import type { Profile } from '../api/types'
@@ -14,8 +14,8 @@ import { useMe } from '../hooks/queries'
 import { FaceSheet } from './character/FaceSheet'
 import { WardrobeSheet, type WardrobeTab } from './character/WardrobeSheet'
 import { PoseSheet } from './character/PoseSheet'
-import { EditProfileSheet } from '../components/profile/EditProfileSheet'
 import { PageError } from '../components/ui/ErrorPage'
+import { PlayerName } from '../components/character/NameTag'
 
 export function CharacterPage() {
   const me = useMe()
@@ -25,7 +25,7 @@ export function CharacterPage() {
 
 function CharacterScreen({ profile }: { profile: Profile }) {
   const pose = usePose(profile.player.userId)
-  const [sheet, setSheet] = useState<'edit' | 'face' | 'poses' | 'wardrobe' | null>(null)
+  const [sheet, setSheet] = useState<'face' | 'poses' | 'wardrobe' | null>(null)
   const [wardrobeTab, setWardrobeTab] = useState<WardrobeTab>('Outfits')
   const openWardrobe = (t: WardrobeTab) => {
     setWardrobeTab(t)
@@ -47,22 +47,19 @@ function CharacterScreen({ profile }: { profile: Profile }) {
             <ArrowButton side="left" onClick={() => cycle(-1)} />
             <ArrowButton side="right" onClick={() => cycle(1)} />
             <Avatar3D look={look} variant="full" pose={pose} live interactive pedestal animated className="relative z-10 w-[92%] max-w-96" title={profile.player.displayName} />
-            <button
-              onClick={() => setSheet('edit')}
-              className="relative z-10 -mt-6 flex items-center gap-2 rounded-full border border-white/15 bg-ink/85 py-1.5 pr-3.5 pl-4 font-display text-lg font-bold backdrop-blur"
-            >
-              {profile.player.displayName}
+            <div className="relative z-10 -mt-6 flex max-w-[92%] items-center gap-2 rounded-full border border-white/15 bg-ink/85 py-1.5 pr-4 pl-4 font-display text-lg font-bold backdrop-blur">
+              <PlayerName player={profile.player} size="md" className="min-w-0 truncate text-lg" />
               <span className="rounded-md border border-lime/70 px-1.5 text-sm text-lime">Lv {profile.progress.level}</span>
-              <Pencil className="size-4 text-white/80" />
-            </button>
+            </div>
           </div>
           {/* Phones: a row of buttons under the character. Larger screens: a column floating on the right. */}
-          <nav className="relative z-20 grid grid-cols-6 gap-1.5 p-2 pt-0 sm:absolute sm:top-0 sm:right-0 sm:flex sm:flex-col sm:gap-2 sm:p-2.5" aria-label="Customize">
+          <nav className="relative z-20 grid grid-cols-7 gap-1 p-2 pt-0 sm:absolute sm:top-0 sm:right-0 sm:flex sm:flex-col sm:gap-2 sm:p-2.5" aria-label="Customize">
             <MenuTile onClick={() => openWardrobe('Outfits')} icon={<Shirt className="size-6" />} label="Outfits" />
             <MenuTile onClick={() => setSheet('face')} icon={<Smile className="size-6" />} label="Look" />
             <MenuTile onClick={() => openWardrobe('Scenes')} icon={<ImageIcon className="size-6" />} label="Scenes" />
             <MenuTile onClick={() => openWardrobe('Auras')} icon={<Flame className="size-6" />} label="Auras" />
             <MenuTile onClick={() => openWardrobe('Effects')} icon={<Sparkles className="size-6" />} label="Effects" />
+            <MenuTile onClick={() => openWardrobe('Names')} icon={<BadgeCheck className="size-6" />} label="Names" />
             <MenuTile onClick={() => setSheet('poses')} icon={<PersonStanding className="size-6" />} label="Poses" />
           </nav>
         </div>
@@ -70,7 +67,7 @@ function CharacterScreen({ profile }: { profile: Profile }) {
 
       <section className="mt-4 rounded-3xl border border-white/10 bg-surface/70 p-4">
         <h2 className="mb-3 font-display text-lg font-bold">Equipped Set</h2>
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-3 gap-2 min-[480px]:grid-cols-6">
           <SlotTile onClick={() => setSheet('face')} label="Look">
             <Avatar3D look={look} className="w-full" />
           </SlotTile>
@@ -86,10 +83,16 @@ function CharacterScreen({ profile }: { profile: Profile }) {
           <SlotTile onClick={() => openWardrobe('Auras')} label="Aura">
             {look.aura ? <AuraArt aura={look.aura} className="w-full" /> : <span className="text-xs text-white/60">No aura</span>}
           </SlotTile>
+          <SlotTile onClick={() => openWardrobe('Names')} label="Name skin">
+            {profile.player.loadout.nameplateId ? (
+              <PlayerName player={profile.player} className="max-w-full text-[11px]" />
+            ) : (
+              <span className="text-xs text-white/60">No name skin</span>
+            )}
+          </SlotTile>
         </div>
       </section>
 
-      <EditProfileSheet open={sheet === 'edit'} onClose={() => setSheet(null)} onCustomize={() => setSheet('face')} profile={profile} />
       <FaceSheet open={sheet === 'face'} onClose={() => setSheet(null)} profile={profile} />
       <WardrobeSheet open={sheet === 'wardrobe'} tab={wardrobeTab} onTab={setWardrobeTab} onClose={() => setSheet(null)} profile={profile} />
       <PoseSheet open={sheet === 'poses'} onClose={() => setSheet(null)} userId={profile.player.userId} look={look} backgroundId={profile.player.loadout.backgroundId} />

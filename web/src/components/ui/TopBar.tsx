@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { Bell, ChevronLeft, Moon, Plus, Sun } from 'lucide-react'
+import { Bell, ChevronLeft, Moon, Plus, Sun, UserPlus } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useCosmetics, useMe } from '../../hooks/queries'
@@ -130,32 +130,60 @@ function AccountButton() {
 }
 
 export function AlertBell() {
-  const active = useMe().data?.activeMatch
+  const me = useMe().data
+  const active = me?.activeMatch
+  const requests = me?.friendRequests ?? 0
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
+  const label = active?.needsAction ? 'Your match needs you' : requests ? `${requests} friend request${requests === 1 ? '' : 's'}` : 'Notifications'
   return (
     <>
       <button
-        onClick={() => (active ? navigate(`/sessions/${active.sessionId}?tab=games`) : setOpen(true))}
+        // A match that needs you goes straight to it; otherwise the list.
+        onClick={() => (active?.needsAction ? navigate(`/sessions/${active.sessionId}?tab=games`) : setOpen(true))}
         className="relative grid size-9 place-items-center rounded-full text-white/90 hover:bg-white/10"
-        aria-label={active?.needsAction ? 'Your match needs you' : 'Notifications'}
+        aria-label={label}
         title={active ? `Court ${active.courtNumber}: ${matchStatusLabel[active.status]}` : undefined}
       >
         <Bell className="size-6" />
-        {active && (
+        {(active || requests > 0) && (
           <span
             className={clsx(
               'absolute -top-0.5 -right-0.5 grid min-w-4.5 place-items-center rounded-full px-1 text-[11px] leading-4.5 font-bold',
-              active.needsAction ? 'bg-danger text-snow' : 'size-2.5 min-w-0 bg-lime p-0',
+              active?.needsAction || requests ? 'bg-danger text-snow' : 'size-2.5 min-w-0 bg-lime p-0',
             )}
           >
-            {active.needsAction ? '1' : ''}
+            {(active?.needsAction ? 1 : 0) + requests || ''}
           </span>
         )}
       </button>
       <Sheet open={open} onClose={() => setOpen(false)} title="Notifications">
-        <p className="mb-4 text-white/75">You're all caught up. When you're put on a court, you'll see it here.</p>
-        <Button block variant="dark" onClick={() => setOpen(false)}>
+        <div className="space-y-2">
+          {active && (
+            <Link
+              to={`/sessions/${active.sessionId}?tab=games`}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-2xl bg-night/70 p-3 hover:bg-night"
+            >
+              <Bell className="size-5 shrink-0 text-lime" />
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">Court {active.courtNumber}: {matchStatusLabel[active.status]}</span>
+                <span className="block truncate text-sm text-muted">{active.sessionTitle}</span>
+              </span>
+            </Link>
+          )}
+          {requests > 0 && (
+            <Link to="/friends" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-2xl bg-night/70 p-3 hover:bg-night">
+              <UserPlus className="size-5 shrink-0 text-lime" />
+              <span className="min-w-0 flex-1 font-semibold">
+                {requests} friend request{requests === 1 ? '' : 's'}
+              </span>
+              <span className="text-sm font-semibold text-lime">See</span>
+            </Link>
+          )}
+          {!active && requests === 0 && <p className="mb-2 text-white/75">You're all caught up. When you're put on a court or someone adds you as a friend, you'll see it here.</p>}
+        </div>
+        <Button block variant="dark" className="mt-4" onClick={() => setOpen(false)}>
           OK
         </Button>
       </Sheet>

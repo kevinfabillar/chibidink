@@ -9,6 +9,7 @@ export const queryKeys = {
   audit: (id: string) => ['session', id, 'audit'] as const,
   player: (id: string) => ['player', id] as const,
   cosmetics: ['cosmetics'] as const,
+  friends: ['friends'] as const,
 }
 
 export function useMe() {

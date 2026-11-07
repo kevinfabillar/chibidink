@@ -12,6 +12,7 @@ import { minutesAgo, useNow } from '../../lib/format'
 import { modeText, partnerNames } from '../../lib/queue'
 import { sessionEarnings } from '../../lib/rewards'
 import { tierName } from '../../lib/skill'
+import { PlayerName } from '../../components/character/NameTag'
 
 
 export function QueueTab({ session }: { session: SessionDetail }) {
@@ -35,7 +36,9 @@ export function QueueTab({ session }: { session: SessionDetail }) {
       {me && (
         <section className="card h-fit p-5 text-center">
           <PlayerAvatar player={me.player} variant="full" size={130} className="mx-auto" />
-          <h2 className="mt-1 font-display text-2xl font-bold">{me.player.displayName}</h2>
+          <h2 className="mt-1 font-display text-2xl font-bold">
+            <PlayerName player={me.player} size="lg" />
+          </h2>
           <p className="text-sm text-muted">
             {skillBased && `${tierName(me.skillEstimate)} · `}This session: {me.completedGames} games · {me.wins}W {me.losses}L
           </p>
@@ -156,8 +159,8 @@ export function PlayerGroup({
             {showPosition && <span className="w-7 text-center font-display text-xl font-extrabold text-lime">{p.queuePosition}</span>}
             <PlayerAvatar player={p.player} size={44} />
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-x-1.5 font-semibold [overflow-wrap:anywhere] leading-tight">
-                {p.player.displayName}
+              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 font-semibold [overflow-wrap:anywhere] leading-tight">
+                <PlayerName player={p.player} />
                 {p.role === 'Organizer' && <Crown className="size-3.5 text-lime" aria-label="Organizer" />}
                 {partners?.has(p.player.userId) && (
                   <span className="inline-flex items-center gap-1 rounded-full border border-lime/40 px-1.5 py-px text-[11px] font-semibold text-lime">

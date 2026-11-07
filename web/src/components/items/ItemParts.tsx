@@ -97,7 +97,7 @@ export function ItemAction({ item, coins }: { item: CosmeticItem; coins: number 
   const buy = useCosmeticAction(() => cosmeticsApi.purchase(item.id))
   const equip = useCosmeticAction(() => cosmeticsApi.equip(item.id))
   const remove = useCosmeticAction(() => cosmeticsApi.unequip(item.slot))
-  const removable = item.slot === 'PaddleEffect' || item.slot === 'CharacterAura'
+  const removable = item.slot === 'PaddleEffect' || item.slot === 'CharacterAura' || item.slot === 'Nameplate'
   const error = buy.error ?? equip.error ?? remove.error
 
   let button: ReactNode

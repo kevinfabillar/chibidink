@@ -12,13 +12,14 @@ import { PartyPopper } from 'lucide-react'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { PageError } from '../../components/ui/ErrorPage'
 
-const TABS = ['Featured', 'Outfits', 'Backgrounds', 'Auras', 'Effects'] as const
+const TABS = ['Featured', 'Names', 'Outfits', 'Backgrounds', 'Auras', 'Effects'] as const
 type Tab = (typeof TABS)[number]
 const TAB_SLOT: Record<Exclude<Tab, 'Featured'>, CosmeticSlot> = {
   Outfits: 'Outfit',
   Backgrounds: 'Background',
   Auras: 'CharacterAura',
   Effects: 'PaddleEffect',
+  Names: 'Nameplate',
 }
 
 export function ShopPage() {

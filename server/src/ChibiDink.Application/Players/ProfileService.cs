@@ -4,6 +4,7 @@ using ChibiDink.Application.Contracts;
 using ChibiDink.Application.Progression;
 using ChibiDink.Domain.Common;
 using ChibiDink.Domain.Players;
+using ChibiDink.Domain.Social;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ChibiDink.Application.Players;
@@ -59,7 +60,9 @@ public sealed class ProfileService(
         var recentTask = Read((IMatchRepository r) => r.ListCompletedForUserAsync(userId, RecentMatchCount, ct));
         var sessionsTask = Read((ISessionRepository r) => r.ListForUserAsync(userId, 10, ct));
         var liveTask = isMe ? Read((IMatchRepository r) => r.FindLiveForUserAsync(userId, ct)) : Task.FromResult<Domain.Matches.Match?>(null);
-        await Task.WhenAll(profileTask, recentTask, sessionsTask, liveTask);
+        var requestsTask = isMe ? Read((IFriendshipRepository r) => r.CountPendingReceivedAsync(userId, ct)) : Task.FromResult(0);
+        var friendshipTask = isMe ? Task.FromResult<Friendship?>(null) : Read((IFriendshipRepository r) => r.FindBetweenAsync(viewerId, userId, ct));
+        await Task.WhenAll(profileTask, recentTask, sessionsTask, liveTask, requestsTask, friendshipTask);
 
         var profile = profileTask.Result ?? throw new NotFoundException("Profile");
         var recent = recentTask.Result;
@@ -89,8 +92,18 @@ public sealed class ProfileService(
             StatsDto.From(profile.Statistics),
             recent.Select(m => ViewMapper.History(m, userId, people)).ToList(),
             mySessions.Select(x => ViewMapper.Summary(x, viewerId)).ToList(),
-            activeMatch);
+            activeMatch,
+            StatusOf(friendshipTask.Result, viewerId),
+            requestsTask.Result);
     }
+
+    private static FriendStatus StatusOf(Friendship? f, Guid viewerId) => f switch
+    {
+        null => FriendStatus.None,
+        { Status: FriendshipStatus.Accepted } => FriendStatus.Friends,
+        _ when f.RequesterId == viewerId => FriendStatus.Outgoing,
+        _ => FriendStatus.Incoming,
+    };
 
     /// <summary>Runs one read in its own scope (its own database connection), so several can run at once.</summary>
     private async Task<T> Read<TRepo, T>(Func<TRepo, Task<T>> read) where TRepo : notnull

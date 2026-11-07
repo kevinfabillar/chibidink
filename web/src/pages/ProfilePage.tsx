@@ -10,13 +10,17 @@ import { TopBar } from '../components/ui/TopBar'
 import { queryKeys } from '../hooks/queries'
 import { winRateText } from '../lib/format'
 import { usePose } from '../lib/pose'
+import { FRIENDS_ENABLED } from '../lib/features'
 import { PageError } from '../components/ui/ErrorPage'
 import clsx from 'clsx'
-import { BarChart3, CalendarDays, ChartNoAxesColumnIncreasing, Layers, Pencil, Swords, Trophy, User, Users, X } from 'lucide-react'
+import { BarChart3, CalendarDays, ChartNoAxesColumnIncreasing, Contact, Layers, Pencil, Swords, Trophy, User, Users, X } from 'lucide-react'
+import { FriendButton } from '../components/profile/FriendButton'
+import { useMe } from '../hooks/queries'
 import { useState, type ReactNode } from 'react'
 import type { Profile } from '../api/types'
 import { EditProfileSheet } from '../components/profile/EditProfileSheet'
 import { Button } from '../components/ui/Button'
+import { PlayerName } from '../components/character/NameTag'
 
 /** Verified pickleball record. Only organizer- or opponent-verified matches count. */
 export function ProfilePage() {
@@ -28,6 +32,7 @@ export function ProfilePage() {
   })
   // Your own profile shows the pose you equipped; other players stand ready.
   const myPose = usePose(userId ? undefined : profile.data?.player.userId)
+  const me = useMe().data
 
   if (profile.isLoading) return <Spinner />
   if (!profile.data) return <PageError error={profile.error} onRetry={() => profile.refetch()} />
@@ -43,10 +48,27 @@ export function ProfilePage() {
         {/* Character card (stays in view on desktop) */}
         <section className="card flex flex-col items-center p-5 md:sticky md:top-6">
           <PlayerAvatar player={player} variant="full" pose={myPose} live pedestal animated className="w-56" />
-          <div className="mt-2 font-display text-2xl font-bold">{player.displayName}</div>
+          <div className="mt-2 max-w-full font-display text-2xl font-bold">
+            <PlayerName player={player} size="lg" />
+          </div>
           <div className="mt-1 rounded-full bg-lime/20 px-3 py-0.5 text-sm font-semibold text-lime">Character Lv {progress.level}</div>
+          {FRIENDS_ENABLED && userId && userId !== me?.player.userId && (
+            <div className="mt-5 w-full">
+              <FriendButton userId={userId} name={player.displayName} status={profile.data.friendship} />
+            </div>
+          )}
           {!userId && (
             <div className="mt-5 w-full space-y-2">
+              <Link
+                to="/friends"
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-grape font-display font-bold text-snow transition hover:brightness-110"
+              >
+                <Contact className="size-4.5" />
+                Friends
+                {profile.data.friendRequests > 0 && (
+                  <span className="grid min-w-5.5 place-items-center rounded-full bg-danger px-1.5 text-xs">{profile.data.friendRequests}</span>
+                )}
+              </Link>
               <Button variant="dark" block icon={<Pencil className="size-4" />} onClick={() => setEditing(true)}>
                 Edit profile
               </Button>

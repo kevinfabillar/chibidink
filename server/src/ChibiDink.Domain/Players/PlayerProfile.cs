@@ -22,6 +22,9 @@ public sealed class PlayerProfile
     public PlayerStatistics Statistics { get; private set; } = new();
     public DateTimeOffset CreatedAt { get; private set; }
 
+    /// <summary>Short code friends type in to add this player. Given out the first time it's needed.</summary>
+    public string? FriendCode { get; private set; }
+
     /// <summary>Optimistic concurrency token (PostgreSQL xmin): two purchases can't spend the same coins.</summary>
     public uint Version { get; private set; }
 
@@ -39,6 +42,12 @@ public sealed class PlayerProfile
 
     public void Rename(string displayName) =>
         DisplayName = Guard.NotBlank(displayName, "Display name", MaxDisplayNameLength);
+
+    public void AssignFriendCode(string code)
+    {
+        Guard.That(FriendCode is null, "This player already has a friend code.");
+        FriendCode = Guard.NotBlank(code, "Friend code", 6);
+    }
 
     public void SetSkillEstimate(SkillLevel skill) => SkillEstimate = skill;
 

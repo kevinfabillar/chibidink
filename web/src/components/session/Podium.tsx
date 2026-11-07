@@ -4,6 +4,7 @@ import { winRateText } from '../../lib/format'
 import { PlayerAvatar } from '../character/Stage'
 import { rankPlayers } from './ranking'
 import { Sparkles } from 'lucide-react'
+import { PlayerName } from '../character/NameTag'
 
 /** Each place celebrates differently: 1st jumps with both arms up, 2nd waves the paddle high, 3rd claps. */
 const POSE: Record<number, 'champion' | 'cheer' | 'clap'> = { 1: 'champion', 2: 'cheer', 3: 'clap' }
@@ -47,7 +48,9 @@ export function Podium({ players, title = 'Session champions' }: { players: Part
                     className={clsx('relative', step.place === 1 ? 'w-28 sm:w-40' : 'w-24 sm:w-32')}
                   />
                   </div>
-                  <div className="mt-1 max-w-full truncate text-center font-semibold">{p.player.displayName}</div>
+                  <div className="mt-1 max-w-full truncate text-center font-semibold">
+                    <PlayerName player={p.player} />
+                  </div>
                   <div className="text-xs text-muted">
                     {p.wins}W {p.losses}L · {winRateText(p.winRate)}
                   </div>

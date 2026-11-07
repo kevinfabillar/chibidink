@@ -83,6 +83,16 @@ public sealed class StandardCosmeticCatalog : ICosmeticCatalog
         new("aura-nova", "Nova Aura", CosmeticSlot.CharacterAura, Rarity.Legendary, 2000, 12),
         new("aura-celestial", "Celestial", CosmeticSlot.CharacterAura, Rarity.Legendary, 2500, 16),
         new("aura-phoenix", "Phoenix", CosmeticSlot.CharacterAura, Rarity.Legendary, 2500, 18),
+
+        // Premium name skins: animated names shown in the queue, on courts and in the standings
+        new("name-neon", "Neon Pulse", CosmeticSlot.Nameplate, Rarity.Legendary, 2500, 3),
+        new("name-toxic", "Toxic", CosmeticSlot.Nameplate, Rarity.Legendary, 2500, 3),
+        new("name-sakura", "Sakura", CosmeticSlot.Nameplate, Rarity.Legendary, 2500, 3),
+        new("name-inferno", "Inferno", CosmeticSlot.Nameplate, Rarity.Mythic, 3500, 5),
+        new("name-frost", "Frostbite", CosmeticSlot.Nameplate, Rarity.Mythic, 3500, 5),
+        new("name-thunder", "Thunder", CosmeticSlot.Nameplate, Rarity.Mythic, 4000, 8),
+        new("name-galaxy", "Galaxy", CosmeticSlot.Nameplate, Rarity.Mythic, 4000, 8),
+        new("name-gold", "Golden Crown", CosmeticSlot.Nameplate, Rarity.Mythic, 5000, 10),
     ];
 
     private static readonly Dictionary<string, CosmeticItem> ById = Items.ToDictionary(i => i.Id);

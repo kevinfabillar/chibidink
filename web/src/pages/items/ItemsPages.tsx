@@ -28,7 +28,7 @@ function Loading({ error }: { error: unknown }) {
 
 // ---- Items hub ------------------------------------------------------------------------------------
 
-const HUB_SLOTS: CosmeticSlot[] = ['Outfit', 'Background', 'PaddleEffect', 'CharacterAura']
+const HUB_SLOTS: CosmeticSlot[] = ['Outfit', 'Background', 'PaddleEffect', 'CharacterAura', 'Nameplate']
 
 export function ItemsHubPage() {
   const { me, cosmetics, error } = useItemsData()

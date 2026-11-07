@@ -36,6 +36,9 @@ export class HttpClient {
   put<T = void>(path: string, body?: unknown) {
     return this.request<T>('PUT', path, body)
   }
+  delete<T = void>(path: string) {
+    return this.request<T>('DELETE', path)
+  }
 
   private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
     const headers: Record<string, string> = { Accept: 'application/json' }

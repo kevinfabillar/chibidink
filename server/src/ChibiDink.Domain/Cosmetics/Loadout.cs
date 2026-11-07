@@ -1,12 +1,12 @@
 namespace ChibiDink.Domain.Cosmetics;
 
 /// <summary>What a character currently wears. Visual only.</summary>
-public sealed record Loadout(string OutfitId, string PaddleId, string? EffectId, string? AuraId = null, string? BackgroundId = null)
+public sealed record Loadout(string OutfitId, string PaddleId, string? EffectId, string? AuraId = null, string? BackgroundId = null, string? NameplateId = null)
 {
     public static Loadout Starter { get; } = new(StarterItems.Outfit, StarterItems.Paddle, null);
 
     public bool IsEquipped(string itemId) =>
-        OutfitId == itemId || PaddleId == itemId || EffectId == itemId || AuraId == itemId ||
+        OutfitId == itemId || PaddleId == itemId || EffectId == itemId || AuraId == itemId || NameplateId == itemId ||
         (BackgroundId ?? StarterItems.Background) == itemId;
 
     public Loadout With(CosmeticItem item) => item.Slot switch
@@ -16,10 +16,11 @@ public sealed record Loadout(string OutfitId, string PaddleId, string? EffectId,
         CosmeticSlot.PaddleEffect => this with { EffectId = item.Id },
         CosmeticSlot.CharacterAura => this with { AuraId = item.Id },
         CosmeticSlot.Background => this with { BackgroundId = item.Id == StarterItems.Background ? null : item.Id },
+        CosmeticSlot.Nameplate => this with { NameplateId = item.Id },
         _ => throw new ArgumentOutOfRangeException(nameof(item)),
     };
 
-    /// <summary>Outfit, paddle and background fall back to the starter items; effects and auras can be removed entirely.</summary>
+    /// <summary>Outfit, paddle and background fall back to the starter items; effects, auras and name skins can be removed entirely.</summary>
     public Loadout Cleared(CosmeticSlot slot) => slot switch
     {
         CosmeticSlot.Outfit => this with { OutfitId = StarterItems.Outfit },
@@ -27,6 +28,7 @@ public sealed record Loadout(string OutfitId, string PaddleId, string? EffectId,
         CosmeticSlot.PaddleEffect => this with { EffectId = null },
         CosmeticSlot.CharacterAura => this with { AuraId = null },
         CosmeticSlot.Background => this with { BackgroundId = null },
+        CosmeticSlot.Nameplate => this with { NameplateId = null },
         _ => throw new ArgumentOutOfRangeException(nameof(slot)),
     };
 }

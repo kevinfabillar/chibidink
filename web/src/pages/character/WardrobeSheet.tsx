@@ -6,6 +6,7 @@ import { Link } from 'react-router'
 import { cosmeticsApi } from '../../api/api'
 import type { CosmeticItem, CosmeticSlot, Loadout, Profile } from '../../api/types'
 import { Avatar3D } from '../../components/character/Avatar3D'
+import { PlayerName } from '../../components/character/NameTag'
 import { STARTER_BACKGROUND, Scene } from '../../components/character/Backgrounds'
 import { ChibiAvatar } from '../../components/character/ChibiAvatar'
 import { ItemAction } from '../../components/items/ItemParts'
@@ -21,13 +22,14 @@ export const WARDROBE_TABS = [
   { label: 'Outfits', slot: 'Outfit' },
   { label: 'Scenes', slot: 'Background' },
   { label: 'Auras', slot: 'CharacterAura' },
+  { label: 'Names', slot: 'Nameplate' },
   { label: 'Effects', slot: 'PaddleEffect' },
 ] as const satisfies readonly { label: string; slot: CosmeticSlot }[]
 export type WardrobeTab = (typeof WARDROBE_TABS)[number]['label']
 
-const LOADOUT_KEY = { Outfit: 'outfitId', Background: 'backgroundId', CharacterAura: 'auraId', PaddleEffect: 'effectId' } as const
+const LOADOUT_KEY = { Outfit: 'outfitId', Background: 'backgroundId', CharacterAura: 'auraId', PaddleEffect: 'effectId', Nameplate: 'nameplateId' } as const
 type WardrobeSlot = keyof typeof LOADOUT_KEY
-const REMOVABLE: WardrobeSlot[] = ['CharacterAura', 'PaddleEffect']
+const REMOVABLE: WardrobeSlot[] = ['CharacterAura', 'PaddleEffect', 'Nameplate']
 
 /**
  * Change outfit, scene, aura or effect without leaving the character screen: tap an item to try it on,
@@ -85,11 +87,16 @@ function Wardrobe({ tab, onTab, profile }: { tab: WardrobeTab; onTab: (t: Wardro
             </span>
           )}
         </div>
+        {slot === 'Nameplate' && (
+          <div className="-mt-1 mb-3 flex justify-center">
+            <PlayerName player={{ displayName: profile.player.displayName, loadout: { nameplateId: shown('Nameplate') } }} size="md" className="font-display text-lg font-bold" />
+          </div>
+        )}
         <Chips value={tab} options={WARDROBE_TABS.map((t) => t.label)} onChange={onTab} />
       </div>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
         {REMOVABLE.includes(slot) && (
-          <Tile selected={selectedId === null} equipped={worn(slot) === null} onClick={() => pick(null)} label="None" art={<WearingArt look={look} slot={slot} id={null} />} />
+          <Tile selected={selectedId === null} equipped={worn(slot) === null} onClick={() => pick(null)} label="None" art={<WearingArt look={look} slot={slot} id={null} name={profile.player.displayName} />} />
         )}
         {items.map((item) => (
           <Tile
@@ -98,7 +105,7 @@ function Wardrobe({ tab, onTab, profile }: { tab: WardrobeTab; onTab: (t: Wardro
             selected={selectedId === item.id}
             equipped={worn(slot) === item.id}
             label={item.name}
-            art={<WearingArt look={look} slot={slot} id={item.id} />}
+            art={<WearingArt look={look} slot={slot} id={item.id} name={profile.player.displayName} />}
             onClick={() => pick(item.id)}
           />
         ))}
@@ -114,7 +121,7 @@ function Wardrobe({ tab, onTab, profile }: { tab: WardrobeTab; onTab: (t: Wardro
           <ItemAction item={selected} coins={cosmetics.data.progress.coins} />
         ) : trying ? (
           <Button block loading={remove.isPending} onClick={() => remove.mutate(slot, { onSuccess: () => setPreview((p) => ({ ...p, [slot]: undefined })) })}>
-            Remove {slot === 'CharacterAura' ? 'aura' : 'effect'}
+            Remove {slot === 'CharacterAura' ? 'aura' : slot === 'Nameplate' ? 'name skin' : 'effect'}
           </Button>
         ) : (
           <Button block disabled icon={<Check className="size-5" />}>
@@ -131,7 +138,15 @@ function Wardrobe({ tab, onTab, profile }: { tab: WardrobeTab; onTab: (t: Wardro
 }
 
 /** Card art: your character (with everything else you have on) wearing this item. Scenes show you standing in them. */
-function WearingArt({ look, slot, id }: { look: CharacterLook; slot: WardrobeSlot; id: string | null }) {
+function WearingArt({ look, slot, id, name }: { look: CharacterLook; slot: WardrobeSlot; id: string | null; name: string }) {
+  if (slot === 'Nameplate') {
+    // Your own name in the skin ("None" = plain name).
+    return (
+      <span className="grid size-full place-items-center overflow-hidden px-0.5 text-xs">
+        <PlayerName player={{ displayName: name, loadout: { nameplateId: id } }} size="sm" className="max-w-full truncate font-bold" />
+      </span>
+    )
+  }
   if (slot !== 'Background') {
     // Only the Auras tab shows auras; elsewhere the glow would hide the item you're picking.
     const tried = lookWith(look, slot, id)
