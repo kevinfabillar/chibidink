@@ -220,6 +220,8 @@ export interface UpNextGroup {
   isPlanned: boolean
   /** Everyone in the group is off court, so it can start now. */
   isReady: boolean
+  /** The same four as last game: held until another court finishes, so the groups can mix. */
+  waitingToMix?: boolean
 }
 
 export interface AuditEntry {

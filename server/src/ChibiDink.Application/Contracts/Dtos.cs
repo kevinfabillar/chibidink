@@ -80,9 +80,10 @@ public sealed record SessionDetailDto(
 /// <summary>A predicted group of four, in the order they will go on court. `Tier` is set in skill-based sessions.</summary>
 /// <param name="IsPlanned">Set up by the organizer (kept as edited) rather than picked by the matchmaker.</param>
 /// <param name="IsReady">All four are off court and waiting, so the group can start now.</param>
+/// <param name="WaitingToMix">The same four as last game: held until another court finishes, so the groups mix.</param>
 public sealed record UpNextDto(
     int Order, IReadOnlyList<PlayerCardDto> TeamA, IReadOnlyList<PlayerCardDto> TeamB, string? Tier, bool IsMixedSkill,
-    bool IsPlanned, bool IsReady);
+    bool IsPlanned, bool IsReady, bool WaitingToMix = false);
 
 public sealed record CourtDto(int Number, CourtStatus Status, MatchDto? Match);
 

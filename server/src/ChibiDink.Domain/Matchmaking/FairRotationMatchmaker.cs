@@ -26,6 +26,14 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
         double OverTolerance = 25,
         double RepeatPartner = 6,
         double RepeatOpponent = 2,
+        // Per pair of players who were in the same game last time: the same four twice in a row costs 6 × 30,
+        // so a fresh mix wins whenever anyone else is waiting (rotation order still decides who goes first).
+        double BackToBack = 30,
+        // The exact same group as last game: ruled out whenever any other group can be made.
+        double SameGroupAgain = 100_000,
+        // Partners from last game teamed up again: ruled out whenever another team split is possible
+        // (if the same four must play, they at least swap partners).
+        double SamePartnerAgain = 10_000,
         int LookAhead = 6);
 
     private readonly Weights _w = weights ?? new Weights();
@@ -139,6 +147,25 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
     private double RepeatCost(List<QueueCandidate> teamA, List<QueueCandidate> teamB, PairingHistory history)
     {
         double cost = 0;
+
+        // Back to back: avoid putting people who just played together (as partners or opponents) in the same
+        // game again right away. Fixed partners are exempt from each other; they always play together.
+        var group = teamA.Concat(teamB).ToList();
+        var allTogetherLastTime = true;
+        for (var i = 0; i < group.Count; i++)
+            for (var j = i + 1; j < group.Count; j++)
+            {
+                var together = history.PlayedLastGameTogether(group[i].UserId, group[j].UserId);
+                allTogetherLastTime &= together;
+                if (together && group[i].PartnerId != group[j].UserId) cost += _w.BackToBack;
+            }
+        // Every pair played together last game = the very same group again (same four, or the same singles
+        // opponent). Never, unless there's no one else to make a game with.
+        if (allTogetherLastTime) cost += _w.SameGroupAgain;
+        foreach (var team in new[] { teamA, teamB })
+            if (team.Count == 2 && team[0].PartnerId != team[1].UserId && history.WereLastGamePartners(team[0].UserId, team[1].UserId))
+                cost += _w.SamePartnerAgain;
+
         // Fixed partners always play together, so that's never a "repeat" to avoid.
         if (teamA.Count == 2 && teamA[0].PartnerId != teamA[1].UserId) cost += history.PartnerCount(teamA[0].UserId, teamA[1].UserId) * _w.RepeatPartner;
         if (teamB.Count == 2 && teamB[0].PartnerId != teamB[1].UserId) cost += history.PartnerCount(teamB[0].UserId, teamB[1].UserId) * _w.RepeatPartner;

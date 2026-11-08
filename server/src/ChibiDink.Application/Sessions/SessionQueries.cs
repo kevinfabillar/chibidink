@@ -133,17 +133,19 @@ public sealed class SessionQueries(
         // The organizer's lined-up groups first, in their order, then the matchmaker's picks from everyone else.
         var plannedViews = planned.Select(g => (
             TeamA: (IReadOnlyList<Guid>)g.TeamA, TeamB: (IReadOnlyList<Guid>)g.TeamB, Tier: (string?)null, Mixed: false,
-            Planned: true, Ready: session.IsPlannedGroupReady(g) && !g.Players.Any(busy.Contains)));
+            Planned: true, Ready: session.IsPlannedGroupReady(g) && !g.Players.Any(busy.Contains), WaitingToMix: false));
+        var now = clock.UtcNow;
         var pickedViews = strategy.FindLineups(request).Select(l => (
             l.TeamA, l.TeamB,
             Tier: session.Settings.Mode == QueueMode.SkillBased && !l.ExceedsSkillTolerance ? SkillLevel.Name(skillOf[l.TeamA[0]]) : null,
-            Mixed: l.ExceedsSkillTolerance, Planned: false, Ready: true));
+            Mixed: l.ExceedsSkillTolerance, Planned: false, Ready: true,
+            WaitingToMix: MixHold.ShouldWait(session, [.. l.TeamA, .. l.TeamB], history, live, now)));
         return plannedViews.Concat(pickedViews)
             .Select((g, i) => new UpNextDto(
                 i + 1,
                 g.TeamA.Select(id => ViewMapper.Card(id, people)).ToList(),
                 g.TeamB.Select(id => ViewMapper.Card(id, people)).ToList(),
-                g.Tier, g.Mixed, g.Planned, g.Ready))
+                g.Tier, g.Mixed, g.Planned, g.Ready, g.WaitingToMix))
             .ToList();
     }
 

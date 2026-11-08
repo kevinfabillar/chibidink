@@ -36,7 +36,7 @@ public sealed class MatchmakingService(
 
             changed |= await ExpireConfirmationsAsync(session, innerCt);
             if (session.IsMatchmakingActive && session.Settings.AutoMatchmaking)
-                changed |= await FillAsync(session, innerCt) > 0;
+                changed |= await FillAsync(session, innerCt, holdToMix: true) > 0;
         }, ct);
 
         if (changed) await notifier.SessionChangedAsync(sessionId, ct);
@@ -53,7 +53,7 @@ public sealed class MatchmakingService(
             session.EnsureOrganizer(currentUser.UserId);
             session.EnsureStarted();
             await ExpireConfirmationsAsync(session, innerCt);
-            created = await FillAsync(session, innerCt);
+            created = await FillAsync(session, innerCt, holdToMix: false); // the organizer asked: fill now
         }, ct);
 
         await notifier.SessionChangedAsync(sessionId, ct);
@@ -68,7 +68,7 @@ public sealed class MatchmakingService(
         return expired.Count > 0;
     }
 
-    private async Task<int> FillAsync(PlaySession session, CancellationToken ct)
+    private async Task<int> FillAsync(PlaySession session, CancellationToken ct, bool holdToMix)
     {
         session.PrunePlannedGroups();
         var freeCourts = session.FreeCourts().ToList();
@@ -93,24 +93,30 @@ public sealed class MatchmakingService(
 
         // Players held for a lined-up group (still waiting on a teammate's game) aren't picked for another.
         var held = session.PlannedGroups.SelectMany(g => g.Players).ToHashSet();
+        var history = await RecentHistoryAsync(session.Id, ct);
         var request = new MatchmakingRequest(
             session.Format,
             freeCourts.Count - created,
             MatchmakingCandidates.Build(session, busy, held),
-            await RecentHistoryAsync(session.Id, ct),
+            history,
             now,
             session.Settings.SkillTolerance,
             TimeSpan.FromMinutes(session.Settings.WaitProtectionMinutes),
             session.Settings.Mode);
 
         var lineups = strategy.FindLineups(request);
-        foreach (var (lineup, court) in lineups.Zip(freeCourts.Skip(created)))
+        var live = holdToMix ? await matches.ListLiveAsync(session.Id, ct) : [];
+        var courts = new Queue<Court>(freeCourts.Skip(created));
+        foreach (var lineup in lineups)
         {
-            var match = Match.Propose(session, court, lineup.TeamA, lineup.TeamB, now,
+            // The same four again while another court is mid-game: wait for it, so the groups can mix.
+            if (holdToMix && MixHold.ShouldWait(session, [.. lineup.TeamA, .. lineup.TeamB], history, live, now)) continue;
+            var match = Match.Propose(session, courts.Dequeue(), lineup.TeamA, lineup.TeamB, now,
                 isManual: false, isMixedSkill: lineup.ExceedsSkillTolerance);
             matches.Add(match);
+            created++;
         }
-        return created + lineups.Count;
+        return created;
     }
 
     private async Task<PairingHistory> RecentHistoryAsync(Guid sessionId, CancellationToken ct)

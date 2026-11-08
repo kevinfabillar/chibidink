@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { Shuffle } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { PlayerCard, UpNextGroup } from '../../api/types'
 import { PlayerAvatar } from '../character/Stage'
@@ -32,6 +33,12 @@ export function UpNextCard({
         <span className="font-display text-sm font-extrabold text-white/50">VS</span>
         <Team players={group.teamB} compact={compact} />
       </div>
+      {group.waitingToMix && (
+        <p className="mt-2 flex items-center gap-1.5 rounded-xl bg-sky/10 px-2.5 py-1.5 text-xs font-semibold text-sky">
+          <Shuffle className="size-3.5 shrink-0" />
+          Same four as last game: waiting for another court to finish so the groups can mix.
+        </p>
+      )}
       {actions}
     </div>
   )
