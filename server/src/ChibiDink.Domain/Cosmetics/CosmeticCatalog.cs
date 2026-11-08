@@ -84,15 +84,22 @@ public sealed class StandardCosmeticCatalog : ICosmeticCatalog
         new("aura-celestial", "Celestial", CosmeticSlot.CharacterAura, Rarity.Legendary, 2500, 16),
         new("aura-phoenix", "Phoenix", CosmeticSlot.CharacterAura, Rarity.Legendary, 2500, 18),
 
-        // Premium name skins: animated names shown in the queue, on courts and in the standings
-        new("name-neon", "Neon Pulse", CosmeticSlot.Nameplate, Rarity.Legendary, 2500, 3),
-        new("name-toxic", "Toxic", CosmeticSlot.Nameplate, Rarity.Legendary, 2500, 3),
-        new("name-sakura", "Sakura", CosmeticSlot.Nameplate, Rarity.Legendary, 2500, 3),
-        new("name-inferno", "Inferno", CosmeticSlot.Nameplate, Rarity.Mythic, 3500, 5),
-        new("name-frost", "Frostbite", CosmeticSlot.Nameplate, Rarity.Mythic, 3500, 5),
-        new("name-thunder", "Thunder", CosmeticSlot.Nameplate, Rarity.Mythic, 4000, 8),
-        new("name-galaxy", "Galaxy", CosmeticSlot.Nameplate, Rarity.Mythic, 4000, 8),
-        new("name-gold", "Golden Crown", CosmeticSlot.Nameplate, Rarity.Mythic, 5000, 10),
+        // Name skins: shown wherever the name appears (queue, courts, standings). Plain borders at Common,
+        // fully animated borders (fire, ice, lightning…) at Legendary and Mythic.
+        new("name-chalk", "Chalk", CosmeticSlot.Nameplate, Rarity.Common, 300, 3),
+        new("name-grass", "Grass Court", CosmeticSlot.Nameplate, Rarity.Common, 300, 3),
+        new("name-ocean", "Ocean", CosmeticSlot.Nameplate, Rarity.Rare, 800, 5),
+        new("name-sunset", "Sunset", CosmeticSlot.Nameplate, Rarity.Rare, 800, 5),
+        new("name-amethyst", "Amethyst", CosmeticSlot.Nameplate, Rarity.Epic, 1500, 8),
+        new("name-ruby", "Ruby", CosmeticSlot.Nameplate, Rarity.Epic, 1500, 8),
+        new("name-neon", "Neon Pulse", CosmeticSlot.Nameplate, Rarity.Legendary, 2500, 10),
+        new("name-toxic", "Toxic", CosmeticSlot.Nameplate, Rarity.Legendary, 2500, 10),
+        new("name-sakura", "Sakura", CosmeticSlot.Nameplate, Rarity.Legendary, 2500, 10),
+        new("name-inferno", "Inferno", CosmeticSlot.Nameplate, Rarity.Mythic, 3500, 20),
+        new("name-frost", "Frostbite", CosmeticSlot.Nameplate, Rarity.Mythic, 3500, 20),
+        new("name-thunder", "Thunder", CosmeticSlot.Nameplate, Rarity.Mythic, 4000, 20),
+        new("name-galaxy", "Galaxy", CosmeticSlot.Nameplate, Rarity.Mythic, 4000, 20),
+        new("name-gold", "Golden Crown", CosmeticSlot.Nameplate, Rarity.Mythic, 5000, 20),
     ];
 
     private static readonly Dictionary<string, CosmeticItem> ById = Items.ToDictionary(i => i.Id);
