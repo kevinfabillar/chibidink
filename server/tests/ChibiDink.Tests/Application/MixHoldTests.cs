@@ -1,6 +1,8 @@
 using ChibiDink.Application.Matchmaking;
 using ChibiDink.Domain.Matches;
+using ChibiDink.Domain.Common;
 using ChibiDink.Domain.Matchmaking;
+using ChibiDink.Domain.Sessions;
 using ChibiDink.Tests.Domain;
 
 namespace ChibiDink.Tests.Application;
@@ -48,5 +50,23 @@ public sealed class MixHoldTests
         notStarted.Start(Now, byOrganizer: true);
         // Waited the full limit already: play rather than sit any longer.
         Assert.False(MixHold.ShouldWait(session, [p[0], p[1], p[2], p[3]], history, [notStarted], Now + MixHold.Limit));
+    }
+
+    [Fact]
+    public void Skill_based_only_waits_for_a_game_at_the_same_level()
+    {
+        var settings = new SessionSettings { Mode = QueueMode.SkillBased };
+        var (session, _, p) = TestData.DoublesSession(players: 8, courts: 2, settings: settings);
+        var history = new PairingHistory();
+        history.AddMatch([p[0], p[1]], [p[2], p[3]]);
+        var court2 = Match.Propose(session, session.GetCourt(2), [p[4], p[5]], [p[6], p[7]], Now, isManual: false);
+        court2.Start(Now, byOrganizer: true);
+
+        // Everyone is the same level here: worth waiting, they'll mix.
+        Assert.True(MixHold.ShouldWait(session, [p[0], p[1], p[2], p[3]], history, [court2], Now));
+
+        // Court 2 is a different level: waiting can't produce a mix, so play now (with swapped partners).
+        foreach (var id in p.Skip(4)) session.GetParticipant(id).SetSkillEstimate(new SkillLevel(1));
+        Assert.False(MixHold.ShouldWait(session, [p[0], p[1], p[2], p[3]], history, [court2], Now));
     }
 }

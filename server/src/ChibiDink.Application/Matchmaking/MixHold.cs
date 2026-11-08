@@ -1,3 +1,4 @@
+using ChibiDink.Domain.Common;
 using ChibiDink.Domain.Matches;
 using ChibiDink.Domain.Matchmaking;
 using ChibiDink.Domain.Sessions;
@@ -18,9 +19,17 @@ public static class MixHold
     public static bool ShouldWait(PlaySession session, IReadOnlyList<Guid> players, PairingHistory history, IEnumerable<Match> live, DateTimeOffset now)
     {
         if (!history.IsSameGroupAsLastGame(players)) return false;
+        // Skill Based only groups players of one level, so a game of other levels finishing can't create a mix.
+        var skillBased = session.Settings.Mode == QueueMode.SkillBased;
+        var tiers = players.Select(TierOf).ToHashSet();
         // Only a game already underway ends soon enough to be worth waiting for.
-        if (!live.Any(m => (m.Status is MatchStatus.Playing or MatchStatus.PendingResult) && !m.PlayerIds.Any(players.Contains))) return false;
+        if (!live.Any(m => (m.Status is MatchStatus.Playing or MatchStatus.PendingResult)
+                           && !m.PlayerIds.Any(players.Contains)
+                           && (!skillBased || m.PlayerIds.Any(id => tiers.Contains(TierOf(id))))))
+            return false;
         var freeSince = players.Select(id => session.FindParticipant(id)?.WaitingSince).Where(t => t is not null).DefaultIfEmpty(now).Min()!.Value;
         return now - freeSince < Limit;
+
+        int TierOf(Guid id) => SkillLevel.TierOf(session.FindParticipant(id)?.SkillEstimate ?? SkillLevel.Default);
     }
 }

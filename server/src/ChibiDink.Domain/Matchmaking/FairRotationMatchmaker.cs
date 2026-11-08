@@ -24,7 +24,9 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
         double QueuePosition = 4,
         double SkillGap = 12,
         double OverTolerance = 25,
-        double RepeatPartner = 6,
+        // Teaming up again is allowed but made rare, and rarer each time: n earlier games together costs
+        // 20 × (1 + 2 + … + n), so 20, 60, 120… Fair turns (an extra game costs 40) still come first.
+        double RepeatPartner = 20,
         double RepeatOpponent = 2,
         // Per pair of players who were in the same game last time: the same four twice in a row costs 6 × 30,
         // so a fresh mix wins whenever anyone else is waiting (rotation order still decides who goes first).
@@ -144,6 +146,9 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
             skillBased && mixed);
     }
 
+    /// <summary>Growing cost of teaming up again: 0, 20, 60, 120… for 0, 1, 2, 3 earlier games together.</summary>
+    private double RepeatPartnerCost(int timesTogether) => _w.RepeatPartner * timesTogether * (timesTogether + 1) / 2;
+
     private double RepeatCost(List<QueueCandidate> teamA, List<QueueCandidate> teamB, PairingHistory history)
     {
         double cost = 0;
@@ -167,8 +172,8 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
                 cost += _w.SamePartnerAgain;
 
         // Fixed partners always play together, so that's never a "repeat" to avoid.
-        if (teamA.Count == 2 && teamA[0].PartnerId != teamA[1].UserId) cost += history.PartnerCount(teamA[0].UserId, teamA[1].UserId) * _w.RepeatPartner;
-        if (teamB.Count == 2 && teamB[0].PartnerId != teamB[1].UserId) cost += history.PartnerCount(teamB[0].UserId, teamB[1].UserId) * _w.RepeatPartner;
+        if (teamA.Count == 2 && teamA[0].PartnerId != teamA[1].UserId) cost += RepeatPartnerCost(history.PartnerCount(teamA[0].UserId, teamA[1].UserId));
+        if (teamB.Count == 2 && teamB[0].PartnerId != teamB[1].UserId) cost += RepeatPartnerCost(history.PartnerCount(teamB[0].UserId, teamB[1].UserId));
         foreach (var a in teamA)
             foreach (var b in teamB)
                 cost += history.OpponentCount(a.UserId, b.UserId) * _w.RepeatOpponent;

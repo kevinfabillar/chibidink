@@ -109,4 +109,25 @@ public sealed class BackToBackTests
         Assert.True(history.PlayedLastGameTogether(a, c));
         Assert.False(history.PlayedLastGameTogether(a, b));
     }
+
+    [Fact]
+    public void Four_players_rotate_through_every_partner_before_repeating_one()
+    {
+        var p = Enumerable.Range(0, 4).Select(i => Player(waitedMinutes: 10 - i)).ToList();
+        var a = p[0].UserId;
+        var games = new List<(IReadOnlyList<Guid> A, IReadOnlyList<Guid> B)>();
+        var partnersOfA = new List<Guid>();
+
+        for (var game = 0; game < 3; game++)
+        {
+            var history = new PairingHistory();
+            foreach (var (ta, tb) in Enumerable.Reverse(games)) history.AddMatch(ta, tb); // newest first
+            var lineup = Assert.Single(_matchmaker.FindLineups(Request(p, history)));
+            games.Add((lineup.TeamA, lineup.TeamB));
+            var team = lineup.TeamA.Contains(a) ? lineup.TeamA : lineup.TeamB;
+            partnersOfA.Add(team.Single(id => id != a));
+        }
+
+        Assert.Equal(3, partnersOfA.Distinct().Count()); // B, C and D once each
+    }
 }
