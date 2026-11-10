@@ -10,6 +10,8 @@ export const queryKeys = {
   player: (id: string) => ['player', id] as const,
   cosmetics: ['cosmetics'] as const,
   friends: ['friends'] as const,
+  /** Under the session's key, so live session updates refresh it too. */
+  kudos: (sessionId: string) => ['session', sessionId, 'kudos'] as const,
 }
 
 export function useMe() {

@@ -14,6 +14,9 @@ import type {
   TokenResponse,
   Friends,
   FriendAction,
+  SessionKudos,
+  KudosKind,
+  StreetCredEntry,
 } from './types'
 
 export const API_BASE = import.meta.env.VITE_API_URL ?? ''
@@ -45,11 +48,22 @@ export const profileApi = {
 
 export const friendsApi = {
   mine: () => http.get<Friends>('/api/friends'),
+  /** Who a code belongs to, before sending anything. */
+  lookup: (code: string) => http.get<FriendAction>(`/api/friends/code/${encodeURIComponent(code)}`),
   addByCode: (code: string) => http.post<FriendAction>('/api/friends/code', { code }),
   add: (userId: string) => http.post<FriendAction>(`/api/friends/${userId}`),
   accept: (userId: string) => http.post<FriendAction>(`/api/friends/${userId}/accept`),
   /** Decline, cancel, or unfriend. */
   remove: (userId: string) => http.delete(`/api/friends/${userId}`),
+}
+
+export const kudosApi = {
+  forSession: (sessionId: string) => http.get<SessionKudos>(`/api/sessions/${sessionId}/matches/kudos`),
+  /** Gives this kudos, or takes it back if it was already given. */
+  toggle: (sessionId: string, matchId: string, toUserId: string, kind: KudosKind) =>
+    http.post(`/api/sessions/${sessionId}/matches/${matchId}/kudos`, { toUserId, kind }),
+  /** The top players for one kind, by Street Cred. */
+  leaderboard: (kind: KudosKind) => http.get<StreetCredEntry[]>(`/api/street-cred/${kind}`),
 }
 
 export const cosmeticsApi = {

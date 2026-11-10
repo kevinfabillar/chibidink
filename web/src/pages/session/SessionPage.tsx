@@ -10,6 +10,7 @@ import { CourtsTab } from './CourtsTab'
 import { ManageTab } from './ManageTab'
 import { MyGamesTab } from './MyGamesTab'
 import { MyMatchBanner } from './MyMatchBanner'
+import { GiveKudosButton } from '../../components/session/KudosPanel'
 import { SessionInfoTab } from './SessionInfoTab'
 import { SessionBottomNav } from './SessionNav'
 import { sessionTabs, type SessionTab } from './sessionTabs'
@@ -34,6 +35,7 @@ export function SessionPage() {
       <SessionHeader session={s} live={live} />
       {s.status === 'Closed' && <Podium players={s.participants} />}
       {s.myMatch && tab !== 'courts' && tab !== 'games' && <MyMatchBanner session={s} match={s.myMatch} />}
+      <GiveKudosButton sessionId={s.id} />
 
       {/* Desktop tabs; phones use the bottom nav */}
       <div role="tablist" className="mb-5 hidden gap-1.5 rounded-2xl border border-white/8 bg-night/70 p-1.5 lg:flex">

@@ -1,183 +1,310 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, Copy, Share2, UserMinus, UserPlus, Users, X } from 'lucide-react'
-import { useState, type FormEvent, type ReactNode } from 'react'
+import clsx from 'clsx'
+import { Check, ChevronLeft, ChevronRight, Copy, QrCode, Share2, UserPlus, X } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
+import { useRef, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { friendsApi } from '../api/api'
 import type { Friend, FriendAction } from '../api/types'
+import { PlayerName } from '../components/character/NameTag'
 import { PlayerAvatar } from '../components/character/Stage'
 import { Button } from '../components/ui/Button'
 import { PageError } from '../components/ui/ErrorPage'
 import { ErrorNote, Spinner } from '../components/ui/primitives'
+import { Sheet } from '../components/ui/Sheet'
 import { TopBar } from '../components/ui/TopBar'
 import { queryKeys } from '../hooks/queries'
-import { PlayerName } from '../components/character/NameTag'
 
-/** Friends: your code to share, add by code, requests both ways, and your friends list. */
+const CODE_LENGTH = 6
+const PER_PAGE = 10
+const cleanCode = (raw: string) => raw.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, CODE_LENGTH)
+const friendLink = (code: string) => `${location.origin}/friends?add=${code}`
+
+/** Friends: your code, requests waiting on you, and your friends list. Adding someone happens in a sheet. */
 export function FriendsPage() {
   const friends = useQuery({ queryKey: queryKeys.friends, queryFn: friendsApi.mine })
+  const [params] = useSearchParams()
+  // Arriving from someone's QR (/friends?add=CODE) opens the add sheet with their code.
+  const [adding, setAdding] = useState(() => params.has('add'))
+
   if (!friends.data) return friends.error ? <PageError error={friends.error} onRetry={() => friends.refetch()} /> : <Spinner />
   const { myCode, maxFriends, friends: list, incoming, outgoing } = friends.data
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <TopBar back="/profile" title="Friends" sub={`${list.length} of ${maxFriends} friends`} />
-      <div className="grid gap-5 md:grid-cols-2 md:items-start">
-        <div className="space-y-5">
-          <MyCode code={myCode} />
-          <AddByCode />
-        </div>
-        <div className="space-y-5">
-          {incoming.length > 0 && (
-            <Section title="Friend requests" count={incoming.length}>
-              {incoming.map((f) => (
-                <Row key={f.player.userId} friend={f} note="Wants to be friends">
-                  <Respond userId={f.player.userId} />
-                </Row>
-              ))}
-            </Section>
-          )}
+    <div className="mx-auto max-w-2xl">
+      <TopBar title="Friends" />
 
-          <Section title="Your friends" count={list.length}>
-            {list.length === 0 ? (
-              <p className="rounded-2xl bg-night/70 p-4 text-center text-sm text-muted">
-                No friends yet. Share your code, or add players from their profile.
-              </p>
-            ) : (
-              list.map((f) => (
-                <Row key={f.player.userId} friend={f} note={`Lv ${f.player.characterLevel}`}>
-                  <RemoveButton userId={f.player.userId} label={`Remove ${f.player.displayName}`} confirm={`Remove ${f.player.displayName} from your friends?`} icon={<UserMinus className="size-4.5" />} />
-                </Row>
-              ))
-            )}
-          </Section>
-
-          {outgoing.length > 0 && (
-            <Section title="Sent requests" count={outgoing.length}>
-              {outgoing.map((f) => (
-                <Row key={f.player.userId} friend={f} note="Waiting for them">
-                  <RemoveButton userId={f.player.userId} label={`Cancel request to ${f.player.displayName}`} icon={<X className="size-4.5" />} />
-                </Row>
-              ))}
-            </Section>
-          )}
-        </div>
+      <div className="mb-5 flex items-center gap-2">
+        <MyCode code={myCode} />
+        <Button icon={<UserPlus className="size-5" />} onClick={() => setAdding(true)} className="shrink-0">
+          Add
+        </Button>
       </div>
+
+      {incoming.length > 0 && (
+        <Section title="Requests" count={incoming.length}>
+          <ul className="card divide-y divide-white/8">
+            {incoming.map((f) => (
+              <IncomingRow key={f.player.userId} friend={f} />
+            ))}
+          </ul>
+        </Section>
+      )}
+
+      <Section title="Friends" count={list.length} note={`${list.length} of ${maxFriends}`}>
+        {list.length === 0 ? (
+          <div className="card px-6 py-8 text-center">
+            <p className="font-semibold">No friends yet</p>
+            <p className="mt-1 text-sm text-muted">Share your code or show your QR at the courts. You can also add players from their profile.</p>
+          </div>
+        ) : (
+          <Paged items={list} perPage={PER_PAGE}>
+            {(page) => (
+              <ul className="card divide-y divide-white/8">
+                {page.map((f) => (
+                  <FriendRow key={f.player.userId} friend={f} />
+                ))}
+              </ul>
+            )}
+          </Paged>
+        )}
+      </Section>
+
+      {outgoing.length > 0 && (
+        <Section title="Sent" count={outgoing.length}>
+          <ul className="flex flex-wrap gap-2">
+            {outgoing.map((f) => (
+              <SentChip key={f.player.userId} friend={f} />
+            ))}
+          </ul>
+        </Section>
+      )}
+
+      <Sheet open={adding} onClose={() => setAdding(false)} title="Add a friend">
+        {adding && <AddByCode initial={params.get('add') ?? ''} />}
+      </Sheet>
     </div>
   )
 }
 
+/** Shows one page of items at a time, with previous / next underneath when there's more than one page. */
+function Paged<T>({ items, perPage, children }: { items: T[]; perPage: number; children: (page: T[]) => ReactNode }) {
+  const [page, setPage] = useState(0)
+  const pages = Math.max(1, Math.ceil(items.length / perPage))
+  const current = Math.min(page, pages - 1) // e.g. after removing the last friend on the last page
+  return (
+    <>
+      {children(items.slice(current * perPage, (current + 1) * perPage))}
+      {pages > 1 && (
+        <nav className="mt-3 flex items-center justify-center gap-3" aria-label="Pages">
+          <button
+            onClick={() => setPage(current - 1)}
+            disabled={current === 0}
+            aria-label="Previous page"
+            className="grid size-9 place-items-center rounded-xl border border-white/12 transition hover:border-lime/60 disabled:opacity-30"
+          >
+            <ChevronLeft className="size-5" />
+          </button>
+          <span className="min-w-16 text-center text-sm font-semibold">
+            {current + 1} / {pages}
+          </span>
+          <button
+            onClick={() => setPage(current + 1)}
+            disabled={current === pages - 1}
+            aria-label="Next page"
+            className="grid size-9 place-items-center rounded-xl border border-white/12 transition hover:border-lime/60 disabled:opacity-30"
+          >
+            <ChevronRight className="size-5" />
+          </button>
+        </nav>
+      )}
+    </>
+  )
+}
+
+function Section({ title, count, note, children }: { title: string; count: number; note?: string; children: ReactNode }) {
+  return (
+    <section className="mb-6">
+      <h2 className="mb-2 flex items-baseline gap-2 px-1">
+        <span className="font-display text-lg font-extrabold">{title}</span>
+        <span className="text-sm font-semibold text-muted">{count}</span>
+        {note && <span className="ml-auto text-xs text-muted">{note}</span>}
+      </h2>
+      {children}
+    </section>
+  )
+}
+
+// ---- Your code ----------------------------------------------------------------------------------------
+
+/** One slim row: your code, with copy, QR and share. */
 function MyCode({ code }: { code: string }) {
   const [copied, setCopied] = useState(false)
-  const link = `${location.origin}/friends?add=${code}`
+  const [qr, setQr] = useState(false)
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(code)
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
     } catch {
-      /* clipboard blocked: the code is on screen to read out */
+      /* clipboard blocked: the code is on screen */
     }
   }
-  const share = () => navigator.share?.({ title: 'Add me on ChibiDink', text: `My ChibiDink friend code: ${code}`, url: link }).catch(() => {})
+  const share = () =>
+    navigator.share?.({ title: 'Add me on ChibiDink', text: `Add me on ChibiDink! My friend code is ${code}.`, url: friendLink(code) }).catch(() => {})
 
   return (
-    <section className="card p-5 text-center">
-      <div className="text-sm font-semibold text-muted">Your friend code</div>
-      <div className="my-2 font-display text-4xl font-bold tracking-[0.25em] text-lime">{code}</div>
-      <p className="mb-4 text-sm text-muted">Friends type this in to add you.</p>
-      <div className="flex gap-2">
-        <Button variant="dark" block icon={copied ? <Check className="size-4.5" /> : <Copy className="size-4.5" />} onClick={copy}>
-          {copied ? 'Copied' : 'Copy code'}
-        </Button>
-        {'share' in navigator && (
-          <Button variant="grape" block icon={<Share2 className="size-4.5" />} onClick={share}>
-            Share
-          </Button>
-        )}
+    <div className="card flex min-w-0 flex-1 items-center gap-1 py-1.5 pr-1.5 pl-4">
+      <div className="min-w-0 flex-1">
+        <div className="text-[11px] font-semibold text-muted">Your code</div>
+        <div className="font-display text-xl leading-tight font-extrabold tracking-[0.18em] text-lime">{code}</div>
       </div>
-    </section>
+      <IconButton label={copied ? 'Copied' : 'Copy code'} onClick={copy}>
+        {copied ? <Check className="size-5 text-lime" /> : <Copy className="size-5" />}
+      </IconButton>
+      <IconButton label="Show QR" onClick={() => setQr(true)}>
+        <QrCode className="size-5" />
+      </IconButton>
+      {'share' in navigator && (
+        <IconButton label="Share" onClick={share}>
+          <Share2 className="size-5" />
+        </IconButton>
+      )}
+
+      <Sheet open={qr} onClose={() => setQr(false)} title="Scan to add me">
+        <div className="flex flex-col items-center text-center">
+          <div className="rounded-3xl bg-snow p-4">
+            <QRCodeSVG value={friendLink(code)} size={220} level="M" />
+          </div>
+          <div className="mt-4 font-display text-3xl font-extrabold tracking-[0.25em] text-lime">{code}</div>
+          <p className="mt-2 max-w-xs text-sm text-muted">Let your friend scan this with their phone camera. It opens ChibiDink with your code filled in.</p>
+        </div>
+      </Sheet>
+    </div>
   )
 }
 
-function AddByCode() {
-  const [params] = useSearchParams()
-  const [code, setCode] = useState(params.get('add')?.toUpperCase() ?? '')
+function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
+  return (
+    <button onClick={onClick} aria-label={label} title={label} className="grid size-10 place-items-center rounded-xl text-white/80 transition hover:bg-white/8 hover:text-white">
+      {children}
+    </button>
+  )
+}
+
+// ---- Add a friend (sheet) -------------------------------------------------------------------------------
+
+/** Type a code; once it's complete you see whose it is before sending a request. */
+function AddByCode({ initial }: { initial: string }) {
+  const [, setParams] = useSearchParams()
+  const [code, setCode] = useState(() => cleanCode(initial))
+  const [focused, setFocused] = useState(false)
+  const input = useRef<HTMLInputElement>(null)
   const queryClient = useQueryClient()
-  const add = useMutation({
-    mutationFn: () => friendsApi.addByCode(code),
+
+  const complete = code.length === CODE_LENGTH
+  const lookup = useQuery({ queryKey: ['friend-code', code], queryFn: () => friendsApi.lookup(code), enabled: complete, retry: false, staleTime: 0 })
+  const send = useMutation({
+    mutationFn: (who: FriendAction) => (who.status === 'Incoming' ? friendsApi.accept(who.player.userId) : friendsApi.add(who.player.userId)),
     onSuccess: () => {
-      setCode('')
       void queryClient.invalidateQueries({ queryKey: queryKeys.friends })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.me })
+      void queryClient.invalidateQueries({ queryKey: ['friend-code'] })
     },
   })
-  const submit = (e: FormEvent) => {
-    e.preventDefault()
-    add.mutate()
+  const change = (value: string) => {
+    setCode(cleanCode(value))
+    send.reset()
+    setParams({}, { replace: true }) // a QR's code has been used
   }
 
   return (
-    <section className="card p-5">
-      <h2 className="mb-3 font-display text-lg font-bold">Add a friend</h2>
-      <form onSubmit={submit} className="flex gap-2">
+    <div>
+      <p className="mb-3 text-sm text-muted">Enter their 6-character code. You'll see who it is before anything is sent.</p>
+      {/* One real input (keyboard, paste, autofill) drawn as six boxes. */}
+      <label className="relative block cursor-text" onClick={() => input.current?.focus()}>
+        <div className="grid grid-cols-6 gap-1.5" aria-hidden>
+          {Array.from({ length: CODE_LENGTH }, (_, i) => (
+            <span
+              key={i}
+              className={clsx(
+                'grid h-13 place-items-center rounded-xl border font-display text-2xl font-extrabold',
+                code[i] ? 'border-lime/50 bg-night text-lime' : 'border-white/10 bg-night/50',
+                focused && !complete && i === code.length && 'border-lime',
+              )}
+            >
+              {code[i] ?? ''}
+            </span>
+          ))}
+        </div>
         <input
+          ref={input}
           value={code}
-          onChange={(e) => {
-            setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))
-            add.reset()
-          }}
-          placeholder="Friend code"
+          onChange={(e) => change(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          autoFocus={!initial}
           aria-label="Friend code"
           autoCapitalize="characters"
           autoComplete="off"
+          autoCorrect="off"
           spellCheck={false}
-          className="h-12 min-w-0 flex-1 rounded-2xl border border-white/10 bg-ink px-4 font-display text-lg tracking-[0.2em] text-white uppercase placeholder:tracking-normal placeholder:text-white/40 focus:border-lime/70 focus:outline-none"
+          maxLength={CODE_LENGTH + 2}
+          className="absolute inset-0 size-full cursor-text bg-transparent text-base text-transparent caret-transparent opacity-0"
         />
-        <Button type="submit" icon={<UserPlus className="size-5" />} disabled={code.length !== 6} loading={add.isPending}>
-          Add
-        </Button>
-      </form>
-      {add.data && <p className="mt-3 text-sm font-semibold text-lime">{resultText(add.data)}</p>}
-      <div className="mt-3">
-        <ErrorNote error={add.error} />
-      </div>
-    </section>
-  )
-}
+      </label>
 
-const resultText = ({ player, status }: FriendAction) =>
-  status === 'Friends' ? `You and ${player.displayName} are now friends!` : `Request sent to ${player.displayName}.`
-
-function Section({ title, count, children }: { title: string; count: number; children: ReactNode }) {
-  return (
-    <section className="card p-5">
-      <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold">
-        <Users className="size-5 text-lime" />
-        {title}
-        <span className="ml-auto rounded-full bg-white/8 px-2 text-sm text-muted">{count}</span>
-      </h2>
-      <ul className="space-y-2">{children}</ul>
-    </section>
-  )
-}
-
-function Row({ friend, note, children }: { friend: Friend; note: string; children: ReactNode }) {
-  return (
-    <li className="flex items-center gap-3 rounded-2xl bg-night/70 p-2.5">
-      <Link to={`/players/${friend.player.userId}`} className="flex min-w-0 flex-1 items-center gap-3">
-        <PlayerAvatar player={friend.player} size={44} />
-        <div className="min-w-0">
-          <div className="flex min-w-0 font-semibold">
-            <PlayerName player={friend.player} truncate />
+      {complete && (
+        <div className="mt-4">
+          {lookup.isPending ? (
+            <div className="grid h-16 place-items-center">
+              <Spinner label="Looking up" />
+            </div>
+          ) : lookup.error ? (
+            <ErrorNote error={lookup.error} />
+          ) : lookup.data ? (
+            <FoundPlayer who={send.data ?? lookup.data} sending={send.isPending} onSend={() => send.mutate(lookup.data!)} />
+          ) : null}
+          <div className="mt-2">
+            <ErrorNote error={send.error} />
           </div>
-          <div className="text-xs text-muted">{note}</div>
         </div>
-      </Link>
-      <div className="flex shrink-0 gap-1.5">{children}</div>
-    </li>
+      )}
+    </div>
   )
 }
 
-function useFriendAction<T>(fn: (v: T) => Promise<unknown>) {
+/** The player a code belongs to, with the one action that fits. */
+function FoundPlayer({ who, sending, onSend }: { who: FriendAction; sending: boolean; onSend: () => void }) {
+  const { player, status } = who
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-night/60 p-3">
+      <PlayerAvatar player={player} size={48} />
+      <div className="min-w-0 flex-1">
+        <div className="flex py-1">
+          <PlayerName player={player} className="truncate font-semibold" truncate />
+        </div>
+        <div className="text-xs text-muted">Level {player.characterLevel}</div>
+      </div>
+      {status === 'None' && (
+        <Button size="sm" loading={sending} onClick={onSend}>
+          Send request
+        </Button>
+      )}
+      {status === 'Incoming' && (
+        <Button size="sm" loading={sending} onClick={onSend}>
+          Accept
+        </Button>
+      )}
+      {status === 'Outgoing' && <span className="text-sm font-semibold text-lime">Request sent</span>}
+      {status === 'Friends' && <span className="text-sm font-semibold text-lime">Friends</span>}
+    </div>
+  )
+}
+
+// ---- Rows -----------------------------------------------------------------------------------------------
+
+function useFriendAction(fn: () => Promise<unknown>) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: fn,
@@ -189,34 +316,81 @@ function useFriendAction<T>(fn: (v: T) => Promise<unknown>) {
   })
 }
 
-function Respond({ userId }: { userId: string }) {
-  const accept = useFriendAction(() => friendsApi.accept(userId))
-  const decline = useFriendAction(() => friendsApi.remove(userId))
+/** A friend: name and level, View profile, and a quiet Remove. */
+function FriendRow({ friend }: { friend: Friend }) {
+  const remove = useFriendAction(() => friendsApi.remove(friend.player.userId))
+  const name = friend.player.displayName
   return (
-    <>
-      <Button size="sm" icon={<Check className="size-4" />} loading={accept.isPending} disabled={decline.isPending} onClick={() => accept.mutate(undefined)}>
-        Accept
-      </Button>
-      <Button size="sm" variant="dark" aria-label="Decline" loading={decline.isPending} disabled={accept.isPending} onClick={() => decline.mutate(undefined)}>
-        <X className="size-4" />
-      </Button>
-      {(accept.error || decline.error) && <span className="sr-only">Something went wrong</span>}
-    </>
+    <li className="flex items-center gap-3 px-4 py-2.5">
+      <div className="min-w-0 flex-1">
+        <div className="flex py-1">
+          <PlayerName player={friend.player} className="truncate font-semibold" truncate />
+        </div>
+        <div className="text-xs text-muted">Level {friend.player.characterLevel}</div>
+      </div>
+      <Link
+        to={`/players/${friend.player.userId}`}
+        className="shrink-0 rounded-lg px-3 py-1.5 text-sm font-semibold text-lime transition hover:bg-lime/10"
+      >
+        View
+      </Link>
+      <button
+        onClick={() => window.confirm(`Remove ${name} from your friends?`) && remove.mutate()}
+        disabled={remove.isPending}
+        className="shrink-0 rounded-lg px-3 py-1.5 text-sm font-semibold text-danger transition hover:bg-danger/10 disabled:opacity-50"
+      >
+        Remove
+      </button>
+    </li>
   )
 }
 
-function RemoveButton({ userId, label, confirm, icon }: { userId: string; label: string; confirm?: string; icon: ReactNode }) {
-  const remove = useFriendAction(() => friendsApi.remove(userId))
+function IncomingRow({ friend }: { friend: Friend }) {
+  const accept = useFriendAction(() => friendsApi.accept(friend.player.userId))
+  const decline = useFriendAction(() => friendsApi.remove(friend.player.userId))
   return (
-    <Button
-      size="sm"
-      variant="dark"
-      aria-label={label}
-      title={label}
-      loading={remove.isPending}
-      onClick={() => (!confirm || window.confirm(confirm)) && remove.mutate(undefined)}
-    >
-      {icon}
-    </Button>
+    <li className="px-4 py-2.5">
+      <div className="flex items-center gap-3">
+        <PlayerAvatar player={friend.player} size={40} />
+        <Link to={`/players/${friend.player.userId}`} className="min-w-0 flex-1">
+          <div className="flex py-1">
+            <PlayerName player={friend.player} className="truncate font-semibold" truncate />
+          </div>
+          <div className="text-xs text-muted">Level {friend.player.characterLevel} · wants to be friends</div>
+        </Link>
+        <Button size="sm" loading={accept.isPending} disabled={decline.isPending} onClick={() => accept.mutate()}>
+          Accept
+        </Button>
+        <button
+          onClick={() => decline.mutate()}
+          disabled={accept.isPending || decline.isPending}
+          aria-label={`Decline ${friend.player.displayName}`}
+          title="Decline"
+          className="grid size-9 shrink-0 place-items-center rounded-lg text-white/60 transition hover:bg-white/8 hover:text-white"
+        >
+          <X className="size-5" />
+        </button>
+      </div>
+      <ErrorNote error={accept.error ?? decline.error} />
+    </li>
+  )
+}
+
+function SentChip({ friend }: { friend: Friend }) {
+  const cancel = useFriendAction(() => friendsApi.remove(friend.player.userId))
+  return (
+    <li className="flex items-center gap-1 rounded-full border border-white/10 bg-surface py-1 pr-1 pl-3 text-sm">
+      <span className="max-w-36 truncate font-semibold">{friend.player.displayName}</span>
+      <span className="text-xs text-muted">pending</span>
+      <button
+        onClick={() => cancel.mutate()}
+        disabled={cancel.isPending}
+        aria-label={`Cancel request to ${friend.player.displayName}`}
+        title="Cancel request"
+        className="grid size-7 place-items-center rounded-full text-white/50 hover:bg-white/10 hover:text-white"
+      >
+        <X className="size-4" />
+      </button>
+    </li>
   )
 }

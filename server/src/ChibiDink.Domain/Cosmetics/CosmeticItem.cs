@@ -23,6 +23,9 @@ public enum Rarity
     Mythic = 6,
 }
 
+/// <summary>Earned, not bought: unlocked by receiving this many kudos of one kind.</summary>
+public sealed record KudosAchievement(Social.KudosKind Kind, int Count);
+
 /// <summary>
 /// A purely visual item. It never changes matchmaking, match results, or drill scores.
 /// How an item looks is a client concern; the server only knows the rules (price, level, ownership).
@@ -34,7 +37,8 @@ public sealed record CosmeticItem(
     Rarity Rarity,
     int Price,
     int RequiredLevel,
-    bool IsStarter = false)
+    bool IsStarter = false,
+    KudosAchievement? Achievement = null)
 {
-    public bool IsForSale => !IsStarter && Price > 0;
+    public bool IsForSale => !IsStarter && Achievement is null && Price > 0;
 }

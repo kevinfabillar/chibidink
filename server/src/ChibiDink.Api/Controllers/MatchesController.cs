@@ -1,3 +1,4 @@
+using ChibiDink.Application.Social;
 using Microsoft.AspNetCore.Mvc;
 using ChibiDink.Application.Contracts;
 using ChibiDink.Application.Matches;
@@ -6,8 +7,20 @@ namespace ChibiDink.Api.Controllers;
 
 [ApiController]
 [Route("api/sessions/{sessionId:guid}/matches")]
-public sealed class MatchesController(IMatchService matches) : ControllerBase
+public sealed class MatchesController(IMatchService matches, IKudosService kudos) : ControllerBase
 {
+    /// <summary>Your matches in this session still open for kudos, and the kudos you received here.</summary>
+    [HttpGet("kudos")]
+    public Task<SessionKudosDto> Kudos(Guid sessionId, CancellationToken ct) => kudos.GetForSessionAsync(sessionId, ct);
+
+    /// <summary>Give a kudos to a player from this finished match, or take it back.</summary>
+    [HttpPost("{matchId:guid}/kudos")]
+    public async Task<IActionResult> ToggleKudos(Guid matchId, GiveKudosRequest request, CancellationToken ct)
+    {
+        await kudos.ToggleAsync(matchId, request.ToUserId, request.Kind, ct);
+        return NoContent();
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateManual(Guid sessionId, CreateManualMatchRequest request, CancellationToken ct) =>
         Ok(new { id = await matches.CreateManualAsync(sessionId, request, ct) });

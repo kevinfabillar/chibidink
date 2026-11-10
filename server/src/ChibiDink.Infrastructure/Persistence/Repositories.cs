@@ -29,6 +29,37 @@ internal sealed class PlayerProfileRepository(AppDbContext db) : IPlayerProfileR
     public void Add(PlayerProfile profile) => db.PlayerProfiles.Add(profile);
 }
 
+internal sealed class KudosRepository(AppDbContext db) : IKudosRepository
+{
+    public Task<Kudos?> FindInSessionAsync(Guid sessionId, Guid fromUserId, Guid toUserId, CancellationToken ct) =>
+        db.Kudos.FirstOrDefaultAsync(k => k.SessionId == sessionId && k.FromUserId == fromUserId && k.ToUserId == toUserId, ct);
+
+    public async Task<IReadOnlyList<Kudos>> ListGivenInSessionsAsync(Guid fromUserId, IReadOnlyCollection<Guid> sessionIds, CancellationToken ct) =>
+        sessionIds.Count == 0 ? [] : await db.Kudos.AsNoTracking().Where(k => k.FromUserId == fromUserId && sessionIds.Contains(k.SessionId)).ToListAsync(ct);
+
+    public async Task<IReadOnlyList<Kudos>> ListReceivedInSessionAsync(Guid userId, Guid sessionId, CancellationToken ct) =>
+        await db.Kudos.AsNoTracking().Where(k => k.ToUserId == userId && k.SessionId == sessionId).ToListAsync(ct);
+
+    public Task<int> CountReceivedAsync(Guid userId, KudosKind kind, CancellationToken ct) =>
+        db.Kudos.CountAsync(k => k.ToUserId == userId && k.Kind == kind, ct);
+
+    public async Task<IReadOnlyList<KudosTally>> TallyForUserAsync(Guid userId, CancellationToken ct) =>
+        await db.Kudos.Where(k => k.ToUserId == userId)
+            .GroupBy(k => k.Kind)
+            .Select(g => new KudosTally(userId, g.Key, g.Count(), g.Select(k => k.FromUserId).Distinct().Count()))
+            .ToListAsync(ct);
+
+    public async Task<IReadOnlyList<KudosTally>> TallyForKindAsync(KudosKind kind, CancellationToken ct) =>
+        await db.Kudos.Where(k => k.Kind == kind)
+            .GroupBy(k => k.ToUserId)
+            .Select(g => new KudosTally(g.Key, kind, g.Count(), g.Select(k => k.FromUserId).Distinct().Count()))
+            .ToListAsync(ct);
+
+    public void Add(Kudos kudos) => db.Kudos.Add(kudos);
+
+    public void Remove(Kudos kudos) => db.Kudos.Remove(kudos);
+}
+
 internal sealed class FriendshipRepository(AppDbContext db) : IFriendshipRepository
 {
     public Task<Friendship?> FindBetweenAsync(Guid a, Guid b, CancellationToken ct)

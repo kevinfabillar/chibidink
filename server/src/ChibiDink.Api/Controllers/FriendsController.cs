@@ -12,6 +12,10 @@ public sealed class FriendsController(IFriendService friends) : ControllerBase
     [HttpGet]
     public Task<FriendsDto> GetMine(CancellationToken ct) => friends.GetMineAsync(ct);
 
+    /// <summary>Who a code belongs to (shown before you send the request).</summary>
+    [HttpGet("code/{code}")]
+    public Task<FriendActionDto> Lookup(string code, CancellationToken ct) => friends.LookupByCodeAsync(code, ct);
+
     /// <summary>Add a friend by their code.</summary>
     [HttpPost("code")]
     public Task<FriendActionDto> AddByCode(AddFriendRequest request, CancellationToken ct) => friends.AddByCodeAsync(request.Code, ct);

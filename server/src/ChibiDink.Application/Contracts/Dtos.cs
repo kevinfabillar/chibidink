@@ -1,3 +1,4 @@
+using ChibiDink.Domain.Social;
 using ChibiDink.Application.Progression;
 using ChibiDink.Domain.Common;
 using ChibiDink.Domain.Cosmetics;
@@ -124,7 +125,9 @@ public sealed record ProfileDto(
     IReadOnlyList<SessionSummaryDto> Sessions,
     ActiveMatchDto? ActiveMatch,
     FriendStatus Friendship = FriendStatus.None,
-    int FriendRequests = 0);
+    int FriendRequests = 0,
+    IReadOnlyList<StreetCredDto>? StreetCred = null,
+    KudosPromptDto? KudosPrompt = null);
 
 // ---- Friends --------------------------------------------------------------------------------
 
@@ -146,6 +149,26 @@ public sealed record FriendsDto(
 
 public sealed record AddFriendRequest(string Code);
 
+// ---- Kudos ----------------------------------------------------------------------------------
+
+public sealed record KudosCountDto(KudosKind Kind, int Count);
+
+/// <summary>Someone you played with this session (kudos open), from your latest game together.</summary>
+/// <param name="Given">The one kudos you gave them this session, if any.</param>
+public sealed record KudosTargetDto(PlayerCardDto Player, Guid MatchId, int CourtNumber, DateTimeOffset PlayedAt, bool Teammate, KudosKind? Given);
+
+/// <summary>Street Cred for one kind: kudos received × different people who gave them.</summary>
+public sealed record StreetCredDto(KudosKind Kind, int Received, int Givers, int Cred);
+
+public sealed record StreetCredEntryDto(int Rank, PlayerCardDto Player, int Cred, int Received, int Givers);
+
+/// <summary>Your latest finished match you haven't given any kudos for yet (bell and home banner).</summary>
+public sealed record KudosPromptDto(Guid SessionId, string SessionTitle, Guid MatchId, int CourtNumber);
+
+public sealed record SessionKudosDto(IReadOnlyList<KudosTargetDto> Players, IReadOnlyList<KudosCountDto> Received);
+
+public sealed record GiveKudosRequest(Guid ToUserId, KudosKind Kind);
+
 public sealed record FriendActionDto(PlayerCardDto Player, FriendStatus Status);
 
 /// <summary>The signed-in player's current match, for the notification bell.</summary>
@@ -154,9 +177,12 @@ public sealed record ActiveMatchDto(
 
 // ---- Cosmetics ------------------------------------------------------------------------------
 
+/// <param name="Achievement">Earned items: which kudos unlock it, and how many you have so far.</param>
 public sealed record CosmeticItemDto(
     string Id, string Name, CosmeticSlot Slot, Rarity Rarity, int Price, int RequiredLevel, bool IsStarter,
-    bool Owned, bool Equipped, bool Unlocked);
+    bool Owned, bool Equipped, bool Unlocked, AchievementDto? Achievement = null);
+
+public sealed record AchievementDto(KudosKind Kind, int Required, int Progress);
 
 public sealed record CosmeticsDto(
     ProgressDto Progress, Loadout Loadout, IReadOnlyList<CosmeticItemDto> Items, RewardRules Rewards);

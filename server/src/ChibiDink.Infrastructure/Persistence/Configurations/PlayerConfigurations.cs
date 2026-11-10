@@ -91,3 +91,19 @@ internal sealed class FriendshipConfiguration : IEntityTypeConfiguration<Friends
         b.HasIndex(f => f.AddresseeId);
     }
 }
+
+internal sealed class KudosConfiguration : IEntityTypeConfiguration<Kudos>
+{
+    public void Configure(EntityTypeBuilder<Kudos> b)
+    {
+        b.ToTable("Kudos");
+        b.Property(k => k.Id).ValueGeneratedNever();
+        b.HasOne<AppUser>().WithMany().HasForeignKey(k => k.FromUserId).OnDelete(DeleteBehavior.Cascade);
+        b.HasOne<AppUser>().WithMany().HasForeignKey(k => k.ToUserId).OnDelete(DeleteBehavior.Cascade);
+        // One kudos per giver and receiver per session.
+        b.HasIndex(k => new { k.SessionId, k.FromUserId, k.ToUserId }).IsUnique();
+        b.HasIndex(k => k.MatchId);
+        b.HasIndex(k => k.Kind);
+        b.HasIndex(k => new { k.ToUserId, k.SessionId });
+    }
+}

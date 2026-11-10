@@ -25,8 +25,9 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 
   const done = (t: TokenResponse) => {
     signIn(t.accessToken, t.expiresIn)
-    // Home after signing in; only an invite link (QR / shared /join/CODE) carries on to that session.
-    navigate(next.startsWith('/join/') ? next : '/', { replace: true })
+    // Home after signing in; only a link someone scanned or was sent carries on: a session invite
+    // (/join/CODE) or a friend's QR (/friends?add=CODE).
+    navigate(next.startsWith('/join/') || next.startsWith('/friends?add=') ? next : '/', { replace: true })
   }
 
   const submit = useMutation({

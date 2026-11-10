@@ -7,6 +7,7 @@ import { useMe } from '../../hooks/queries'
 import { PlayerAvatar } from '../character/Stage'
 import { Logo } from '../ui/primitives'
 import { PlayerName } from '../character/NameTag'
+import { AchievementUnlocked } from '../character/AchievementUnlocked'
 
 const nav = [
   { to: '/', label: 'Home', icon: Home, end: true },
@@ -120,6 +121,7 @@ export function AppShell() {
 
       <main className="min-w-0 flex-1 pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[calc(7rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] md:px-8 md:pt-8 lg:pb-10">
         <Outlet />
+        <AchievementUnlocked />
       </main>
 
       {!isSessionRoute(pathname) && <BottomNav items={nav} />}

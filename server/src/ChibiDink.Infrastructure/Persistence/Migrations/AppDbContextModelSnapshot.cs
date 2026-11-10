@@ -592,6 +592,47 @@ namespace ChibiDink.Infrastructure.Persistence.Migrations
                     b.ToTable("Friendships", (string)null);
                 });
 
+            modelBuilder.Entity("ChibiDink.Domain.Social.Kudos", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("FromUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("GivenAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid>("MatchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ToUserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromUserId");
+
+                    b.HasIndex("Kind");
+
+                    b.HasIndex("MatchId");
+
+                    b.HasIndex("ToUserId", "SessionId");
+
+                    b.HasIndex("SessionId", "FromUserId", "ToUserId")
+                        .IsUnique();
+
+                    b.ToTable("Kudos", (string)null);
+                });
+
             modelBuilder.Entity("ChibiDink.Infrastructure.Identity.AppUser", b =>
                 {
                     b.Property<Guid>("Id")
@@ -955,6 +996,21 @@ namespace ChibiDink.Infrastructure.Persistence.Migrations
                     b.HasOne("ChibiDink.Infrastructure.Identity.AppUser", null)
                         .WithMany()
                         .HasForeignKey("RequesterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ChibiDink.Domain.Social.Kudos", b =>
+                {
+                    b.HasOne("ChibiDink.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("FromUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ChibiDink.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("ToUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

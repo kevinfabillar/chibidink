@@ -15,6 +15,29 @@ public interface IPlayerProfileRepository
     void Add(PlayerProfile profile);
 }
 
+/// <summary>Per kind: kudos received and how many different people gave them.</summary>
+public sealed record KudosTally(Guid UserId, KudosKind Kind, int Received, int Givers);
+
+public interface IKudosRepository
+{
+    /// <summary>The one kudos a player gave another in a session, if any.</summary>
+    Task<Kudos?> FindInSessionAsync(Guid sessionId, Guid fromUserId, Guid toUserId, CancellationToken ct);
+
+    /// <summary>Everything a player gave in these sessions (read-only).</summary>
+    Task<IReadOnlyList<Kudos>> ListGivenInSessionsAsync(Guid fromUserId, IReadOnlyCollection<Guid> sessionIds, CancellationToken ct);
+    Task<IReadOnlyList<Kudos>> ListReceivedInSessionAsync(Guid userId, Guid sessionId, CancellationToken ct);
+
+    Task<int> CountReceivedAsync(Guid userId, KudosKind kind, CancellationToken ct);
+
+    /// <summary>One player's tallies, one per kind they've received.</summary>
+    Task<IReadOnlyList<KudosTally>> TallyForUserAsync(Guid userId, CancellationToken ct);
+
+    /// <summary>Every player's tally for one kind (for the Street Cred leaderboard).</summary>
+    Task<IReadOnlyList<KudosTally>> TallyForKindAsync(KudosKind kind, CancellationToken ct);
+    void Add(Kudos kudos);
+    void Remove(Kudos kudos);
+}
+
 public interface IFriendshipRepository
 {
     /// <summary>The row between two players (a request either way, or a friendship), if any.</summary>

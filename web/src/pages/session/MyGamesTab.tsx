@@ -3,6 +3,7 @@ import { CourtCard } from '../../components/court/CourtCard'
 import { MatchActions } from '../../components/court/MatchActions'
 import { Leaderboard } from '../../components/session/Leaderboard'
 import { MatchHistoryList } from '../../components/session/MatchHistoryList'
+import { KudosPanel } from '../../components/session/KudosPanel'
 import { SectionTitle, StatTile } from '../../components/ui/primitives'
 import { CoinIcon } from '../../components/ui/icons'
 import { useCosmetics } from '../../hooks/queries'
@@ -41,6 +42,8 @@ export function MyGamesTab({ session }: { session: SessionDetail }) {
           </div>
         )}
       </section>
+
+      <KudosPanel sessionId={session.id} />
 
       {myCourt && session.myMatch && (
         <section>

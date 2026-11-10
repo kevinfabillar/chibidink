@@ -62,7 +62,8 @@ public sealed class ProfileService(
         var liveTask = isMe ? Read((IMatchRepository r) => r.FindLiveForUserAsync(userId, ct)) : Task.FromResult<Domain.Matches.Match?>(null);
         var requestsTask = isMe ? Read((IFriendshipRepository r) => r.CountPendingReceivedAsync(userId, ct)) : Task.FromResult(0);
         var friendshipTask = isMe ? Task.FromResult<Friendship?>(null) : Read((IFriendshipRepository r) => r.FindBetweenAsync(viewerId, userId, ct));
-        await Task.WhenAll(profileTask, recentTask, sessionsTask, liveTask, requestsTask, friendshipTask);
+        var kudosTask = Read((IKudosRepository r) => r.TallyForUserAsync(userId, ct));
+        await Task.WhenAll(profileTask, recentTask, sessionsTask, liveTask, requestsTask, friendshipTask, kudosTask);
 
         var profile = profileTask.Result ?? throw new NotFoundException("Profile");
         var recent = recentTask.Result;
@@ -76,8 +77,22 @@ public sealed class ProfileService(
         var titleTask = live is not null && title is null
             ? Read((ISessionRepository r) => r.FindTitleAsync(live.SessionId, ct))
             : Task.FromResult(title);
-        await Task.WhenAll(peopleTask, titleTask);
+        // Your latest finished game (24 h) that you haven't given anyone kudos for yet: the bell and home banner.
+        var kudosOpen = isMe
+            ? recent.Where(m => m.EndedAt is { } ended && clock.UtcNow - ended <= Kudos.Window).ToList()
+            : [];
+        var givenTask = kudosOpen.Count > 0
+            ? Read((IKudosRepository r) => r.ListGivenInSessionsAsync(userId, kudosOpen.Select(m => m.SessionId).Distinct().ToList(), ct))
+            : Task.FromResult<IReadOnlyList<Kudos>>([]);
+        await Task.WhenAll(peopleTask, titleTask, givenTask);
         var people = peopleTask.Result;
+        // Prompt while someone from your latest open game still has no kudos from you this session.
+        var promptMatch = kudosOpen.FirstOrDefault(m => m.PlayerIds.Any(id =>
+            id != userId && givenTask.Result.All(k => k.SessionId != m.SessionId || k.ToUserId != id)));
+        var kudosPrompt = promptMatch is null
+            ? null
+            : new KudosPromptDto(promptMatch.SessionId, mySessions.FirstOrDefault(x => x.Id == promptMatch.SessionId)?.Title ?? "Session",
+                promptMatch.Id, promptMatch.CourtNumber);
 
         // Someone else's profile only lists sessions you were both in, so it can't reveal where and when they play.
         if (!isMe)
@@ -94,7 +109,9 @@ public sealed class ProfileService(
             mySessions.Select(x => ViewMapper.Summary(x, viewerId)).ToList(),
             activeMatch,
             StatusOf(friendshipTask.Result, viewerId),
-            requestsTask.Result);
+            requestsTask.Result,
+            Social.KudosService.Cred(kudosTask.Result),
+            kudosPrompt);
     }
 
     private static FriendStatus StatusOf(Friendship? f, Guid viewerId) => f switch

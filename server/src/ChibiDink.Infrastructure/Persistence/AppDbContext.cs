@@ -26,6 +26,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<MatchEditAudit> MatchEditAudits => Set<MatchEditAudit>();
     public DbSet<RewardTransaction> RewardTransactions => Set<RewardTransaction>();
     public DbSet<Friendship> Friendships => Set<Friendship>();
+    public DbSet<Kudos> Kudos => Set<Kudos>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

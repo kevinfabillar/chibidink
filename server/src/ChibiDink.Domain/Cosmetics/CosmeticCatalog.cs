@@ -84,6 +84,13 @@ public sealed class StandardCosmeticCatalog : ICosmeticCatalog
         new("aura-celestial", "Celestial", CosmeticSlot.CharacterAura, Rarity.Legendary, 2500, 16),
         new("aura-phoenix", "Phoenix", CosmeticSlot.CharacterAura, Rarity.Legendary, 2500, 18),
 
+        // Achievement skins: Mythic outfits you can't buy. Receiving 20 kudos of one kind unlocks one.
+        new("ach-butler", "Grand Maître", CosmeticSlot.Outfit, Rarity.Mythic, 0, 1, Achievement: new(Social.KudosKind.Serves, 20)),
+        new("ach-aegis", "Aegis Bastion", CosmeticSlot.Outfit, Rarity.Mythic, 0, 1, Achievement: new(Social.KudosKind.Defense, 20)),
+        new("ach-racer", "F1 Champion", CosmeticSlot.Outfit, Rarity.Mythic, 0, 1, Achievement: new(Social.KudosKind.Drives, 20)),
+        new("ach-shade", "Sword God", CosmeticSlot.Outfit, Rarity.Mythic, 0, 1, Achievement: new(Social.KudosKind.Slices, 20)),
+        new("ach-clockwork", "Clockwork Rewind", CosmeticSlot.Outfit, Rarity.Mythic, 0, 1, Achievement: new(Social.KudosKind.Resets, 20)),
+
         // Name skins: shown wherever the name appears (queue, courts, standings). Plain borders at Common,
         // fully animated borders (fire, ice, lightning…) at Legendary and Mythic.
         new("name-chalk", "Chalk", CosmeticSlot.Nameplate, Rarity.Common, 300, 3),

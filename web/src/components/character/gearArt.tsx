@@ -1,3 +1,4 @@
+import { ACH_GLOW, AchBackdrop, AchBody, AchHat, AchHeld, AchOffhand, isAchievementGear } from './achievementArt'
 import type { EffectVisual, Gear } from '../../cosmetics/visuals'
 import { shade } from '../../lib/color'
 import { useSvgIds } from '../../lib/svgIds'
@@ -79,7 +80,13 @@ const DEVIL_WING = 'M232 392 Q150 300 44 280 Q72 322 62 352 Q30 354 22 394 Q60 3
 /** Wings, tails and premium backdrops, drawn behind everything else. */
 export function GearBack({ gear, premium }: { gear: Gear; premium?: { aura: string; sparkle: string } }) {
   const { defs, url } = useTones()
-  if (premium) return <PremiumBack gear={gear} aura={premium.aura} sparkle={premium.sparkle} />
+  if (premium)
+    return (
+      <g>
+        {isAchievementGear(gear) && <AchBackdrop gear={gear} />}
+        <PremiumBack gear={gear} aura={premium.aura} sparkle={premium.sparkle} />
+      </g>
+    )
   if (gear === 'fairy') return <GlamBack gear={gear} />
   if (gear === 'ranger')
     return (
@@ -356,6 +363,7 @@ export function GearCape({ gear, color, gradient }: { gear: Gear; color: string 
 /** Belts, aprons and scarves worn over the handle. `hx`/`hw` are the handle's left edge and width. */
 export function GearBody({ gear, hx, hw, p }: { gear: Gear; hx: number; hw: number; p: GearPaint }) {
   const { defs, url } = useTones()
+  if (isAchievementGear(gear)) return <AchBody gear={gear} hx={hx} hw={hw} p={p} />
   return (
     <g>
       {defs}
@@ -448,6 +456,7 @@ function Body({ gear, hx, hw, p, t }: { gear: Gear; hx: number; hw: number; p: G
 /** Hats and helmets, drawn over the face. */
 export function GearHat({ gear, p }: { gear: Gear; p: GearPaint }) {
   const { defs, url } = useTones()
+  if (isAchievementGear(gear)) return <AchHat gear={gear} p={p} />
   return (
     <g>
       {defs}
@@ -647,6 +656,7 @@ const GLOW: Record<Gear, [number, number, number, number]> = {
   fairy: [539, 116, 44, 44],
   idol: [539, 172, 34, 34],
   sakura: [539, 210, 70, 44],
+  ...ACH_GLOW,
 }
 
 /** The item held in the raised right hand, plus its effect. Drawn inside the arm's group so it swings. */
@@ -711,6 +721,7 @@ function EffectFront({ effect, cx, cy, r }: { effect: EffectVisual; cx: number; 
 
 function HeldItem({ gear, p }: { gear: Gear; p: GearPaint }) {
   const { defs, url } = useTones()
+  if (isAchievementGear(gear)) return <AchHeld gear={gear} p={p} />
   return (
     <g>
       {defs}
@@ -839,6 +850,7 @@ function Held({ gear, p, t }: { gear: Gear; p: GearPaint; t: Tones }) {
 /** What the left hand holds in front of the body: the knight's or the viking's shield. */
 export function GearOffhand({ gear, p, shield, effect }: { gear: Gear; p: GearPaint; shield: string; effect?: EffectVisual | null }) {
   const { defs, url } = useTones()
+  if (isAchievementGear(gear)) return <AchOffhand gear={gear} p={p} />
   if (gear === 'knight') return <KnightShield p={p} shield={shield} effect={effect} />
   if (gear !== 'viking') return null
   return (

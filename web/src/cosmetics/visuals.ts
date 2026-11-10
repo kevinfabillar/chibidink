@@ -10,6 +10,8 @@ export type Gear =
   | 'ranger' | 'viking' | 'cleric' | 'bard' | 'samurai'
   | 'dragon' | 'void'
   | 'princess' | 'fairy' | 'idol' | 'sakura'
+  // Earned with kudos (achievement skins): see character3d/achievement.ts and achievementArt.tsx
+  | 'butler' | 'aegis' | 'racer' | 'shade' | 'clockwork'
 
 /** Hair that comes with an outfit (the Glam sets). */
 export interface Hair {
@@ -61,6 +63,12 @@ const outfits: Record<string, OutfitVisual> = {
   'angel-set': { gear: 'angel', cape: null, shoes: '#F4F6F9', accent: '#D9AE4A', sole: '#D9AE4A', tag: 'Fantasy' },
   'devil-set': { gear: 'devil', cape: null, shoes: '#7A1F24', accent: '#1A1D24', sole: '#1A1D24', glove: '#5E1522', tag: 'Fantasy' },
   'inferno-dragon': { gear: 'dragon', cape: null, glove: '#2A1A1E', shoes: '#F4F6F9', accent: '#FF7A3C', tag: 'Fantasy', premium: { aura: '#FF7A3C', sparkle: '#FFB347' } },
+  // Achievement skins: earned by receiving 50 kudos of one kind.
+  'ach-butler': { gear: 'butler', cape: null, glove: '#FFFFFF', shoes: '#15171C', sole: '#3A3D45', accent: '#D9AE4A', tag: 'Fun', premium: { aura: '#F5C451', sparkle: '#FFF4C2' } },
+  'ach-aegis': { gear: 'aegis', cape: '#1E3A8A', capeTo: '#0B1638', glove: '#C9D1DC', shoes: '#C9D1DC', sole: '#7D8798', accent: '#60A5FA', tag: 'Fantasy', premium: { aura: '#38BDF8', sparkle: '#E0F2FE' } },
+  'ach-racer': { gear: 'racer', cape: null, glove: '#15171C', shoes: '#F4F6F9', sole: '#D61F2C', accent: '#D61F2C', tag: 'Adventure', premium: { aura: '#EF4444', sparkle: '#FDE68A' } },
+  'ach-shade': { gear: 'shade', cape: '#1A1030', capeTo: '#05030A', glove: '#0E0A16', shoes: '#F4F6F9', accent: '#8B5CF6', tag: 'Fantasy', premium: { aura: '#7C3AED', sparkle: '#C4B5FD' } },
+  'ach-clockwork': { gear: 'clockwork', cape: '#5A3A1E', capeTo: '#2A1A0C', glove: '#B8863B', shoes: '#3B2A1A', sole: '#B8863B', accent: '#D9AE4A', tag: 'Adventure', premium: { aura: '#D9922E', sparkle: '#FDE68A' } },
   'void-reaper': { gear: 'void', cape: '#241638', capeTo: '#030208', glove: '#120C1A', shoes: '#F4F6F9', accent: '#9B5CFF', tag: 'Fantasy', premium: { aura: '#5B24A8', sparkle: '#B48CFF' } },
   'legend-set': { gear: 'royal', cape: '#A3162B', shoes: '#D9AE4A', accent: '#D9AE4A', sole: '#D9AE4A', tag: 'Fantasy' },
   'ranger-set': { gear: 'ranger', cape: '#5E9A55', capeTo: '#24461F', glove: '#8A5E38', shoes: '#F4F6F9', accent: '#D9AE4A', tag: 'Adventure' },

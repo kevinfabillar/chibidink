@@ -15,6 +15,7 @@ import { PageError } from '../components/ui/ErrorPage'
 import clsx from 'clsx'
 import { BarChart3, CalendarDays, ChartNoAxesColumnIncreasing, Handshake, Layers, Moon, Sun, Pencil, Swords, Trophy, User, Users, X } from 'lucide-react'
 import { FriendButton } from '../components/profile/FriendButton'
+import { StreetCredRow } from '../components/session/KudosPanel'
 import { useMe } from '../hooks/queries'
 import { useState, type ReactNode } from 'react'
 import type { Profile } from '../api/types'
@@ -53,6 +54,7 @@ export function ProfilePage() {
             <PlayerName player={player} size="lg" />
           </div>
           <div className="mt-1 rounded-full bg-lime/20 px-3 py-0.5 text-sm font-semibold text-lime">Character Lv {progress.level}</div>
+          {(!userId || (profile.data.streetCred?.length ?? 0) > 0) && <StreetCredRow cred={profile.data.streetCred ?? []} />}
           {FRIENDS_ENABLED && userId && userId !== me?.player.userId && (
             <div className="mt-5 w-full">
               <FriendButton userId={userId} name={player.displayName} status={profile.data.friendship} />

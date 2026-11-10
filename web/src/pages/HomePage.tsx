@@ -15,6 +15,7 @@ import { winRateText } from '../lib/format'
 import { PageError } from '../components/ui/ErrorPage'
 import { PlayerName } from '../components/character/NameTag'
 import { FriendsStrip } from '../components/social/FriendsEntry'
+import { KudosBanner } from '../components/session/KudosBanner'
 
 export function HomePage() {
   const me = useMe()
@@ -81,6 +82,7 @@ export function HomePage() {
         <ChevronRight className="size-8 shrink-0 text-lime" />
       </Link>
 
+      {me.data.kudosPrompt && <KudosBanner prompt={me.data.kudosPrompt} />}
       <FriendsStrip />
 
       <div className="mt-8 grid gap-6 md:grid-cols-2">

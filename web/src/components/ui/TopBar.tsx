@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { Bell, ChevronLeft, Moon, Plus, Sun, UserPlus } from 'lucide-react'
+import { Bell, ChevronLeft, Moon, Plus, Sparkles, Sun, UserPlus } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useCosmetics, useMe } from '../../hooks/queries'
@@ -136,6 +136,7 @@ export function AlertBell() {
   const me = useMe().data
   const active = me?.activeMatch
   const requests = me?.friendRequests ?? 0
+  const kudos = me?.kudosPrompt ?? null
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const label = active?.needsAction ? 'Your match needs you' : requests ? `${requests} friend request${requests === 1 ? '' : 's'}` : 'Notifications'
@@ -149,14 +150,14 @@ export function AlertBell() {
         title={active ? `Court ${active.courtNumber}: ${matchStatusLabel[active.status]}` : undefined}
       >
         <Bell className="size-6" />
-        {(active || requests > 0) && (
+        {(active || requests > 0 || kudos) && (
           <span
             className={clsx(
               'absolute -top-0.5 -right-0.5 grid min-w-4.5 place-items-center rounded-full px-1 text-[11px] leading-4.5 font-bold',
-              active?.needsAction || requests ? 'bg-danger text-snow' : 'size-2.5 min-w-0 bg-lime p-0',
+              active?.needsAction || requests || kudos ? 'bg-danger text-snow' : 'size-2.5 min-w-0 bg-lime p-0',
             )}
           >
-            {(active?.needsAction ? 1 : 0) + requests || ''}
+            {(active?.needsAction ? 1 : 0) + requests + (kudos ? 1 : 0) || ''}
           </span>
         )}
       </button>
@@ -184,7 +185,21 @@ export function AlertBell() {
               <span className="text-sm font-semibold text-lime">See</span>
             </Link>
           )}
-          {!active && requests === 0 && <p className="mb-2 text-white/75">You're all caught up. When you're put on a court or someone adds you as a friend, you'll see it here.</p>}
+          {kudos && (
+            <Link
+              to={`/sessions/${kudos.sessionId}?tab=games#kudos`}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-2xl bg-night/70 p-3 hover:bg-night"
+            >
+              <Sparkles className="size-5 shrink-0 text-lime" />
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">Give kudos for your game on Court {kudos.courtNumber}</span>
+                <span className="block truncate text-sm text-muted">{kudos.sessionTitle}</span>
+              </span>
+              <span className="text-sm font-semibold text-lime">Give</span>
+            </Link>
+          )}
+          {!active && requests === 0 && !kudos && <p className="mb-2 text-white/75">You're all caught up. When you're put on a court or someone adds you as a friend, you'll see it here.</p>}
         </div>
         <Button block variant="dark" className="mt-4" onClick={() => setOpen(false)}>
           OK

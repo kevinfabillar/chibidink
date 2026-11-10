@@ -4,6 +4,7 @@ import { addEffect, type EffectUpdate } from './effects'
 import { mesh, toy } from './materials'
 import { flameTexture, glowTexture } from './textures'
 import { glamBack, glamBody, glamHat, glamHeld } from './glam'
+import { achBody, achExtras, achHat, achHeld, achOffhand, achPremium } from './achievement'
 
 // Themed gear in 3D, matching components/character/gearArt.tsx. World units: the character is
 // about 2.8 tall with its feet on y = 0; S converts the 2D artwork's units.
@@ -266,6 +267,7 @@ export function buildPremium(gear: Gear, aura: string, sparkle: string): Premium
       steps.push((t) => (rune.material.opacity = 0.6 + 0.4 * Math.sin(t * 3 + x)))
     }
   }
+  achPremium(gear, g, steps)
   return { group: g, update: (t) => steps.forEach((s) => s(t)) }
 }
 
@@ -300,8 +302,8 @@ export function buildBack(gear: Gear): THREE.Group | null {
   return g
 }
 
-export function buildHat(gear: Gear): THREE.Group | null {
-  const glam = glamHat(gear)
+export function buildHat(gear: Gear, fx: EffectUpdate[] = []): THREE.Group | null {
+  const glam = glamHat(gear) ?? achHat(gear, fx)
   if (glam) return glam
   const g = new THREE.Group()
   const top = HEAD.y + HEAD.h / 2
@@ -742,7 +744,7 @@ export function buildHeld(gear: Gear, effect: EffectVisual | null, fx: EffectUpd
       glowAt = [0.6, 0.36, 0.36]
       break
     default: {
-      const glam = glamHeld(gear)
+      const glam = glamHeld(gear) ?? achHeld(gear)
       if (glam) {
         g.add(glam.group)
         glowAt = glam.glowAt
@@ -802,12 +804,14 @@ export function buildExtras(gear: Gear): THREE.Group | null {
       return g
     }
     default:
-      return null
+      return achExtras(gear)
   }
 }
 
 /** Left-hand items: the viking's wooden shield and the bard's lute. Local origin is the hand. */
-export function buildOffhand(gear: Gear): THREE.Group | null {
+export function buildOffhand(gear: Gear, fx: EffectUpdate[] = []): THREE.Group | null {
+  const earned = achOffhand(gear, fx)
+  if (earned) return earned
   const g = new THREE.Group()
   if (gear === 'viking') {
     const disc = mesh(new THREE.CylinderGeometry(0.244, 0.244, 0.04, 64), satin('#8A5E38'))
@@ -896,5 +900,6 @@ export function buildBodyGear(gear: Gear, r: number): THREE.Group {
     }
   }
   glamBody(gear, r, g)
+  achBody(gear, r, g)
   return g
 }

@@ -5,6 +5,7 @@ using ChibiDink.Application.Progression;
 using ChibiDink.Domain.Cosmetics;
 using ChibiDink.Domain.Players;
 using ChibiDink.Domain.Progression;
+using ChibiDink.Domain.Social;
 
 namespace ChibiDink.Application.Cosmetics;
 
@@ -20,6 +21,7 @@ public interface ICosmeticsService
 public sealed class CosmeticsService(
     ICosmeticCatalog catalog,
     IPlayerProfileRepository profiles,
+    IKudosRepository kudos,
     IRewardLedger ledger,
     IUnitOfWork unitOfWork,
     ICurrentUser currentUser,
@@ -28,11 +30,29 @@ public sealed class CosmeticsService(
 {
     public async Task<CosmeticsDto> GetMineAsync(CancellationToken ct)
     {
-        var profile = await profiles.FindAsync(currentUser.UserId, ct) ?? throw new NotFoundException("Profile");
+        var me = currentUser.UserId;
+        var received = (await kudos.TallyForUserAsync(me, ct)).ToDictionary(t => t.Kind, t => t.Received);
+        var profile = await profiles.FindAsync(me, ct) ?? throw new NotFoundException("Profile");
+
+        // Achievement skins already earned (e.g. kudos that arrived before this check) are handed over here.
+        var earned = catalog.All.Where(i => i.Achievement is { } a && !profile.Owns(i) && received.GetValueOrDefault(a.Kind) >= a.Count).ToList();
+        if (earned.Count > 0)
+        {
+            await unitOfWork.ExecuteAsync(async innerCt =>
+            {
+                var fresh = await profiles.FindAsync(me, innerCt) ?? throw new NotFoundException("Profile");
+                foreach (var item in earned) fresh.Grant(item, clock.UtcNow);
+            }, ct);
+            profile = await profiles.FindAsync(me, ct) ?? throw new NotFoundException("Profile");
+        }
+
+        // Achievement skins stay hidden (not in the shop, items or wardrobe) until they're earned.
         var items = catalog.All
+            .Where(i => i.Achievement is null || profile.Owns(i))
             .Select(i => new CosmeticItemDto(
                 i.Id, i.Name, i.Slot, i.Rarity, i.Price, i.RequiredLevel, i.IsStarter,
-                Owned: profile.Owns(i), Equipped: profile.Loadout.IsEquipped(i.Id), Unlocked: profile.HasUnlocked(i)))
+                Owned: profile.Owns(i), Equipped: profile.Loadout.IsEquipped(i.Id), Unlocked: profile.HasUnlocked(i),
+                Achievement: i.Achievement is { } a ? new AchievementDto(a.Kind, a.Count, Math.Min(a.Count, received.GetValueOrDefault(a.Kind))) : null))
             .ToList();
         return new CosmeticsDto(ProgressDto.From(profile), profile.Loadout, items, rewards);
     }

@@ -253,6 +253,59 @@ export interface Profile {
   friendship: FriendStatus
   /** Friend requests waiting for your answer (your own profile only). */
   friendRequests: number
+  /** Street Cred per kind of kudos, highest first. */
+  streetCred?: StreetCred[]
+  /** Your latest finished game you haven't given kudos for (own profile only). */
+  kudosPrompt?: KudosPrompt | null
+}
+
+export type KudosKind =
+  | 'Dinks' | 'Drops' | 'Volleys' | 'Serves' | 'Smashes' | 'Defense' | 'Drives' | 'Slices' | 'Resets'
+  | 'GoodSport' | 'GreatPartner' | 'FunToPlayWith'
+
+/** Kudos received × different people who gave them. */
+export interface StreetCred {
+  kind: KudosKind
+  received: number
+  givers: number
+  cred: number
+}
+
+export interface StreetCredEntry {
+  rank: number
+  player: PlayerCard
+  cred: number
+  received: number
+  givers: number
+}
+
+export interface KudosPrompt {
+  sessionId: string
+  sessionTitle: string
+  matchId: string
+  courtNumber: number
+}
+
+export interface KudosCount {
+  kind: KudosKind
+  count: number
+}
+
+/** Someone you played with this session (kudos open), from your latest game together. */
+export interface KudosTarget {
+  player: PlayerCard
+  matchId: string
+  courtNumber: number
+  playedAt: string
+  teammate: boolean
+  /** The one kudos you gave them this session, if any. */
+  given: KudosKind | null
+}
+
+export interface SessionKudos {
+  /** Newest game first. */
+  players: KudosTarget[]
+  received: KudosCount[]
 }
 
 /** Outgoing = you asked them; Incoming = they asked you. */
@@ -288,6 +341,8 @@ export interface CosmeticItem {
   owned: boolean
   equipped: boolean
   unlocked: boolean
+  /** Earned items: the kudos that unlock it and how many you have so far. */
+  achievement?: { kind: KudosKind; required: number; progress: number } | null
 }
 
 export interface RewardRules {

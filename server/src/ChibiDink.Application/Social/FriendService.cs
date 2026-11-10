@@ -12,6 +12,9 @@ public interface IFriendService
     /// <summary>Your friend code, friends, and requests both ways. Gives you a friend code the first time.</summary>
     Task<FriendsDto> GetMineAsync(CancellationToken ct);
 
+    /// <summary>Who a friend code belongs to and where you stand with them, without sending anything.</summary>
+    Task<FriendActionDto> LookupByCodeAsync(string code, CancellationToken ct);
+
     /// <summary>Sends a request by friend code (or accepts theirs, if they already asked you).</summary>
     Task<FriendActionDto> AddByCodeAsync(string code, CancellationToken ct);
 
@@ -49,12 +52,30 @@ public sealed class FriendService(
             rows.Where(f => f.Status == FriendshipStatus.Pending && f.RequesterId == me).Select(Item).ToList());
     }
 
-    public async Task<FriendActionDto> AddByCodeAsync(string code, CancellationToken ct)
+    public async Task<FriendActionDto> LookupByCodeAsync(string code, CancellationToken ct)
+    {
+        var target = await FindByCodeAsync(code, ct);
+        var me = currentUser.UserId;
+        if (target.UserId == me) throw new DomainException("That's your own friend code.");
+        var row = await friendships.FindBetweenAsync(me, target.UserId, ct);
+        var status = row switch
+        {
+            null => FriendStatus.None,
+            { Status: FriendshipStatus.Accepted } => FriendStatus.Friends,
+            _ when row.RequesterId == me => FriendStatus.Outgoing,
+            _ => FriendStatus.Incoming,
+        };
+        return new FriendActionDto(ViewMapper.Card(target), status);
+    }
+
+    public async Task<FriendActionDto> AddByCodeAsync(string code, CancellationToken ct) =>
+        await AddAsync((await FindByCodeAsync(code, ct)).UserId, ct);
+
+    private async Task<PlayerProfile> FindByCodeAsync(string code, CancellationToken ct)
     {
         var clean = new string((code ?? "").Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
         if (clean.Length != 6) throw new DomainException("A friend code has 6 letters and numbers.");
-        var target = await profiles.FindByFriendCodeAsync(clean, ct) ?? throw new DomainException("Nobody has that friend code. Check it and try again.");
-        return await AddAsync(target.UserId, ct);
+        return await profiles.FindByFriendCodeAsync(clean, ct) ?? throw new DomainException("Nobody has that friend code. Check it and try again.");
     }
 
     public async Task<FriendActionDto> AddAsync(Guid userId, CancellationToken ct)

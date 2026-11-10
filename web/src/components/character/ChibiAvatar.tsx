@@ -33,7 +33,7 @@ const AURA_FIT = `translate(-129 -110) scale(${858 / 204}) translate(22 2)`
 /** Right arm angle (degrees, around the shoulder) per pose. 0 = raised, as in the design. */
 const ARM_TURN: Record<Pose, number> = { idle: 0, swing: 40, victory: -12 }
 
-const NECKWEAR: Gear[] = ['cowboy', 'ninja', 'viking', 'bard', 'void']
+const NECKWEAR: Gear[] = ['cowboy', 'ninja', 'viking', 'bard', 'void', 'butler', 'aegis', 'racer', 'shade', 'clockwork']
 
 const ID_NAMES = ['shoe', 'body', 'grip', 'leg', 'steel', 'gold', 'blade', 'cape', 'shield', 'ball', 'blur', 'blur8', 'faceClip', 'face', 'aura', 'auraBlur'] as const
 

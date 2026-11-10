@@ -75,7 +75,7 @@ export function Podium({ players, title = 'Session champions' }: { players: Part
 const CONFETTI_COLORS = ['#B7F33B', '#A348FA', '#FBBF24', '#3BC6F3', '#FF5CA8', '#FFFFFF']
 
 /** Confetti drifting down over the podium. CSS only; switched off for people who prefer reduced motion. */
-function Confetti() {
+export function Confetti() {
   const pieces = Array.from({ length: 36 }, (_, i) => i)
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>

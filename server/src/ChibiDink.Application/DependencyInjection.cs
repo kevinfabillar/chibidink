@@ -29,6 +29,7 @@ public static class DependencyInjection
         services.AddScoped<IMatchmakingService, MatchmakingService>();
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<IFriendService, FriendService>();
+        services.AddScoped<IKudosService, KudosService>();
         services.AddScoped<IRewardService, RewardService>();
         services.AddScoped<ICosmeticsService, CosmeticsService>();
 

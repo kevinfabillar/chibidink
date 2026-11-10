@@ -105,7 +105,7 @@ export function buildCharacter(look: CharacterLook, pose: Pose = 'idle', opts: {
   head.add(mesh(new THREE.PlaneGeometry(HEAD.w, HEAD.h), faceMat, [0, 0, FRONT_Z + 0.002]))
   figure.add(head)
   if (o.hair) figure.add(buildHair(o.hair))
-  const hat = buildHat(gear)
+  const hat = buildHat(gear, fx)
   if (hat) figure.add(hat)
 
   // ---- Body: the handle, with its wrap and end cap ----
@@ -145,7 +145,7 @@ export function buildCharacter(look: CharacterLook, pose: Pose = 'idle', opts: {
     right.hand.add(held)
   }
   const serve = pose === 'serve' ? serveMotion(root, figure, left, right) : null
-  const offhand = buildOffhand(gear)
+  const offhand = buildOffhand(gear, fx)
   if (offhand) {
     offhand.rotation.z += -p.left
     left.hand.add(offhand)

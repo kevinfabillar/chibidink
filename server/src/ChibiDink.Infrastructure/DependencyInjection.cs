@@ -31,6 +31,7 @@ public static class DependencyInjection
         services.AddScoped<IAuditLog, AuditLog>();
         services.AddScoped<IRewardLedger, RewardLedger>();
         services.AddScoped<IFriendshipRepository, FriendshipRepository>();
+        services.AddScoped<IKudosRepository, KudosRepository>();
 
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IInviteCodeGenerator, InviteCodeGenerator>();
