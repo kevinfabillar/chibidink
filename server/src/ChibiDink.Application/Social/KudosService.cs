@@ -1,6 +1,7 @@
 using ChibiDink.Application.Abstractions;
 using ChibiDink.Application.Common;
 using ChibiDink.Application.Contracts;
+using ChibiDink.Domain.Common;
 using ChibiDink.Domain.Cosmetics;
 using ChibiDink.Domain.Social;
 
@@ -16,12 +17,19 @@ public interface IKudosService
 
     /// <summary>The top players for one kind of kudos, by Street Cred.</summary>
     Task<IReadOnlyList<StreetCredEntryDto>> LeaderboardAsync(KudosKind kind, CancellationToken ct);
+
+    /// <summary>Confirm your kudos for this session: once everyone has one, they become final.</summary>
+    Task ConfirmAsync(Guid sessionId, CancellationToken ct);
+
+    /// <summary>The signed-in player's kudos, anonymously (only they can see this).</summary>
+    Task<MyKudosDto> GetMineAsync(CancellationToken ct);
 }
 
 public sealed class KudosService(
     IKudosRepository kudos,
     IMatchRepository matches,
     IPlayerProfileRepository profiles,
+    ISessionRepository sessions,
     ICosmeticCatalog catalog,
     IUnitOfWork unitOfWork,
     ICurrentUser currentUser,
@@ -36,10 +44,13 @@ public sealed class KudosService(
             .Where(m => m.EndedAt is { } ended && now - ended <= Kudos.Window)
             .ToList();
 
-        var given = (await kudos.ListGivenInSessionsAsync(me, [sessionId], ct)).ToDictionary(k => k.ToUserId, k => k.Kind);
-        var received = await kudos.ListReceivedInSessionAsync(me, sessionId, ct);
-        var people = await profiles.GetManyAsync(open.SelectMany(m => m.PlayerIds).Append(me), ct);
+        var all = await kudos.ListInSessionAsync(sessionId, ct);
+        var given = all.Where(k => k.FromUserId == me).ToDictionary(k => k.ToUserId);
+        var received = all.Where(k => k.ToUserId == me).ToList();
+        var people = await profiles.GetManyAsync(open.SelectMany(m => m.PlayerIds).Concat(all.Select(k => k.ToUserId)).Append(me), ct);
 
+        // Confirming closes the games played up to then; players from later games can still get a kudos.
+        var confirmedAt = given.Values.Max(k => k.ConfirmedAt);
         var seen = new HashSet<Guid> { me };
         var players = new List<KudosTargetDto>();
         foreach (var m in open)
@@ -49,9 +60,18 @@ public sealed class KudosService(
                 players.Add(new KudosTargetDto(
                     ViewMapper.Card(p.UserId, people), m.Id, m.CourtNumber, m.EndedAt!.Value,
                     Teammate: myTeam.Any(t => t.UserId == p.UserId),
-                    Given: given.TryGetValue(p.UserId, out var kind) ? kind : null));
+                    Given: given.TryGetValue(p.UserId, out var k) ? k.Kind : null,
+                    Locked: k?.Locked ?? false,
+                    Closed: k is null && confirmedAt is { } at && m.EndedAt <= at));
         }
-        return new SessionKudosDto(players, Counts(received));
+        // The session's board: per kind, who received it and how many times. Givers stay anonymous.
+        var board = all.GroupBy(k => k.Kind)
+            .OrderBy(g => g.Key)
+            .Select(g => new KudosBoardGroupDto(g.Key, g.GroupBy(k => k.ToUserId)
+                .Select(r => new KudosReceiverDto(ViewMapper.Card(r.Key, people), r.Count()))
+                .OrderByDescending(r => r.Count).ToList()))
+            .ToList();
+        return new SessionKudosDto(players, Counts(received), board);
     }
 
     public Task ToggleAsync(Guid matchId, Guid toUserId, KudosKind kind, CancellationToken ct) =>
@@ -63,10 +83,15 @@ public sealed class KudosService(
             // One kudos per person per session: tapping the one you gave takes it back, another switches it.
             var existing = await kudos.FindInSessionAsync(match.SessionId, me, toUserId, innerCt);
             if (existing is null)
+            {
+                var confirmedAt = (await kudos.ListGivenInSessionsAsync(me, [match.SessionId], innerCt)).Max(k => k.ConfirmedAt);
+                if (confirmedAt is { } at && match.EndedAt <= at)
+                    throw new DomainException("You've confirmed your kudos for this game, so it's closed.");
                 kudos.Add(Kudos.Give(match, me, toUserId, kind, now));
+            }
             else if (existing.Kind == kind)
             {
-                Kudos.EnsureCanTakeBack(match, me, toUserId, now);
+                existing.EnsureCanTakeBack(match, now);
                 kudos.Remove(existing);
                 return;
             }
@@ -93,6 +118,29 @@ public sealed class KudosService(
             .ToList();
         var people = await profiles.GetManyAsync(top.Select(x => x.Tally.UserId), ct);
         return top.Select((x, i) => new StreetCredEntryDto(i + 1, ViewMapper.Card(x.Tally.UserId, people), x.Cred, x.Tally.Received, x.Tally.Givers)).ToList();
+    }
+
+    public async Task ConfirmAsync(Guid sessionId, CancellationToken ct)
+    {
+        // Nobody has to give everyone a kudos: confirming locks whatever you gave.
+        await unitOfWork.ExecuteAsync(async innerCt =>
+        {
+            var mine = await kudos.ListGivenForUpdateAsync(currentUser.UserId, sessionId, innerCt);
+            if (mine.Count == 0) throw new DomainException("Give at least one kudos before confirming.");
+            foreach (var k in mine) k.Lock(clock.UtcNow);
+        }, ct);
+    }
+
+    public async Task<MyKudosDto> GetMineAsync(CancellationToken ct)
+    {
+        var me = currentUser.UserId;
+        var tallies = await kudos.TallyForUserAsync(me, ct);
+        var recent = await kudos.ListReceivedAsync(me, 60, ct);
+        var titles = await sessions.FindTitlesAsync(recent.Select(k => k.SessionId).Distinct().ToList(), ct);
+        return new MyKudosDto(
+            tallies.Sum(t => t.Received),
+            Cred(tallies),
+            recent.Select(k => new ReceivedKudosDto(k.Kind, titles.GetValueOrDefault(k.SessionId) ?? "A session", k.GivenAt)).ToList());
     }
 
     /// <summary>Totals per kind, most received first.</summary>

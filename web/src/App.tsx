@@ -22,6 +22,7 @@ import { CourtPage } from './pages/session/CourtPage'
 import { SessionPage } from './pages/session/SessionPage'
 import { ErrorPage } from './components/ui/ErrorPage'
 import { StreetCredPage } from './pages/StreetCredPage'
+import { MyKudosPage } from './pages/MyKudosPage'
 
 function RequireAuth() {
   const token = useAuth((s) => s.token)
@@ -60,6 +61,7 @@ export default function App() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="players/:userId" element={<ProfilePage />} />
           <Route path="street-cred" element={<StreetCredPage />} />
+          <Route path="kudos" element={<MyKudosPage />} />
           <Route
             path="friends"
             element={

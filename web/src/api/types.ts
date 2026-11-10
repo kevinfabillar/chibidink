@@ -271,6 +271,13 @@ export interface StreetCred {
   cred: number
 }
 
+/** Your own kudos page. Anonymous: who gave each kudos is never included. */
+export interface MyKudos {
+  total: number
+  byKind: StreetCred[]
+  recent: { kind: KudosKind; sessionTitle: string; givenAt: string }[]
+}
+
 export interface StreetCredEntry {
   rank: number
   player: PlayerCard
@@ -300,12 +307,18 @@ export interface KudosTarget {
   teammate: boolean
   /** The one kudos you gave them this session, if any. */
   given: KudosKind | null
+  /** You confirmed it: final. */
+  locked?: boolean
+  /** You confirmed without giving this player one: closed. */
+  closed?: boolean
 }
 
 export interface SessionKudos {
-  /** Newest game first. */
+  /** People you played with (newest game first) and what you gave each. */
   players: KudosTarget[]
   received: KudosCount[]
+  /** Everyone's kudos in this session by kind: who received them (never who gave them). */
+  board?: { kind: KudosKind; players: { player: PlayerCard; count: number }[] }[]
 }
 
 /** Outgoing = you asked them; Incoming = they asked you. */

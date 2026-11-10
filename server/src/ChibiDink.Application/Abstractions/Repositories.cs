@@ -23,11 +23,20 @@ public interface IKudosRepository
     /// <summary>The one kudos a player gave another in a session, if any.</summary>
     Task<Kudos?> FindInSessionAsync(Guid sessionId, Guid fromUserId, Guid toUserId, CancellationToken ct);
 
+    /// <summary>Everything a player gave in one session, tracked for changes (confirming them).</summary>
+    Task<IReadOnlyList<Kudos>> ListGivenForUpdateAsync(Guid fromUserId, Guid sessionId, CancellationToken ct);
+
     /// <summary>Everything a player gave in these sessions (read-only).</summary>
     Task<IReadOnlyList<Kudos>> ListGivenInSessionsAsync(Guid fromUserId, IReadOnlyCollection<Guid> sessionIds, CancellationToken ct);
     Task<IReadOnlyList<Kudos>> ListReceivedInSessionAsync(Guid userId, Guid sessionId, CancellationToken ct);
 
     Task<int> CountReceivedAsync(Guid userId, KudosKind kind, CancellationToken ct);
+
+    /// <summary>Every kudos given in a session, by anyone (read-only; for the session's kudos board).</summary>
+    Task<IReadOnlyList<Kudos>> ListInSessionAsync(Guid sessionId, CancellationToken ct);
+
+    /// <summary>The latest kudos a player received (read-only).</summary>
+    Task<IReadOnlyList<Kudos>> ListReceivedAsync(Guid userId, int take, CancellationToken ct);
 
     /// <summary>One player's tallies, one per kind they've received.</summary>
     Task<IReadOnlyList<KudosTally>> TallyForUserAsync(Guid userId, CancellationToken ct);
@@ -62,6 +71,7 @@ public interface ISessionRepository
     Task<bool> InviteCodeExistsAsync(string inviteCode, CancellationToken ct);
     Task<IReadOnlyList<PlaySession>> ListForUserAsync(Guid userId, int take, CancellationToken ct);
     Task<string?> FindTitleAsync(Guid sessionId, CancellationToken ct);
+    Task<IReadOnlyDictionary<Guid, string>> FindTitlesAsync(IReadOnlyCollection<Guid> sessionIds, CancellationToken ct);
 
     /// <summary>The title of a session this organizer hosts that isn't closed yet (open or live), if any.</summary>
     Task<string?> FindUnclosedTitleForOrganizerAsync(Guid organizerId, CancellationToken ct);

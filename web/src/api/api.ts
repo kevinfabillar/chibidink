@@ -17,6 +17,7 @@ import type {
   SessionKudos,
   KudosKind,
   StreetCredEntry,
+  MyKudos,
 } from './types'
 
 export const API_BASE = import.meta.env.VITE_API_URL ?? ''
@@ -62,6 +63,10 @@ export const kudosApi = {
   /** Gives this kudos, or takes it back if it was already given. */
   toggle: (sessionId: string, matchId: string, toUserId: string, kind: KudosKind) =>
     http.post(`/api/sessions/${sessionId}/matches/${matchId}/kudos`, { toUserId, kind }),
+  /** Confirm your kudos for this session: they become final. */
+  confirm: (sessionId: string) => http.post(`/api/sessions/${sessionId}/matches/kudos/confirm`),
+  /** Your kudos, anonymously (only you can see them). */
+  mine: () => http.get<MyKudos>('/api/me/kudos'),
   /** The top players for one kind, by Street Cred. */
   leaderboard: (kind: KudosKind) => http.get<StreetCredEntry[]>(`/api/street-cred/${kind}`),
 }

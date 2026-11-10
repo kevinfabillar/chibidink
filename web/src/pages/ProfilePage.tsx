@@ -55,6 +55,11 @@ export function ProfilePage() {
           </div>
           <div className="mt-1 rounded-full bg-lime/20 px-3 py-0.5 text-sm font-semibold text-lime">Character Lv {progress.level}</div>
           {(!userId || (profile.data.streetCred?.length ?? 0) > 0) && <StreetCredRow cred={profile.data.streetCred ?? []} />}
+          {!userId && (
+            <Link to="/kudos" className="mt-2 text-sm font-semibold text-lime hover:underline">
+              See all my kudos ›
+            </Link>
+          )}
           {FRIENDS_ENABLED && userId && userId !== me?.player.userId && (
             <div className="mt-5 w-full">
               <FriendButton userId={userId} name={player.displayName} status={profile.data.friendship} />

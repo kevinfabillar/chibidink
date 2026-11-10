@@ -597,6 +597,9 @@ namespace ChibiDink.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTimeOffset?>("ConfirmedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("FromUserId")
                         .HasColumnType("uuid");
 
@@ -607,6 +610,9 @@ namespace ChibiDink.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
+
+                    b.Property<bool>("Locked")
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("MatchId")
                         .HasColumnType("uuid");

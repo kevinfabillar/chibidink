@@ -155,7 +155,9 @@ public sealed record KudosCountDto(KudosKind Kind, int Count);
 
 /// <summary>Someone you played with this session (kudos open), from your latest game together.</summary>
 /// <param name="Given">The one kudos you gave them this session, if any.</param>
-public sealed record KudosTargetDto(PlayerCardDto Player, Guid MatchId, int CourtNumber, DateTimeOffset PlayedAt, bool Teammate, KudosKind? Given);
+/// <param name="Locked">You confirmed it: final.</param>
+/// <param name="Closed">You confirmed your kudos without giving this player one: that's final too.</param>
+public sealed record KudosTargetDto(PlayerCardDto Player, Guid MatchId, int CourtNumber, DateTimeOffset PlayedAt, bool Teammate, KudosKind? Given, bool Locked = false, bool Closed = false);
 
 /// <summary>Street Cred for one kind: kudos received × different people who gave them.</summary>
 public sealed record StreetCredDto(KudosKind Kind, int Received, int Givers, int Cred);
@@ -165,9 +167,23 @@ public sealed record StreetCredEntryDto(int Rank, PlayerCardDto Player, int Cred
 /// <summary>Your latest finished match you haven't given any kudos for yet (bell and home banner).</summary>
 public sealed record KudosPromptDto(Guid SessionId, string SessionTitle, Guid MatchId, int CourtNumber);
 
-public sealed record SessionKudosDto(IReadOnlyList<KudosTargetDto> Players, IReadOnlyList<KudosCountDto> Received);
+/// <param name="Players">People you played with (kudos still open) and what you gave each.</param>
+/// <param name="Received">Kudos you got in this session.</param>
+/// <param name="Board">Everyone's kudos in this session by kind: who received them (never who gave them).</param>
+public sealed record SessionKudosDto(IReadOnlyList<KudosTargetDto> Players, IReadOnlyList<KudosCountDto> Received, IReadOnlyList<KudosBoardGroupDto>? Board = null);
+
+/// <summary>One kind on the session's kudos board, with the players who received it (most first).</summary>
+public sealed record KudosBoardGroupDto(KudosKind Kind, IReadOnlyList<KudosReceiverDto> Players);
+
+public sealed record KudosReceiverDto(PlayerCardDto Player, int Count);
 
 public sealed record GiveKudosRequest(Guid ToUserId, KudosKind Kind);
+
+/// <summary>One kudos you received. Anonymous: who gave it is never shown.</summary>
+public sealed record ReceivedKudosDto(KudosKind Kind, string SessionTitle, DateTimeOffset GivenAt);
+
+/// <summary>Your own kudos page: totals per kind (with Street Cred) and the latest ones, anonymously.</summary>
+public sealed record MyKudosDto(int Total, IReadOnlyList<StreetCredDto> ByKind, IReadOnlyList<ReceivedKudosDto> Recent);
 
 public sealed record FriendActionDto(PlayerCardDto Player, FriendStatus Status);
 

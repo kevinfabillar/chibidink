@@ -38,6 +38,12 @@ public sealed class Kudos : Entity
     public KudosKind Kind { get; private set; }
     public DateTimeOffset GivenAt { get; private set; }
 
+    /// <summary>Confirmed by the giver: final, can't be switched or taken back.</summary>
+    public bool Locked { get; private set; }
+
+    /// <summary>When the giver confirmed. Games that ended before this are closed for their kudos.</summary>
+    public DateTimeOffset? ConfirmedAt { get; private set; }
+
     private Kudos() { } // EF
 
     public static Kudos Give(Match match, Guid from, Guid to, KudosKind kind, DateTimeOffset now)
@@ -50,6 +56,7 @@ public sealed class Kudos : Entity
     /// <summary>Switch this session's kudos for the person to another kind (still one per person).</summary>
     public void Change(Match match, KudosKind kind, DateTimeOffset now)
     {
+        EnsureNotLocked();
         EnsureOpen(match, FromUserId, ToUserId, now);
         Guard.That(match.SessionId == SessionId, "That match is from another session.");
         Guard.That(Enum.IsDefined(kind), "Unknown kudos.");
@@ -58,8 +65,21 @@ public sealed class Kudos : Entity
         GivenAt = now;
     }
 
-    /// <summary>Taking kudos back follows the same rules as giving them (your match, still open).</summary>
-    public static void EnsureCanTakeBack(Match match, Guid from, Guid to, DateTimeOffset now) => EnsureOpen(match, from, to, now);
+    /// <summary>Taking kudos back follows the same rules as giving them (your match, still open, not confirmed).</summary>
+    public void EnsureCanTakeBack(Match match, DateTimeOffset now)
+    {
+        EnsureNotLocked();
+        EnsureOpen(match, FromUserId, ToUserId, now);
+    }
+
+    /// <summary>The giver confirmed their kudos: no more changes.</summary>
+    public void Lock(DateTimeOffset now)
+    {
+        Locked = true;
+        ConfirmedAt ??= now;
+    }
+
+    private void EnsureNotLocked() => Guard.That(!Locked, "You've confirmed your kudos for this session, so they can't be changed.");
 
     private static void EnsureOpen(Match match, Guid from, Guid to, DateTimeOffset now)
     {

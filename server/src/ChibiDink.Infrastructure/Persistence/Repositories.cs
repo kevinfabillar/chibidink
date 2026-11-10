@@ -34,11 +34,20 @@ internal sealed class KudosRepository(AppDbContext db) : IKudosRepository
     public Task<Kudos?> FindInSessionAsync(Guid sessionId, Guid fromUserId, Guid toUserId, CancellationToken ct) =>
         db.Kudos.FirstOrDefaultAsync(k => k.SessionId == sessionId && k.FromUserId == fromUserId && k.ToUserId == toUserId, ct);
 
+    public async Task<IReadOnlyList<Kudos>> ListGivenForUpdateAsync(Guid fromUserId, Guid sessionId, CancellationToken ct) =>
+        await db.Kudos.Where(k => k.FromUserId == fromUserId && k.SessionId == sessionId).ToListAsync(ct);
+
     public async Task<IReadOnlyList<Kudos>> ListGivenInSessionsAsync(Guid fromUserId, IReadOnlyCollection<Guid> sessionIds, CancellationToken ct) =>
         sessionIds.Count == 0 ? [] : await db.Kudos.AsNoTracking().Where(k => k.FromUserId == fromUserId && sessionIds.Contains(k.SessionId)).ToListAsync(ct);
 
     public async Task<IReadOnlyList<Kudos>> ListReceivedInSessionAsync(Guid userId, Guid sessionId, CancellationToken ct) =>
         await db.Kudos.AsNoTracking().Where(k => k.ToUserId == userId && k.SessionId == sessionId).ToListAsync(ct);
+
+    public async Task<IReadOnlyList<Kudos>> ListInSessionAsync(Guid sessionId, CancellationToken ct) =>
+        await db.Kudos.AsNoTracking().Where(k => k.SessionId == sessionId).ToListAsync(ct);
+
+    public async Task<IReadOnlyList<Kudos>> ListReceivedAsync(Guid userId, int take, CancellationToken ct) =>
+        await db.Kudos.AsNoTracking().Where(k => k.ToUserId == userId).OrderByDescending(k => k.GivenAt).Take(take).ToListAsync(ct);
 
     public Task<int> CountReceivedAsync(Guid userId, KudosKind kind, CancellationToken ct) =>
         db.Kudos.CountAsync(k => k.ToUserId == userId && k.Kind == kind, ct);
@@ -109,6 +118,11 @@ internal sealed class SessionRepository(AppDbContext db) : ISessionRepository
 
     public Task<string?> FindTitleAsync(Guid sessionId, CancellationToken ct) =>
         db.PlaySessions.Where(s => s.Id == sessionId).Select(s => s.Title).FirstOrDefaultAsync(ct);
+
+    public async Task<IReadOnlyDictionary<Guid, string>> FindTitlesAsync(IReadOnlyCollection<Guid> sessionIds, CancellationToken ct) =>
+        sessionIds.Count == 0
+            ? new Dictionary<Guid, string>()
+            : await db.PlaySessions.Where(s => sessionIds.Contains(s.Id)).ToDictionaryAsync(s => s.Id, s => s.Title, ct);
 
     public Task<string?> FindUnclosedTitleForOrganizerAsync(Guid organizerId, CancellationToken ct) =>
         db.PlaySessions.Where(s => s.OrganizerId == organizerId && s.Status != SessionStatus.Closed)

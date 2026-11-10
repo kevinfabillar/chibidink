@@ -13,6 +13,14 @@ public sealed class MatchesController(IMatchService matches, IKudosService kudos
     [HttpGet("kudos")]
     public Task<SessionKudosDto> Kudos(Guid sessionId, CancellationToken ct) => kudos.GetForSessionAsync(sessionId, ct);
 
+    /// <summary>Confirm your kudos for this session: they become final.</summary>
+    [HttpPost("kudos/confirm")]
+    public async Task<IActionResult> ConfirmKudos(Guid sessionId, CancellationToken ct)
+    {
+        await kudos.ConfirmAsync(sessionId, ct);
+        return NoContent();
+    }
+
     /// <summary>Give a kudos to a player from this finished match, or take it back.</summary>
     [HttpPost("{matchId:guid}/kudos")]
     public async Task<IActionResult> ToggleKudos(Guid matchId, GiveKudosRequest request, CancellationToken ct)

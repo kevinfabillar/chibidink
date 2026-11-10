@@ -86,9 +86,8 @@ public sealed class ProfileService(
             : Task.FromResult<IReadOnlyList<Kudos>>([]);
         await Task.WhenAll(peopleTask, titleTask, givenTask);
         var people = peopleTask.Result;
-        // Prompt while someone from your latest open game still has no kudos from you this session.
-        var promptMatch = kudosOpen.FirstOrDefault(m => m.PlayerIds.Any(id =>
-            id != userId && givenTask.Result.All(k => k.SessionId != m.SessionId || k.ToUserId != id)));
+        // Prompt for your latest open game until you've given any kudos in its session (you don't have to give everyone one).
+        var promptMatch = kudosOpen.FirstOrDefault(m => givenTask.Result.All(k => k.SessionId != m.SessionId));
         var kudosPrompt = promptMatch is null
             ? null
             : new KudosPromptDto(promptMatch.SessionId, mySessions.FirstOrDefault(x => x.Id == promptMatch.SessionId)?.Title ?? "Session",

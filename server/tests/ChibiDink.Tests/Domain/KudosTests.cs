@@ -55,7 +55,8 @@ public sealed class KudosTests
         Assert.Throws<DomainException>(() => Kudos.Give(match, p[5], p[0], KudosKind.Dinks, later)); // not in it
         Assert.Throws<DomainException>(() => Kudos.Give(match, p[0], p[5], KudosKind.Dinks, later)); // not in it
         Assert.Throws<DomainException>(() => Kudos.Give(match, p[0], p[1], KudosKind.Dinks, Now.AddMinutes(16) + Kudos.Window + TimeSpan.FromMinutes(1)));
-        Assert.Throws<DomainException>(() => Kudos.EnsureCanTakeBack(match, p[0], p[1], Now.AddMinutes(16) + Kudos.Window + TimeSpan.FromMinutes(1)));
+        var given = Kudos.Give(match, p[0], p[1], KudosKind.Dinks, later);
+        Assert.Throws<DomainException>(() => given.EnsureCanTakeBack(match, Now.AddMinutes(16) + Kudos.Window + TimeSpan.FromMinutes(1)));
 
         var (session, _, q) = TestData.DoublesSession();
         var unfinished = Match.Propose(session, session.GetCourt(1), q[..2], q[2..4], Now, isManual: false);
@@ -68,5 +69,18 @@ public sealed class KudosTests
         // Ten kudos from one friend vs ten kudos from ten different players.
         Assert.Equal(10, Kudos.StreetCred(received: 10, uniqueGivers: 1));
         Assert.Equal(100, Kudos.StreetCred(received: 10, uniqueGivers: 10));
+    }
+
+    [Fact]
+    public void Confirmed_kudos_are_final()
+    {
+        var (match, p) = FinishedMatch();
+        var kudos = Kudos.Give(match, p[0], p[2], KudosKind.Drives, Now.AddMinutes(20));
+
+        kudos.Lock(Now.AddMinutes(20));
+
+        Assert.True(kudos.Locked);
+        Assert.Throws<DomainException>(() => kudos.Change(match, KudosKind.Slices, Now.AddMinutes(21)));
+        Assert.Throws<DomainException>(() => kudos.EnsureCanTakeBack(match, Now.AddMinutes(21)));
     }
 }
