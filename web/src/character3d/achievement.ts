@@ -3,12 +3,13 @@ import type { Gear } from '../cosmetics/visuals'
 import { FRONT_Z, HEAD, S, art, fittedCap, gold, roundBox, roundedRect, satin, slab, steel, wy } from './gear'
 import { mesh, toy } from './materials'
 import { glowTexture } from './textures'
+import { kudosBody, kudosHat, kudosHeld, kudosOffhand, kudosPremium } from './kudosSkins'
 
-// The achievement skins (earned with 50 kudos of one kind) in 3D, matching
+// The achievement skins (earned with 20 kudos of one kind) in 3D, matching
 // components/character/achievementArt.tsx: Grand Maître (Serves), Aegis Bastion (Defense),
 // F1 Champion (Drives), Sword God (Slices) and Clockwork Rewind (Resets).
 
-export const ACHIEVEMENT_GEARS: Gear[] = ['butler', 'aegis', 'racer', 'shade', 'clockwork']
+export const ACHIEVEMENT_GEARS: Gear[] = ['butler', 'aegis', 'racer', 'shade', 'clockwork', 'sage', 'archer', 'volt', 'titan', 'olympian', 'soulbound', 'cheer']
 
 const glossy = (color: string) => toy(color, 0.28, 0.8)
 const glowMat = (color: string, intensity = 0.8) =>
@@ -288,7 +289,7 @@ export function achHat(gear: Gear, fx: ((t: number) => void)[] = []): THREE.Grou
       return g
     }
     default:
-      return null
+      return kudosHat(gear, fx)
   }
 }
 
@@ -376,7 +377,7 @@ export function achHeld(gear: Gear): { group: THREE.Group; glowAt: [number, numb
       return { group: g, glowAt: [0.5, 0.36, 0.3] }
     }
     default:
-      return null
+      return kudosHeld(gear)
   }
 }
 
@@ -441,7 +442,7 @@ export function achOffhand(gear: Gear, fx: ((t: number) => void)[] = []): THREE.
       return g
     }
     default:
-      return null
+      return kudosOffhand(gear, fx)
   }
 }
 
@@ -530,7 +531,8 @@ export function achBody(gear: Gear, r: number, g: THREE.Group) {
       watch.rotation.x = Math.PI / 2
       g.add(watch, mesh(new THREE.CircleGeometry(0.048, 32), toy('#FFF7E0', 0.4, 0.3), [r * 0.7, at(586), r * 0.75 + 0.012]))
       break
-    }
+    }    default:
+      kudosBody(gear, r, g)
   }
 }
 
@@ -700,5 +702,7 @@ export function achPremium(gear: Gear, g: THREE.Group, steps: ((t: number) => vo
       g.add(back)
       break
     }
+    default:
+      kudosPremium(gear, g, steps)
   }
 }

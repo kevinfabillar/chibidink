@@ -233,6 +233,14 @@ function ElementBorder({ kind, size }: { kind: BorderKind; size: Size }) {
       return <CosmicBorder size={size} />
     case 'gold':
       return <GoldBorder size={size} />
+    case 'hearts':
+      return <HeartsBorder size={size} />
+    case 'butterfly':
+      return <ButterflyBorder size={size} />
+    case 'rose':
+      return <RoseBorder size={size} />
+    case 'tiara':
+      return <TiaraBorder size={size} />
   }
 }
 
@@ -391,6 +399,111 @@ function Crown() {
       <circle cx="6" cy="9" r="1.9" fill="#38BDF8" stroke="#E0F2FE" strokeWidth="0.5" />
       <circle cx="34" cy="9" r="1.9" fill="#38BDF8" stroke="#E0F2FE" strokeWidth="0.5" />
       <circle cx="20" cy="25.8" r="1.4" fill="#F43F5E" />
+    </svg>
+  )
+}
+
+/** Sweetheart: little hearts all around the border, beating one after another. */
+function HeartsBorder({ size }: { size: Size }) {
+  const spots = outline(bySize(size, 5, 8, 11), bySize(size, 5, 8, 11), bySize(size, 2, 3, 4))
+  return (
+    <Around
+      spots={spots}
+      turn={(_, i) => (rand(i + 21) - 0.5) * 24}
+      piece={(_, i) => <span className={clsx('np-heart', i % 3 === 0 && 'np-heart-big')} style={{ animationDelay: `${((i * 0.18) % 1.2).toFixed(2)}s` }} />}
+    />
+  )
+}
+
+/** Butterfly Dream: butterflies resting on the edge, flapping, plus one fluttering around the tag. */
+function ButterflyBorder({ size }: { size: Size }) {
+  const spots = outline(bySize(size, 2, 3, 4), bySize(size, 1, 2, 3), 1)
+  const colors = ['#F0ABFC', '#7DD3FC', '#F9A8D4', '#C4B5FD']
+  return (
+    <>
+      <Around
+        spots={spots}
+        turn={(s, i) => (90 - s.angle) * 0.6 + (rand(i + 2) - 0.5) * 30}
+        piece={(_, i) => <Butterfly color={colors[i % colors.length]} delay={rand(i + 6) * 0.6} />}
+      />
+      <span className="np-flutter" aria-hidden>
+        <Butterfly color="#FDE68A" delay={0.2} />
+      </span>
+    </>
+  )
+}
+
+function Butterfly({ color, delay }: { color: string; delay: number }) {
+  return (
+    <span className="np-fly">
+      <svg viewBox="0 0 24 20" className="np-fly-wings" style={{ animationDelay: `${delay.toFixed(2)}s` }}>
+        <path d="M12 10 C7 0 0 1 1.5 7 C2.5 11 7 11 12 10 Z M12 10 C17 0 24 1 22.5 7 C21.5 11 17 11 12 10 Z" fill={color} stroke="#FFFFFF" strokeWidth="0.8" />
+        <path d="M12 10 C8 12 3 14 4.5 17.5 C6.5 19.5 10 15 12 10 Z M12 10 C16 12 21 14 19.5 17.5 C17.5 19.5 14 15 12 10 Z" fill={color} opacity="0.75" stroke="#FFFFFF" strokeWidth="0.8" />
+        <circle cx="6" cy="6" r="1.4" fill="#FFFFFF" opacity="0.8" />
+        <circle cx="18" cy="6" r="1.4" fill="#FFFFFF" opacity="0.8" />
+        <rect x="11.2" y="5" width="1.6" height="11" rx="0.8" fill="#3B0764" />
+      </svg>
+    </span>
+  )
+}
+
+/** Rose Garden: a green vine border with roses blooming on it and leaves between them. */
+function RoseBorder({ size }: { size: Size }) {
+  const spots = outline(bySize(size, 7, 10, 14), bySize(size, 6, 9, 13), bySize(size, 3, 4, 5))
+  return (
+    <Around
+      spots={spots}
+      turn={(s, i) => 90 - s.angle + (rand(i + 15) - 0.5) * 30}
+      piece={(s, i) =>
+        i % 2 === 0 || s.where === 'end' ? (
+          <span className={clsx('np-rose', i % 4 === 0 && 'np-rose-big')} style={{ animationDelay: `-${(rand(i + 3) * 3).toFixed(2)}s` }}>
+            <svg viewBox="0 0 20 20">
+              <circle cx="10" cy="10" r="9" fill={i % 3 ? '#E11D48' : '#F43F5E'} />
+              <path d="M10 3.5 C14.5 3.5 16.5 8 14 11 C12 13.5 7.5 12.5 7.5 9.5 C7.5 7.5 10 6.5 11.5 8 M4 9 C4 14 8 17 12 16.5 M5.5 5.5 C3 9 6 13.5 9.5 14" stroke="#881337" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+              <circle cx="7" cy="6.5" r="1.6" fill="#FFE4E6" opacity="0.5" />
+            </svg>
+          </span>
+        ) : (
+          <span className="np-leaf" />
+        )
+      }
+    />
+  )
+}
+
+/** Princess Tiara: a string of pearls all around, a jewelled tiara on top and diamonds on the ends. */
+function TiaraBorder({ size }: { size: Size }) {
+  const spots = outline(bySize(size, 7, 11, 15), bySize(size, 7, 11, 15), bySize(size, 3, 4, 5))
+  return (
+    <>
+      <Around spots={spots} piece={(_, i) => <span className={clsx('np-pearl', i % 2 === 1 && 'np-pearl-pink')} />} />
+      <Tiara />
+      <span className="np-diamond np-diamond-l" aria-hidden />
+      <span className="np-diamond np-diamond-r" aria-hidden />
+    </>
+  )
+}
+
+function Tiara() {
+  const ids = useSvgIds('tiara')
+  const silver = `url(#${ids.tiara})`
+  return (
+    <svg className="np-tiara" viewBox="0 0 48 28" aria-hidden>
+      <defs>
+        <linearGradient id={ids.tiara} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#FFFFFF" />
+          <stop offset="0.5" stopColor="#E2E8F0" />
+          <stop offset="1" stopColor="#94A3B8" />
+        </linearGradient>
+      </defs>
+      <path d="M3 25 Q6 15 12 14 Q14 8 18 9 Q20 2 24 1.5 Q28 2 30 9 Q34 8 36 14 Q42 15 45 25 Q24 20 3 25 Z" fill={silver} stroke="#FFFFFF" strokeWidth="0.8" strokeLinejoin="round" />
+      <path d="M8 22 Q12 17 15 18 M40 22 Q36 17 33 18 M19 15 Q24 11 29 15" stroke="#CBD5E1" strokeWidth="0.9" fill="none" />
+      <path d="M24 13.5 C19.5 10 19.5 5.5 22 5 C23 4.8 23.8 5.5 24 6.4 C24.2 5.5 25 4.8 26 5 C28.5 5.5 28.5 10 24 13.5 Z" fill="#EC4899" stroke="#FFE4F3" strokeWidth="0.7" />
+      <circle cx="12" cy="14" r="1.8" fill="#C084FC" stroke="#FFFFFF" strokeWidth="0.5" />
+      <circle cx="36" cy="14" r="1.8" fill="#C084FC" stroke="#FFFFFF" strokeWidth="0.5" />
+      <circle cx="18" cy="9" r="1.3" fill="#F9A8D4" />
+      <circle cx="30" cy="9" r="1.3" fill="#F9A8D4" />
+      <circle cx="24" cy="1.8" r="1.4" fill="#FFFFFF" />
     </svg>
   )
 }

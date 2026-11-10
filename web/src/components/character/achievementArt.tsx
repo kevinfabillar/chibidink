@@ -1,15 +1,17 @@
 import type { Gear } from '../../cosmetics/visuals'
 import { edgeX, headTop } from './characterArt'
 import type { GearPaint } from './gearArt'
+import { KUDOS_SKIN_GEARS, KUDOS_SKIN_GLOW, type KudosSkinGear, KudosSkinBackdrop, KudosSkinBody, KudosSkinHat, KudosSkinHeld, KudosSkinOffhand } from './kudosSkinsArt'
 
 // The achievement skins in 2D (same design coordinates as gearArt.tsx; head x 120..480, y 80..490,
 // raised hand at 539,294, other hand at 85,430). The 3D versions are in character3d/achievement.ts.
 
-export const ACHIEVEMENT_GEARS: Gear[] = ['butler', 'aegis', 'racer', 'shade', 'clockwork']
+export const ACHIEVEMENT_GEARS: Gear[] = ['butler', 'aegis', 'racer', 'shade', 'clockwork', ...KUDOS_SKIN_GEARS]
 export const isAchievementGear = (gear: Gear) => ACHIEVEMENT_GEARS.includes(gear)
 
 /** Where the held item's effect glows: [cx, cy, rx, ry]. */
-export const ACH_GLOW: Record<'butler' | 'aegis' | 'racer' | 'shade' | 'clockwork', [number, number, number, number]> = {
+export const ACH_GLOW: Record<'butler' | 'aegis' | 'racer' | 'shade' | 'clockwork' | KudosSkinGear, [number, number, number, number]> = {
+  ...KUDOS_SKIN_GLOW,
   butler: [539, 220, 80, 56],
   aegis: [539, 200, 56, 56],
   racer: [539, 210, 60, 70],
@@ -134,7 +136,7 @@ export function AchBackdrop({ gear }: { gear: Gear }) {
         </g>
       )
     default:
-      return null
+      return <KudosSkinBackdrop gear={gear} />
   }
 }
 
@@ -253,7 +255,7 @@ export function AchHat({ gear, p }: { gear: Gear; p: GearPaint }) {
         </g>
       )
     default:
-      return null
+      return <KudosSkinHat gear={gear} p={p} />
   }
 }
 
@@ -311,7 +313,7 @@ export function AchHeld({ gear, p }: { gear: Gear; p: GearPaint }) {
         </g>
       )
     default:
-      return null
+      return <KudosSkinHeld gear={gear} />
   }
 }
 
@@ -336,7 +338,7 @@ export function AchOffhand({ gear, p }: { gear: Gear; p: GearPaint }) {
         <circle cx="96" cy="420" r="26" fill="#7DD3FC" opacity="0.35" className="cd-glow" />
       </g>
     )
-  return null
+  return <KudosSkinOffhand gear={gear} />
 }
 
 /** Suits, armor and robes over the handle. */
@@ -414,6 +416,6 @@ export function AchBody({ gear, hx, hw, p }: { gear: Gear; hx: number; hw: numbe
         </g>
       )
     default:
-      return null
+      return <KudosSkinBody gear={gear} hx={hx} hw={hw} p={p} />
   }
 }

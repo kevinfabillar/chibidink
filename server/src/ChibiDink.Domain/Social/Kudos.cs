@@ -15,6 +15,7 @@ public enum KudosKind
     Drives = 7,
     Slices = 8,
     Resets = 9,
+    SpeedUps = 10,
 
     GoodSport = 20,
     GreatPartner = 21,

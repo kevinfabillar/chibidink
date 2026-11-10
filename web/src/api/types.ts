@@ -260,7 +260,7 @@ export interface Profile {
 }
 
 export type KudosKind =
-  | 'Dinks' | 'Drops' | 'Volleys' | 'Serves' | 'Smashes' | 'Defense' | 'Drives' | 'Slices' | 'Resets'
+  | 'Dinks' | 'Drops' | 'Volleys' | 'Serves' | 'Smashes' | 'Defense' | 'Drives' | 'Slices' | 'Resets' | 'SpeedUps'
   | 'GoodSport' | 'GreatPartner' | 'FunToPlayWith'
 
 /** Kudos received × different people who gave them. */

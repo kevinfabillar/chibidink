@@ -90,6 +90,13 @@ public sealed class StandardCosmeticCatalog : ICosmeticCatalog
         new("ach-racer", "F1 Champion", CosmeticSlot.Outfit, Rarity.Mythic, 0, 1, Achievement: new(Social.KudosKind.Drives, 20)),
         new("ach-shade", "Sword God", CosmeticSlot.Outfit, Rarity.Mythic, 0, 1, Achievement: new(Social.KudosKind.Slices, 20)),
         new("ach-clockwork", "Clockwork Rewind", CosmeticSlot.Outfit, Rarity.Mythic, 0, 1, Achievement: new(Social.KudosKind.Resets, 20)),
+        new("ach-sage", "Jade Sage", CosmeticSlot.Outfit, Rarity.Mythic, 0, 1, Achievement: new(Social.KudosKind.Dinks, 20)),
+        new("ach-archer", "Starfall Archer", CosmeticSlot.Outfit, Rarity.Mythic, 0, 1, Achievement: new(Social.KudosKind.Drops, 20)),
+        new("ach-volt", "Volt Striker", CosmeticSlot.Outfit, Rarity.Mythic, 0, 1, Achievement: new(Social.KudosKind.SpeedUps, 20)),
+        new("ach-titan", "Meteor Titan", CosmeticSlot.Outfit, Rarity.Mythic, 0, 1, Achievement: new(Social.KudosKind.Smashes, 20)),
+        new("ach-olympian", "Laurel Olympian", CosmeticSlot.Outfit, Rarity.Mythic, 0, 1, Achievement: new(Social.KudosKind.GoodSport, 20)),
+        new("ach-soulbound", "Soulbound", CosmeticSlot.Outfit, Rarity.Mythic, 0, 1, Achievement: new(Social.KudosKind.GreatPartner, 20)),
+        new("ach-cheer", "Cheer Captain", CosmeticSlot.Outfit, Rarity.Mythic, 0, 1, Achievement: new(Social.KudosKind.FunToPlayWith, 20)),
 
         // Name skins: shown wherever the name appears (queue, courts, standings). Plain borders at Common,
         // fully animated borders (fire, ice, lightning…) at Legendary and Mythic.
@@ -107,6 +114,10 @@ public sealed class StandardCosmeticCatalog : ICosmeticCatalog
         new("name-thunder", "Thunder", CosmeticSlot.Nameplate, Rarity.Mythic, 4000, 20),
         new("name-galaxy", "Galaxy", CosmeticSlot.Nameplate, Rarity.Mythic, 4000, 20),
         new("name-gold", "Golden Crown", CosmeticSlot.Nameplate, Rarity.Mythic, 5000, 20),
+        new("name-sweetheart", "Sweetheart", CosmeticSlot.Nameplate, Rarity.Mythic, 3500, 20),
+        new("name-butterfly", "Butterfly Dream", CosmeticSlot.Nameplate, Rarity.Mythic, 4000, 20),
+        new("name-rose", "Rose Garden", CosmeticSlot.Nameplate, Rarity.Mythic, 4500, 20),
+        new("name-tiara", "Princess Tiara", CosmeticSlot.Nameplate, Rarity.Mythic, 5000, 20),
     ];
 
     private static readonly Dictionary<string, CosmeticItem> ById = Items.ToDictionary(i => i.Id);

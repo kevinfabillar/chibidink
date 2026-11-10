@@ -54,7 +54,8 @@ export function ProfilePage() {
             <PlayerName player={player} size="lg" />
           </div>
           <div className="mt-1 rounded-full bg-lime/20 px-3 py-0.5 text-sm font-semibold text-lime">Character Lv {progress.level}</div>
-          {(!userId || (profile.data.streetCred?.length ?? 0) > 0) && <StreetCredRow cred={profile.data.streetCred ?? []} />}
+          {/* Your kudos are only yours to see: other players' profiles don't show them. */}
+          {!userId && <StreetCredRow cred={profile.data.streetCred ?? []} />}
           {!userId && (
             <Link to="/kudos" className="mt-2 text-sm font-semibold text-lime hover:underline">
               See all my kudos ›

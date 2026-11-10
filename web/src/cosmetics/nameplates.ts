@@ -1,11 +1,12 @@
 /** How each name skin looks. The server only knows ids, prices and ownership. */
-export type ParticleKind = 'ember' | 'snow' | 'star' | 'petal' | 'bubble' | 'glint'
+export type ParticleKind = 'ember' | 'snow' | 'star' | 'petal' | 'bubble' | 'glint' | 'love'
 
 /**
  * Mythic skins: the border itself is made of an element. Fire burns all around the name, ice forms shards
- * and icicles, lightning crackles along the outline, a comet orbits a cosmic ring, gold becomes a crown frame.
+ * and icicles, lightning crackles along the outline, a comet orbits a cosmic ring, gold becomes a crown frame,
+ * hearts beat all around, butterflies flutter on the edge, roses bloom on a vine, pearls string a tiara.
  */
-export type BorderKind = 'fire' | 'ice' | 'lightning' | 'cosmic' | 'gold'
+export type BorderKind = 'fire' | 'ice' | 'lightning' | 'cosmic' | 'gold' | 'hearts' | 'butterfly' | 'rose' | 'tiara'
 
 export interface NameplateVisual {
   /** Lettering gradient. */
@@ -147,6 +148,46 @@ const NAMEPLATES: Record<string, NameplateVisual> = {
     glow: '#F59E0B',
     particle: 'glint',
     particleColor: '#FEF3C7',
+  },
+  'name-sweetheart': {
+    tier: 'mythic',
+    border: 'hearts',
+    text: ['#FFF1F2', '#FDA4AF', '#FB7185', '#FFE4E6'],
+    background: 'linear-gradient(135deg, #3B0A1E, #5A0F2E)',
+    ring: ['#FFE4E6', '#FB7185', '#E11D48', '#FB7185', '#FFE4E6'],
+    glow: '#FB7185',
+    particle: 'love',
+    particleColor: '#FDA4AF',
+  },
+  'name-butterfly': {
+    tier: 'mythic',
+    border: 'butterfly',
+    text: ['#FAF5FF', '#F5D0FE', '#BAE6FD', '#FBCFE8', '#FAF5FF'],
+    background: 'linear-gradient(135deg, #2A1446, #1A2350)',
+    ring: ['#F0ABFC', '#A5B4FC', '#7DD3FC', '#F9A8D4', '#F0ABFC'],
+    glow: '#E879F9',
+    particle: 'star',
+    particleColor: '#FAE8FF',
+  },
+  'name-rose': {
+    tier: 'mythic',
+    border: 'rose',
+    text: ['#FFF1F2', '#FECDD3', '#FB7185', '#FFF1F2'],
+    background: 'linear-gradient(135deg, #2A0710, #3A0B1A)',
+    ring: ['#16A34A', '#BE123C', '#F43F5E', '#15803D', '#16A34A'],
+    glow: '#F43F5E',
+    particle: 'petal',
+    particleColor: '#FB7185',
+  },
+  'name-tiara': {
+    tier: 'mythic',
+    border: 'tiara',
+    text: ['#FFFFFF', '#FBCFE8', '#F9A8D4', '#E9D5FF', '#FFFFFF'],
+    background: 'linear-gradient(135deg, #3A1030, #2A1446)',
+    ring: ['#FFFFFF', '#F9A8D4', '#E9D5FF', '#F9A8D4', '#FFFFFF'],
+    glow: '#F472B6',
+    particle: 'glint',
+    particleColor: '#FFE4F3',
   },
 }
 

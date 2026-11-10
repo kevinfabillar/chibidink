@@ -62,7 +62,8 @@ public sealed class ProfileService(
         var liveTask = isMe ? Read((IMatchRepository r) => r.FindLiveForUserAsync(userId, ct)) : Task.FromResult<Domain.Matches.Match?>(null);
         var requestsTask = isMe ? Read((IFriendshipRepository r) => r.CountPendingReceivedAsync(userId, ct)) : Task.FromResult(0);
         var friendshipTask = isMe ? Task.FromResult<Friendship?>(null) : Read((IFriendshipRepository r) => r.FindBetweenAsync(viewerId, userId, ct));
-        var kudosTask = Read((IKudosRepository r) => r.TallyForUserAsync(userId, ct));
+        // Kudos are private: only you see your own (on your profile and your kudos page).
+        var kudosTask = isMe ? Read((IKudosRepository r) => r.TallyForUserAsync(userId, ct)) : Task.FromResult<IReadOnlyList<KudosTally>>([]);
         await Task.WhenAll(profileTask, recentTask, sessionsTask, liveTask, requestsTask, friendshipTask, kudosTask);
 
         var profile = profileTask.Result ?? throw new NotFoundException("Profile");

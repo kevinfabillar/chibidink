@@ -12,6 +12,7 @@ export type Gear =
   | 'princess' | 'fairy' | 'idol' | 'sakura'
   // Earned with kudos (achievement skins): see character3d/achievement.ts and achievementArt.tsx
   | 'butler' | 'aegis' | 'racer' | 'shade' | 'clockwork'
+  | 'sage' | 'archer' | 'volt' | 'titan' | 'olympian' | 'soulbound' | 'cheer'
 
 /** Hair that comes with an outfit (the Glam sets). */
 export interface Hair {
@@ -63,12 +64,19 @@ const outfits: Record<string, OutfitVisual> = {
   'angel-set': { gear: 'angel', cape: null, shoes: '#F4F6F9', accent: '#D9AE4A', sole: '#D9AE4A', tag: 'Fantasy' },
   'devil-set': { gear: 'devil', cape: null, shoes: '#7A1F24', accent: '#1A1D24', sole: '#1A1D24', glove: '#5E1522', tag: 'Fantasy' },
   'inferno-dragon': { gear: 'dragon', cape: null, glove: '#2A1A1E', shoes: '#F4F6F9', accent: '#FF7A3C', tag: 'Fantasy', premium: { aura: '#FF7A3C', sparkle: '#FFB347' } },
-  // Achievement skins: earned by receiving 50 kudos of one kind.
+  // Achievement skins: earned by receiving 20 kudos of one kind.
   'ach-butler': { gear: 'butler', cape: null, glove: '#FFFFFF', shoes: '#15171C', sole: '#3A3D45', accent: '#D9AE4A', tag: 'Fun', premium: { aura: '#F5C451', sparkle: '#FFF4C2' } },
   'ach-aegis': { gear: 'aegis', cape: '#1E3A8A', capeTo: '#0B1638', glove: '#C9D1DC', shoes: '#C9D1DC', sole: '#7D8798', accent: '#60A5FA', tag: 'Fantasy', premium: { aura: '#38BDF8', sparkle: '#E0F2FE' } },
   'ach-racer': { gear: 'racer', cape: null, glove: '#15171C', shoes: '#F4F6F9', sole: '#D61F2C', accent: '#D61F2C', tag: 'Adventure', premium: { aura: '#EF4444', sparkle: '#FDE68A' } },
   'ach-shade': { gear: 'shade', cape: '#1A1030', capeTo: '#05030A', glove: '#0E0A16', shoes: '#F4F6F9', accent: '#8B5CF6', tag: 'Fantasy', premium: { aura: '#7C3AED', sparkle: '#C4B5FD' } },
   'ach-clockwork': { gear: 'clockwork', cape: '#5A3A1E', capeTo: '#2A1A0C', glove: '#B8863B', shoes: '#3B2A1A', sole: '#B8863B', accent: '#D9AE4A', tag: 'Adventure', premium: { aura: '#D9922E', sparkle: '#FDE68A' } },
+  'ach-sage': { gear: 'sage', cape: '#0F5E45', capeTo: '#06261C', glove: '#E8F5EE', shoes: '#F4F6F9', sole: '#34D399', accent: '#34D399', tag: 'Fantasy', premium: { aura: '#10B981', sparkle: '#D1FAE5' } },
+  'ach-archer': { gear: 'archer', cape: '#1E2A5A', capeTo: '#070B1F', glove: '#C7D2FE', shoes: '#1E2A5A', sole: '#38BDF8', accent: '#38BDF8', tag: 'Fantasy', premium: { aura: '#38BDF8', sparkle: '#E0F2FE' } },
+  'ach-volt': { gear: 'volt', cape: null, glove: '#15171C', shoes: '#15171C', sole: '#FACC15', accent: '#FACC15', tag: 'Adventure', premium: { aura: '#FACC15', sparkle: '#FEF9C3' } },
+  'ach-titan': { gear: 'titan', cape: '#3A0D12', capeTo: '#120305', glove: '#2A1A1E', shoes: '#2A1A1E', sole: '#FB923C', accent: '#F43F5E', tag: 'Fantasy', premium: { aura: '#F97316', sparkle: '#FDBA74' } },
+  'ach-olympian': { gear: 'olympian', cape: '#FFFFFF', capeTo: '#D9D2BF', glove: '#FFFFFF', shoes: '#D9AE4A', sole: '#B7F33B', accent: '#B7F33B', tag: 'Fantasy', premium: { aura: '#B7F33B', sparkle: '#FEF3C7' } },
+  'ach-soulbound': { gear: 'soulbound', cape: '#0E4A5C', capeTo: '#04151C', glove: '#CFFAFE', shoes: '#F4F6F9', sole: '#22D3EE', accent: '#22D3EE', tag: 'Fantasy', premium: { aura: '#22D3EE', sparkle: '#F0ABFC' } },
+  'ach-cheer': { gear: 'cheer', cape: null, glove: '#FFFFFF', shoes: '#FFFFFF', sole: '#F472B6', accent: '#F472B6', tag: 'Glam', hair: { color: '#F2C14E', style: 'pigtails', accent: '#F472B6' }, premium: { aura: '#F472B6', sparkle: '#FDE68A' } },
   'void-reaper': { gear: 'void', cape: '#241638', capeTo: '#030208', glove: '#120C1A', shoes: '#F4F6F9', accent: '#9B5CFF', tag: 'Fantasy', premium: { aura: '#5B24A8', sparkle: '#B48CFF' } },
   'legend-set': { gear: 'royal', cape: '#A3162B', shoes: '#D9AE4A', accent: '#D9AE4A', sole: '#D9AE4A', tag: 'Fantasy' },
   'ranger-set': { gear: 'ranger', cape: '#5E9A55', capeTo: '#24461F', glove: '#8A5E38', shoes: '#F4F6F9', accent: '#D9AE4A', tag: 'Adventure' },

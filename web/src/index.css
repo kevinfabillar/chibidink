@@ -439,3 +439,37 @@
 .cd-meteor {
   animation: cd-meteor 7s ease-out infinite;
 }
+
+/* Achievement skins: confetti and feathers drifting down, pom-poms shaking */
+@keyframes cd-fall {
+  0% {
+    transform: translate(0, -40px) rotate(0deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(24px, 160px) rotate(220deg);
+    opacity: 0;
+  }
+}
+.cd-fall {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cd-fall 4s linear infinite;
+}
+@keyframes cd-shake {
+  0%,
+  100% {
+    transform: rotate(-6deg) scale(1);
+  }
+  50% {
+    transform: rotate(6deg) scale(1.05);
+  }
+}
+.cd-shake {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cd-shake 0.7s ease-in-out infinite;
+}
