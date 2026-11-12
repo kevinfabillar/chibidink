@@ -50,6 +50,9 @@ public sealed class StandardCosmeticCatalog : ICosmeticCatalog
         // Premium skins
         new("inferno-dragon", "Inferno Dragon", CosmeticSlot.Outfit, Rarity.Mythic, 3000, 10),
         new("void-reaper", "Void Reaper", CosmeticSlot.Outfit, Rarity.Mythic, 3000, 10),
+        new("frost-monarch", "Frost Monarch", CosmeticSlot.Outfit, Rarity.Mythic, 3200, 12),
+        new("spirit-kitsune", "Spirit Kitsune", CosmeticSlot.Outfit, Rarity.Mythic, 3200, 12),
+        new("neon-ronin", "Neon Ronin", CosmeticSlot.Outfit, Rarity.Mythic, 3500, 14),
         new("legend-set", "Royal", CosmeticSlot.Outfit, Rarity.Legendary, 2000, 8),
 
         // Paddles: retired from the app (the character is the paddle now); kept so existing loadouts stay valid.

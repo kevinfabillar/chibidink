@@ -9,6 +9,8 @@ export type Gear =
   | 'none' | 'chef' | 'cowboy' | 'ninja' | 'knight' | 'pirate' | 'wizard' | 'royal' | 'angel' | 'devil'
   | 'ranger' | 'viking' | 'cleric' | 'bard' | 'samurai'
   | 'dragon' | 'void'
+  // Premium skins, second wave: see character3d/premiumSkins.ts and premiumSkinsArt.tsx
+  | 'frost' | 'kitsune' | 'mecha'
   | 'princess' | 'fairy' | 'idol' | 'sakura'
   // Earned with kudos (achievement skins): see character3d/achievement.ts and achievementArt.tsx
   | 'butler' | 'aegis' | 'racer' | 'shade' | 'clockwork'
@@ -77,6 +79,9 @@ const outfits: Record<string, OutfitVisual> = {
   'ach-olympian': { gear: 'olympian', cape: '#FFFFFF', capeTo: '#D9D2BF', glove: '#FFFFFF', shoes: '#D9AE4A', sole: '#B7F33B', accent: '#B7F33B', tag: 'Fantasy', premium: { aura: '#B7F33B', sparkle: '#FEF3C7' } },
   'ach-soulbound': { gear: 'soulbound', cape: '#0E4A5C', capeTo: '#04151C', glove: '#CFFAFE', shoes: '#F4F6F9', sole: '#22D3EE', accent: '#22D3EE', tag: 'Fantasy', premium: { aura: '#22D3EE', sparkle: '#F0ABFC' } },
   'ach-cheer': { gear: 'cheer', cape: null, glove: '#FFFFFF', shoes: '#FFFFFF', sole: '#F472B6', accent: '#F472B6', tag: 'Glam', hair: { color: '#F2C14E', style: 'pigtails', accent: '#F472B6' }, premium: { aura: '#F472B6', sparkle: '#FDE68A' } },
+  'frost-monarch': { gear: 'frost', cape: '#D6ECFF', capeTo: '#2B5C9E', glove: '#E0F2FE', shoes: '#F4F6F9', sole: '#7DD3FC', accent: '#7DD3FC', tag: 'Fantasy', premium: { aura: '#38BDF8', sparkle: '#E0F2FE' } },
+  'spirit-kitsune': { gear: 'kitsune', cape: null, glove: '#FFFFFF', shoes: '#F4F6F9', sole: '#C81E4A', accent: '#FF5CA8', tag: 'Fantasy', premium: { aura: '#FF5CA8', sparkle: '#FFD1E8' } },
+  'neon-ronin': { gear: 'mecha', cape: null, glove: '#1A1D26', shoes: '#1A1D26', sole: '#2DD4BF', accent: '#2DD4BF', tag: 'Adventure', premium: { aura: '#14B8A6', sparkle: '#F9A8D4' } },
   'void-reaper': { gear: 'void', cape: '#241638', capeTo: '#030208', glove: '#120C1A', shoes: '#F4F6F9', accent: '#9B5CFF', tag: 'Fantasy', premium: { aura: '#5B24A8', sparkle: '#B48CFF' } },
   'legend-set': { gear: 'royal', cape: '#A3162B', shoes: '#D9AE4A', accent: '#D9AE4A', sole: '#D9AE4A', tag: 'Fantasy' },
   'ranger-set': { gear: 'ranger', cape: '#5E9A55', capeTo: '#24461F', glove: '#8A5E38', shoes: '#F4F6F9', accent: '#D9AE4A', tag: 'Adventure' },

@@ -8,7 +8,7 @@ namespace ChibiDink.Api.Realtime;
 /// Clients subscribe to a session and get a lightweight "SessionChanged" ping after every change.
 /// They then refetch the session view, so the server remains the single source of truth.
 /// </summary>
-public sealed class SessionHub(ISessionRepository sessions) : Hub
+public sealed class SessionHub(ISessionRepository sessions, IServiceProvider services) : Hub
 {
     public static string GroupFor(Guid sessionId) => $"session:{sessionId}";
 
@@ -16,6 +16,12 @@ public sealed class SessionHub(ISessionRepository sessions) : Hub
     {
         if (!Guid.TryParse(Context.UserIdentifier, out var userId))
             throw new HubException("Sign in to continue.");
+        // A live connection outlasts the check on its first request: a banned or revoked account is cut off here.
+        if (await AccountAccess.IsRevokedAsync(Context.User!, services, CancellationToken.None))
+        {
+            Context.Abort();
+            throw new HubException("Sign in to continue.");
+        }
         var session = await sessions.FindAsync(sessionId, CancellationToken.None); // quick; finish even if the phone drops
         if (session?.FindParticipant(userId) is null)
             throw new HubException("Join this session first.");

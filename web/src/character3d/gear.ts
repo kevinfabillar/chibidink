@@ -5,6 +5,7 @@ import { mesh, toy } from './materials'
 import { flameTexture, glowTexture } from './textures'
 import { glamBack, glamBody, glamHat, glamHeld } from './glam'
 import { achBody, achExtras, achHat, achHeld, achOffhand, achPremium } from './achievement'
+import { premiumBackdrop, premiumBody, premiumHat, premiumHeld, premiumOffhand } from './premiumSkins'
 
 // Themed gear in 3D, matching components/character/gearArt.tsx. World units: the character is
 // about 2.8 tall with its feet on y = 0; S converts the 2D artwork's units.
@@ -268,6 +269,7 @@ export function buildPremium(gear: Gear, aura: string, sparkle: string): Premium
     }
   }
   achPremium(gear, g, steps)
+  premiumBackdrop(gear, g, steps)
   return { group: g, update: (t) => steps.forEach((s) => s(t)) }
 }
 
@@ -303,7 +305,7 @@ export function buildBack(gear: Gear): THREE.Group | null {
 }
 
 export function buildHat(gear: Gear, fx: EffectUpdate[] = []): THREE.Group | null {
-  const glam = glamHat(gear) ?? achHat(gear, fx)
+  const glam = glamHat(gear) ?? achHat(gear, fx) ?? premiumHat(gear, fx)
   if (glam) return glam
   const g = new THREE.Group()
   const top = HEAD.y + HEAD.h / 2
@@ -744,7 +746,7 @@ export function buildHeld(gear: Gear, effect: EffectVisual | null, fx: EffectUpd
       glowAt = [0.6, 0.36, 0.36]
       break
     default: {
-      const glam = glamHeld(gear) ?? achHeld(gear)
+      const glam = glamHeld(gear) ?? achHeld(gear) ?? premiumHeld(gear, fx)
       if (glam) {
         g.add(glam.group)
         glowAt = glam.glowAt
@@ -810,7 +812,7 @@ export function buildExtras(gear: Gear): THREE.Group | null {
 
 /** Left-hand items: the viking's wooden shield and the bard's lute. Local origin is the hand. */
 export function buildOffhand(gear: Gear, fx: EffectUpdate[] = []): THREE.Group | null {
-  const earned = achOffhand(gear, fx)
+  const earned = achOffhand(gear, fx) ?? premiumOffhand(gear, fx)
   if (earned) return earned
   const g = new THREE.Group()
   if (gear === 'viking') {
@@ -901,5 +903,6 @@ export function buildBodyGear(gear: Gear, r: number): THREE.Group {
   }
   glamBody(gear, r, g)
   achBody(gear, r, g)
+  premiumBody(gear, r, g)
   return g
 }

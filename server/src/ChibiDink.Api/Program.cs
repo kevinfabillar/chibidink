@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.BearerToken;
@@ -6,6 +7,8 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using ChibiDink.Api.Infrastructure;
 using ChibiDink.Api.Matchmaking;
 using ChibiDink.Api.Realtime;
@@ -92,6 +95,7 @@ services.AddRateLimiter(o =>
 
 // ---- Web adapters ---------------------------------------------------------------------------
 services.AddHttpContextAccessor();
+services.AddMemoryCache();
 services.AddScoped<ICurrentUser, HttpCurrentUser>();
 services.AddSingleton<ISessionNotifier, SignalRSessionNotifier>();
 services.AddSingleton<MatchmakingInbox>();
@@ -182,7 +186,17 @@ var siteFiles = new StaticFileOptions
 app.UseStaticFiles(siteFiles);
 app.UseCors();
 app.UseAuthentication();
-app.UseRateLimiter();
+app.UseRateLimiter(); // before the account check, so a flood is turned away without touching the database
+// A banned or suspended account, or one whose sign-ins were revoked, can't keep using a token it already has.
+app.Use(async (context, next) =>
+{
+    if (await AccountAccess.IsRevokedAsync(context.User, context.RequestServices, context.RequestAborted))
+    {
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        return;
+    }
+    await next();
+});
 app.UseAuthorization();
 
 app.MapControllers();
@@ -220,3 +234,39 @@ static async Task SeedRolesAsync(IServiceProvider sp)
 }
 
 public partial class Program;
+
+/// <summary>
+/// Refuses tokens of accounts that staff banned or suspended, or whose security stamp changed since the token
+/// was issued (sign-ins revoked). The account row is cached for a minute, so it costs one small query per
+/// player per minute.
+/// </summary>
+internal static class AccountAccess
+{
+    private sealed record AccountState(DateTimeOffset? LockoutEnd, string? SecurityStamp);
+
+    /// <summary>
+    /// True for a lockout set by staff (a ban or suspension), false for Identity's own lockout after too many
+    /// wrong passwords or codes. That one always ends exactly <see cref="LockoutOptions.DefaultLockoutTimeSpan"/>
+    /// after it starts, so any lockout ending later than that from now was set by staff. Wrong passwords must
+    /// only stop new sign-ins: otherwise anyone who knows a player's email could sign them out mid-session.
+    /// (The last few minutes of a staff suspension count as an ordinary lockout, which still blocks sign-in.)
+    /// </summary>
+    public static bool IsStaffLockout(DateTimeOffset? lockoutEnd, IdentityOptions options) =>
+        lockoutEnd > DateTimeOffset.UtcNow + options.Lockout.DefaultLockoutTimeSpan;
+
+    public static async Task<bool> IsRevokedAsync(ClaimsPrincipal user, IServiceProvider services, CancellationToken ct)
+    {
+        if (user.Identity?.IsAuthenticated != true || !Guid.TryParse(user.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+            return false;
+        var state = await services.GetRequiredService<IMemoryCache>().GetOrCreateAsync(("account-access", userId), async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(60);
+            return await services.GetRequiredService<AppDbContext>().Users.AsNoTracking().Where(u => u.Id == userId)
+                .Select(u => new AccountState(u.LockoutEnd, u.SecurityStamp)).FirstOrDefaultAsync(ct);
+        });
+        var options = services.GetRequiredService<IOptions<IdentityOptions>>().Value;
+        if (state is null || IsStaffLockout(state.LockoutEnd, options)) return true; // deleted, banned or suspended
+        // Identity puts the security stamp in every token; a different one means the token predates a revoke.
+        return user.FindFirstValue(options.ClaimsIdentity.SecurityStampClaimType) is { } stamp && stamp != state.SecurityStamp;
+    }
+}

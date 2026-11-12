@@ -1,4 +1,5 @@
 import { ACH_GLOW, AchBackdrop, AchBody, AchHat, AchHeld, AchOffhand, isAchievementGear } from './achievementArt'
+import { PREMIUM_SKIN_GLOW, PremiumSkinBackdrop, PremiumSkinBody, PremiumSkinHat, PremiumSkinHeld, PremiumSkinOffhand, isPremiumSkinGear } from './premiumSkinsArt'
 import type { EffectVisual, Gear } from '../../cosmetics/visuals'
 import { shade } from '../../lib/color'
 import { useSvgIds } from '../../lib/svgIds'
@@ -84,6 +85,7 @@ export function GearBack({ gear, premium }: { gear: Gear; premium?: { aura: stri
     return (
       <g>
         {isAchievementGear(gear) && <AchBackdrop gear={gear} />}
+        {isPremiumSkinGear(gear) && <PremiumSkinBackdrop gear={gear} />}
         <PremiumBack gear={gear} aura={premium.aura} sparkle={premium.sparkle} />
       </g>
     )
@@ -364,6 +366,7 @@ export function GearCape({ gear, color, gradient }: { gear: Gear; color: string 
 export function GearBody({ gear, hx, hw, p }: { gear: Gear; hx: number; hw: number; p: GearPaint }) {
   const { defs, url } = useTones()
   if (isAchievementGear(gear)) return <AchBody gear={gear} hx={hx} hw={hw} p={p} />
+  if (isPremiumSkinGear(gear)) return <PremiumSkinBody gear={gear} hx={hx} hw={hw} p={p} />
   return (
     <g>
       {defs}
@@ -457,6 +460,7 @@ function Body({ gear, hx, hw, p, t }: { gear: Gear; hx: number; hw: number; p: G
 export function GearHat({ gear, p }: { gear: Gear; p: GearPaint }) {
   const { defs, url } = useTones()
   if (isAchievementGear(gear)) return <AchHat gear={gear} p={p} />
+  if (isPremiumSkinGear(gear)) return <PremiumSkinHat gear={gear} p={p} />
   return (
     <g>
       {defs}
@@ -657,6 +661,7 @@ const GLOW: Record<Gear, [number, number, number, number]> = {
   idol: [539, 172, 34, 34],
   sakura: [539, 210, 70, 44],
   ...ACH_GLOW,
+  ...PREMIUM_SKIN_GLOW,
 }
 
 /** The item held in the raised right hand, plus its effect. Drawn inside the arm's group so it swings. */
@@ -682,38 +687,107 @@ function EffectBack({ effect, cx, cy, rx, ry, blur }: { effect: EffectVisual; cx
   )
 }
 
-/** The part of each effect drawn over the item: rings, sparks or flames. */
+/** A flame standing on (x, y), `k` times the base size. */
+const effectFlame = (x: number, y: number, k = 1) =>
+  `M${x} ${y} c${-16 * k} ${-8 * k} ${-12 * k} ${-30 * k} 0 ${-52 * k} c${4 * k} ${16 * k} ${14 * k} ${22 * k} ${10 * k} ${38 * k} c${6 * k} ${-6 * k} ${6 * k} ${-14 * k} ${4 * k} ${-20 * k} c${10 * k} ${14 * k} ${6 * k} ${32 * k} ${-14 * k} ${34 * k} Z`
+
+const EFFECT_DELAYS = ['', 'cd-d1', 'cd-d2', 'cd-d3']
+
+/** The part of each effect drawn over the item (rings, lightning, flames or water), plus motes circling it. */
 function EffectFront({ effect, cx, cy, r }: { effect: EffectVisual; cx: number; cy: number; r: number }) {
+  const orbit = `M${-r * 1.1} 0 A${r * 1.1} ${r * 0.34} 0 1 1 ${r * 1.1} 0 A${r * 1.1} ${r * 0.34} 0 1 1 ${-r * 1.1} 0`
+  return (
+    <g>
+      <EffectKind effect={effect} cx={cx} cy={cy} r={r} />
+      <g transform={`translate(${cx} ${cy})`}>
+        {[0, 1, 2, 3].map((i) => (
+          <circle key={i} r={i % 2 ? 3.5 : 5} fill={i % 2 ? '#FFFFFF' : effect.color}>
+            <animateMotion dur="2.6s" begin={`${-i * 0.65}s`} repeatCount="indefinite" path={orbit} />
+          </circle>
+        ))}
+      </g>
+    </g>
+  )
+}
+
+function EffectKind({ effect, cx, cy, r }: { effect: EffectVisual; cx: number; cy: number; r: number }) {
   const c = effect.color
+  /** Small dots drifting up from below the item. */
+  const motes = (color: string, n: number, size: number, stroke?: string) =>
+    Array.from({ length: n }, (_, i) => (
+      <circle
+        key={`m${i}`}
+        cx={cx + (((i * 0.43) % 1) - 0.5) * r * 1.6}
+        cy={cy + r * 0.5}
+        r={size * (0.7 + (i % 3) * 0.3)}
+        fill={stroke ? `${color}55` : color}
+        stroke={stroke}
+        strokeWidth={stroke ? 2 : undefined}
+        className="cd-rise"
+        style={{ animationDelay: `${(-i * 0.47).toFixed(2)}s`, animationDuration: '2.2s' }}
+      />
+    ))
   switch (effect.kind) {
     case 'pulse':
-      return <circle cx={cx} cy={cy} r={r * 0.9} fill="none" stroke={c} strokeWidth="5" opacity="0.85" className="cd-glow" />
-    case 'wave':
+      // Energy rings beating outward from a glowing ring; motes drifting up.
       return (
-        <g fill="none" stroke={c} strokeWidth="4" className="cd-glow">
-          <circle cx={cx} cy={cy} r={r * 0.85} opacity="0.9" />
-          <circle cx={cx} cy={cy} r={r * 1.25} opacity="0.5" />
+        <g>
+          <circle cx={cx} cy={cy} r={r * 0.9} fill="none" stroke={c} strokeWidth="5" opacity="0.85" className="cd-glow" />
+          {['', 'cd-d2'].map((d) => (
+            <circle key={d} cx={cx} cy={cy} r={r * 1.3} fill="none" stroke={c} strokeWidth="4" className={`cd-ripple ${d}`} style={{ animationDuration: '1.6s' }} />
+          ))}
+          {motes(c, 5, 4)}
+        </g>
+      )
+    case 'wave':
+      // Water: ripples spreading, two streams swirling round the item, bubbles rising.
+      return (
+        <g>
+          {['', 'cd-d2'].map((d) => (
+            <circle key={d} cx={cx} cy={cy} r={r * 1.3} fill="none" stroke={c} strokeWidth="3" className={`cd-ripple ${d}`} style={{ animationDuration: '2s' }} />
+          ))}
+          <g transform={`rotate(-18 ${cx} ${cy})`} fill="none" strokeLinecap="round">
+            <ellipse cx={cx} cy={cy} rx={r * 1.05} ry={r * 0.36} stroke={c} strokeWidth="6" strokeDasharray="40 18" opacity="0.85" className="cd-dash" />
+            <ellipse cx={cx} cy={cy} rx={r * 0.9} ry={r * 0.28} stroke="#FFFFFF" strokeWidth="2.5" strokeDasharray="14 22" opacity="0.8" className="cd-dash" style={{ animationDirection: 'reverse' }} />
+          </g>
+          {motes(c, 6, 5, '#FFFFFF')}
         </g>
       )
     case 'spark':
+      // Lightning striking out from the item in two sets, out of step, and sparks twinkling around it.
       return (
-        <g stroke="#FFFFFF" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round" className="cd-glow">
-          {[0, 72, 144, 216, 288].map((a) => (
-            <path key={a} d={`M${cx} ${cy - r * 0.8} l8 14 l-10 4 l8 14`} transform={`rotate(${a} ${cx} ${cy})`} stroke={a % 144 ? c : '#FFFFFF'} />
+        <g stroke="#FFFFFF" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round">
+          {[0, 1].map((set) => (
+            <g key={set} className="cd-flicker" style={set ? { animationDelay: '-0.85s', animationDuration: '1.3s' } : undefined}>
+              {[0, 72, 144, 216, 288].map((a) => (
+                <path key={a} d={`M${cx} ${cy - r * 0.55} l8 -14 l-10 -4 l9 -16`} transform={`rotate(${a + set * 36} ${cx} ${cy})`} stroke={(a / 72 + set) % 2 ? c : '#FFFFFF'} />
+              ))}
+            </g>
+          ))}
+          {[0, 60, 120, 180, 240, 300].map((a, i) => (
+            <path key={a} d="M0 -7 Q1 -1 7 0 Q1 1 0 7 Q-1 1 -7 0 Q-1 -1 0 -7 Z" transform={`rotate(${a} ${cx} ${cy}) translate(${cx} ${cy - r * 1.15})`} fill={i % 2 ? c : '#FFFFFF'} stroke="none" className={`cd-twinkle ${EFFECT_DELAYS[i % 4]}`} />
           ))}
         </g>
       )
     case 'flame':
+      // Flames wrapping the item with white-hot hearts, embers rising.
       return (
-        <g className="cd-glow">
-          {[-1, 0, 1].map((i) => (
-            <path
-              key={i}
-              d={`M${cx + i * 22} ${cy - r * 0.55} c-16 -8 -12 -30 0 -52 c4 16 14 22 10 38 c6 -6 6 -14 4 -20 c10 14 6 32 -14 34 Z`}
-              fill={i === 0 ? '#FDE68A' : c}
-              opacity="0.9"
-            />
+        <g>
+          {(
+            [
+              [-34, 0.7, '#FF4D1A'], [34, 0.7, '#FF4D1A'], [-18, 0.9, c], [18, 0.9, c], [0, 1.15, '#FDE68A'],
+            ] as const
+          ).map(([dx, k, color], i) => (
+            <g key={dx} className={`cd-flick ${EFFECT_DELAYS[i % 4]}`}>
+              <path d={effectFlame(cx + dx, cy - r * 0.35, k)} fill={color} opacity="0.92" />
+            </g>
           ))}
+          {[-12, 12].map((dx, i) => (
+            <g key={dx} className={`cd-flick ${EFFECT_DELAYS[(i + 2) % 4]}`}>
+              <path d={effectFlame(cx + dx, cy - r * 0.38, 0.5)} fill="#FFF3C4" />
+            </g>
+          ))}
+          {motes('#FFB347', 5, 3.5)}
         </g>
       )
   }
@@ -722,6 +796,7 @@ function EffectFront({ effect, cx, cy, r }: { effect: EffectVisual; cx: number; 
 function HeldItem({ gear, p }: { gear: Gear; p: GearPaint }) {
   const { defs, url } = useTones()
   if (isAchievementGear(gear)) return <AchHeld gear={gear} p={p} />
+  if (isPremiumSkinGear(gear)) return <PremiumSkinHeld gear={gear} p={p} />
   return (
     <g>
       {defs}
@@ -851,6 +926,7 @@ function Held({ gear, p, t }: { gear: Gear; p: GearPaint; t: Tones }) {
 export function GearOffhand({ gear, p, shield, effect }: { gear: Gear; p: GearPaint; shield: string; effect?: EffectVisual | null }) {
   const { defs, url } = useTones()
   if (isAchievementGear(gear)) return <AchOffhand gear={gear} p={p} />
+  if (isPremiumSkinGear(gear)) return <PremiumSkinOffhand gear={gear} />
   if (gear === 'knight') return <KnightShield p={p} shield={shield} effect={effect} />
   if (gear !== 'viking') return null
   return (

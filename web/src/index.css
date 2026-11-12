@@ -473,3 +473,114 @@
   transform-origin: center;
   animation: cd-shake 0.7s ease-in-out infinite;
 }
+
+/* Premium skins, second wave: aurora curtains, snowfall, swaying fox tails, falling data streaks */
+@keyframes cd-aurora {
+  0%,
+  100% {
+    transform: translateX(-24px) scaleY(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateX(24px) scaleY(1.14);
+    opacity: 1;
+  }
+}
+.cd-aurora {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: cd-aurora 6s ease-in-out infinite;
+}
+@keyframes cd-snow {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  8%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(40px, 820px) rotate(240deg);
+    opacity: 0;
+  }
+}
+.cd-snow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cd-snow 9s linear infinite;
+}
+@keyframes cd-sway {
+  0%,
+  100% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+/* Swings from the element's own origin (a tail's root, a ribbon's knot). */
+.cd-sway {
+  transform-origin: 0 0;
+  animation: cd-sway 3.2s ease-in-out infinite;
+}
+@keyframes cd-stream {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(900px);
+    opacity: 0;
+  }
+}
+.cd-stream {
+  animation: cd-stream 3s linear infinite;
+}
+.cd-spin-rev {
+  animation: cd-spin 14s linear infinite reverse;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Rings rippling outward from the centre (the Green Pulse aura, Neon Ronin's floor scan) */
+@keyframes cd-ripple {
+  0% {
+    transform: scale(0.35);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+}
+.cd-ripple {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cd-ripple 2.4s ease-out infinite;
+}
+
+/* Lightning that strikes, cuts out and strikes again (the Electric aura) */
+@keyframes cd-flicker {
+  0%,
+  6%,
+  12%,
+  40%,
+  48%,
+  100% {
+    opacity: 1;
+  }
+  8%,
+  44% {
+    opacity: 0.1;
+  }
+  70% {
+    opacity: 0.55;
+  }
+}
+.cd-flicker {
+  animation: cd-flicker 1.7s linear infinite;
+}

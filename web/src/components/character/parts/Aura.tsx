@@ -1,4 +1,5 @@
 import type { AuraVisual } from '../../../cosmetics/visuals'
+import type { CSSProperties } from 'react'
 
 // Character auras in full-body coordinates (character centred on x = 80, feet at y ≈ 202).
 
@@ -39,7 +40,9 @@ export function AuraBack({ aura, ids }: { aura: AuraVisual; ids: AuraIds }) {
       {aura.kind === 'orbit' && <OrbitBack aura={aura} blurId={ids.auraBlur} />}
       {aura.kind === 'celestial' && <Celestial aura={aura} blurId={ids.auraBlur} />}
       {aura.kind === 'phoenix' && <Phoenix aura={aura} blurId={ids.auraBlur} />}
+      {aura.kind === 'nova' && <Radiance color={aura.color} pool={aura.accent} blurId={ids.auraBlur} />}
       {aura.kind === 'nova' && <NovaRays aura={aura} rayId={`${ids.aura}r`} softId={`${ids.auraBlur}s`} />}
+      {aura.kind === 'pulse' && <PulseWaves aura={aura} blurId={ids.auraBlur} />}
       {aura.kind === 'flame' && <Flames aura={aura} blurId={ids.auraBlur} />}
       {aura.kind === 'spark' && <Bolts aura={aura} blurId={ids.auraBlur} />}
       <GroundRing aura={aura} blurId={ids.auraBlur} />
@@ -70,11 +73,10 @@ function GroundRing({ aura, blurId }: { aura: AuraVisual; blurId: string }) {
       <ellipse cx={80} cy={202} rx={54} ry={11.5} fill={aura.color} opacity={0.18} />
       <ellipse cx={80} cy={202} rx={54} ry={11.5} fill="none" stroke={aura.color} strokeWidth={4} filter={`url(#${blurId})`} className="cd-glow" />
       <ellipse cx={80} cy={202} rx={54} ry={11.5} fill="none" stroke={aura.accent} strokeWidth={1.2} opacity={0.9} />
-      {aura.kind === 'pulse' && (
-        <g className="cd-glow">
-          <ellipse cx={80} cy={202} rx={40} ry={8} fill="none" stroke={aura.color} strokeWidth={1.4} opacity={0.6} />
-        </g>
-      )}
+      {aura.kind === 'pulse' &&
+        ['', 'cd-d1', 'cd-d2'].map((d) => (
+          <ellipse key={d} cx={80} cy={202} rx={70} ry={15} fill="none" stroke={aura.accent} strokeWidth={1.6} className={`cd-ripple ${d}`} style={{ animationDuration: '2.2s' }} />
+        ))}
     </g>
   )
 }
@@ -187,6 +189,10 @@ function Phoenix({ aura, blurId }: { aura: AuraVisual; blurId: string }) {
   return (
     <g>
       <Radiance color="#FF4D1A" pool={aura.color} blurId={blurId} />
+      <PhoenixWing aura={aura} blurId={blurId} />
+      <g transform="translate(160 0) scale(-1 1)">
+        <PhoenixWing aura={aura} blurId={blurId} />
+      </g>
       <g transform="translate(80 110)">
         <circle r={62} fill={aura.color} opacity={0.2} filter={`url(#${blurId})`} />
         <circle r={70} fill="none" stroke={aura.color} strokeWidth={5} opacity={0.6} filter={`url(#${blurId})`} />
@@ -211,6 +217,9 @@ function NovaRays({ aura, rayId, softId }: { aura: AuraVisual; rayId: string; so
   return (
     <g transform="translate(80 112)">
       <circle r={30} fill={aura.accent} opacity={0.25} filter={`url(#${softId})`} />
+      <circle r={80} fill="none" stroke={aura.accent} strokeWidth={1.4} className="cd-ripple" />
+      <circle r={80} fill="none" stroke={aura.accent} strokeWidth={1.4} className="cd-ripple cd-d2" />
+      <path d={STAR} transform="scale(2.4)" fill="#FFFFFF" className="cd-twinkle" />
       <g className="cd-spin" filter={`url(#${softId})`}>
         {Array.from({ length: 12 }, (_, i) => (
           <path key={i} d="M0 0 Q-6 -48 -2.5 -96 Q0 -100 2.5 -96 Q6 -48 0 0 Z" transform={`rotate(${i * 30})`} fill={`url(#${rayId})`} />
@@ -255,21 +264,75 @@ function Flames({ aura, blurId }: { aura: AuraVisual; blurId: string }) {
 }
 
 const BOLTS = ['M22 70 l9 12 l-7 3 l11 15', 'M140 84 l-9 11 l7 3 l-10 15', 'M18 150 l10 8 l-6 4 l10 9', 'M144 150 l-10 8 l6 4 l-10 9']
+const BOLTS_2 = ['M10 104 l10 10 l-7 3 l9 13', 'M152 112 l-8 10 l6 3 l-9 13', 'M34 30 l6 9 l-5 2 l7 10', 'M128 34 l-6 9 l5 2 l-7 10']
 
-/** Lightning: a soft coloured glow under a thin bright core. */
-function Bolts({ aura, blurId }: { aura: AuraVisual; blurId: string }) {
+/** One set of bolts: a soft coloured glow under a thin bright core. */
+function BoltSet({ aura, blurId, paths, className, style }: { aura: AuraVisual; blurId: string; paths: string[]; className: string; style?: CSSProperties }) {
   return (
-    <g fill="none" strokeLinecap="round" strokeLinejoin="round" className="cd-glow">
+    <g fill="none" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
       <g stroke={aura.color} strokeWidth={6} opacity={0.7} filter={`url(#${blurId})`}>
-        {BOLTS.map((d) => (
+        {paths.map((d) => (
           <path key={d} d={d} />
         ))}
       </g>
       <g stroke={aura.accent} strokeWidth={1.6}>
-        {BOLTS.map((d) => (
+        {paths.map((d) => (
           <path key={d} d={d} />
         ))}
       </g>
+      <g stroke="#FFFFFF" strokeWidth={0.7}>
+        {paths.map((d) => (
+          <path key={d} d={d} />
+        ))}
+      </g>
+    </g>
+  )
+}
+
+/** Lightning: two sets of bolts striking and cutting out out of step, with static flashing on the floor ring. */
+function Bolts({ aura, blurId }: { aura: AuraVisual; blurId: string }) {
+  return (
+    <g>
+      <ellipse cx={80} cy={120} rx={80} ry={96} fill={aura.color} opacity={0.06} filter={`url(#${blurId})`} className="cd-flicker" style={{ animationDuration: '1.3s' }} />
+      <BoltSet aura={aura} blurId={blurId} paths={BOLTS} className="cd-flicker" />
+      <BoltSet aura={aura} blurId={blurId} paths={BOLTS_2} className="cd-flicker" style={{ animationDelay: '-0.8s', animationDuration: '1.3s' }} />
+      <g stroke={aura.accent} strokeWidth={1.2} fill="none" strokeLinecap="round" className="cd-flicker" style={{ animationDelay: '-0.4s', animationDuration: '0.9s' }}>
+        <path d="M30 200 l6 -4 l4 5 l6 -5 l5 4" />
+        <path d="M108 206 l6 -5 l4 4 l6 -4 l5 5" />
+      </g>
+    </g>
+  )
+}
+
+/** Phoenix wing (left; the right mirrors it): flame feathers fanning out from behind the shoulder, beating. */
+function PhoenixWing({ aura, blurId }: { aura: AuraVisual; blurId: string }) {
+  const feathers = Array.from({ length: 7 }, (_, i) => {
+    const k = i / 6
+    return { angle: -(22 + k * 86), len: 3.4 - k * 1.3, color: i % 2 ? aura.color : '#FF4D1A' }
+  })
+  return (
+    <g className="cd-sway" style={{ transformOrigin: '68px 100px', animationDuration: '2.8s' }}>
+      <ellipse cx={38} cy={86} rx={38} ry={30} fill="#FF4D1A" opacity={0.25} filter={`url(#${blurId})`} />
+      {feathers.map((f, i) => (
+        <g key={i} transform={`translate(68 100) rotate(${f.angle}) scale(1 ${f.len})`}>
+          <g className={`cd-flick ${['', 'cd-d1', 'cd-d2', 'cd-d3'][i % 4]}`}>
+            <path d={FLAME} fill={f.color} opacity={0.95} stroke="#FFB347" strokeWidth={0.5} />
+            <path d={FLAME} transform="scale(0.55) translate(0 -2)" fill={i % 2 ? '#FFF3C4' : aura.accent} />
+          </g>
+        </g>
+      ))}
+    </g>
+  )
+}
+
+/** Green Pulse: a heartbeat glow and a ring of light rising up the body. */
+function PulseWaves({ aura, blurId }: { aura: AuraVisual; blurId: string }) {
+  return (
+    <g>
+      <ellipse cx={80} cy={130} rx={60} ry={80} fill={aura.color} opacity={0.14} filter={`url(#${blurId})`} className="cd-glow" style={{ animationDuration: '1.1s' }} />
+      {['', 'cd-d2'].map((d) => (
+        <ellipse key={d} cx={80} cy={196} rx={46} ry={9} fill="none" stroke={aura.accent} strokeWidth={1.4} className={`cd-rise ${d}`} />
+      ))}
     </g>
   )
 }

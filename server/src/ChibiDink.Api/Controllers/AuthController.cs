@@ -311,13 +311,15 @@ public sealed class AuthController(
         }
 
         // A successful reset also clears a lockout from too many wrong passwords, and proves the email is theirs.
+        // A suspension or ban (a lockout set by staff) stays: a new password doesn't lift it.
         if (!user.EmailConfirmed)
         {
             user.EmailConfirmed = true;
             await users.UpdateAsync(user);
         }
         await users.ResetAccessFailedCountAsync(user);
-        await users.SetLockoutEndDateAsync(user, null);
+        if (!AccountAccess.IsStaffLockout(user.LockoutEnd, users.Options))
+            await users.SetLockoutEndDateAsync(user, null);
         return NoContent();
     }
 

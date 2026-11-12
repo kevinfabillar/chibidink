@@ -92,16 +92,17 @@ export function EffectArt({ effect, className }: { effect: EffectVisual } & ArtP
       <ellipse cx={0} cy={8} rx={22} ry={8} fill="none" stroke={c} strokeWidth={1.5} />
       <path d="M-15 4 C-12 -14 12 -14 15 4" stroke={c} strokeWidth={2} fill="none" opacity={0.75} strokeLinecap="round" className="cd-glow" />
       {effect.kind === 'pulse' && <ellipse cx={0} cy={8} rx={13} ry={4.5} fill="none" stroke={c} strokeWidth={1.2} opacity={0.8} />}
+      {effect.kind === 'pulse' && <ellipse cx={0} cy={8} rx={26} ry={10} fill="none" stroke={c} strokeWidth={1.2} className="cd-ripple" />}
       {effect.kind === 'spark' && (
-        <path d="M-6 -20 l4 6 l-5 1 l5 7 M8 -18 l-3 5 l4 1 l-4 6" stroke={c} strokeWidth={1.6} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M-6 -20 l4 6 l-5 1 l5 7 M8 -18 l-3 5 l4 1 l-4 6" stroke={c} strokeWidth={1.6} fill="none" strokeLinecap="round" strokeLinejoin="round" className="cd-flicker" />
       )}
       {effect.kind === 'flame' && (
         <g fill={c}>
-          <path d="M-5 0 q-5 -6 0 -16 q1 6 4 8 q1 -4 0 -8 q7 7 3 16 Z" />
-          <path d="M6 1 q-3 -4 0 -10 q1 4 3 5 q1 -2 0 -5 q4 5 2 10 Z" opacity={0.8} />
+          <path d="M-5 0 q-5 -6 0 -16 q1 6 4 8 q1 -4 0 -8 q7 7 3 16 Z" className="cd-flick" />
+          <path d="M6 1 q-3 -4 0 -10 q1 4 3 5 q1 -2 0 -5 q4 5 2 10 Z" opacity={0.8} className="cd-flick cd-d2" />
         </g>
       )}
-      {effect.kind === 'wave' && <ellipse cx={0} cy={8} rx={28} ry={11} fill="none" stroke={c} strokeWidth={1.1} opacity={0.5} />}
+      {effect.kind === 'wave' && <ellipse cx={0} cy={8} rx={28} ry={11} fill="none" stroke={c} strokeWidth={1.1} opacity={0.5} strokeDasharray="10 5" className="cd-dash" />}
     </svg>
   )
 }

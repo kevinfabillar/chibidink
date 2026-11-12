@@ -1,6 +1,6 @@
-import { AdaptiveDpr, OrbitControls } from '@react-three/drei'
+import { OrbitControls, PerformanceMonitor } from '@react-three/drei'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { CharacterLook } from '../cosmetics/visuals'
 import { buildCharacter, buildPedestal, type CharacterRig, type Pose } from './build'
 import { dispose } from './materials'
@@ -25,14 +25,15 @@ export default function Character3D({ look, pose = 'idle', interactive, pedestal
   const stand = useMemo(() => (pedestal ? buildPedestal() : null), [pedestal])
   useEffect(() => () => void (stand && dispose(stand)), [stand])
 
+  // Sharp on high-density screens (up to 2x). The resolution only steps down if the device really can't
+  // keep up (measured frame rate), and never below 1x, so turning the character stays crisp.
+  const maxDpr = Math.min(typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1, 2)
+  const [dpr, setDpr] = useState(maxDpr)
+
   const f = FRAMINGS.full
   return (
     <Canvas
-      dpr={[1, 1.5]}
-      // While you drag, the view renders at a lower resolution (unnoticeable in motion) so it keeps up on
-      // phones; it sharpens again a moment after you let go. The shiny materials cost per pixel, so this
-      // is where the time goes.
-      performance={{ min: 0.55, debounce: 300 }}
+      dpr={dpr}
       camera={{ fov: f.fov, position: [...f.position] }}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       onCreated={({ camera, gl, scene }) => {
@@ -43,6 +44,12 @@ export default function Character3D({ look, pose = 'idle', interactive, pedestal
       }}
       style={{ touchAction: interactive ? 'pan-y' : 'auto' }} // swipe up/down scrolls the page; drag sideways spins
     >
+      <PerformanceMonitor
+        onDecline={() => setDpr((d) => Math.max(1, d - 0.5))}
+        onIncline={() => setDpr((d) => Math.min(maxDpr, d + 0.5))}
+        flipflops={3}
+        onFallback={() => setDpr(1)}
+      />
       <StudioLights />
       <group rotation-y={turn}>
         <primitive object={rig.root} />
@@ -51,7 +58,6 @@ export default function Character3D({ look, pose = 'idle', interactive, pedestal
       <Animator rig={rig} />
       {interactive && (
         <>
-          <AdaptiveDpr />
           {/* Damping: the turn eases out and glides to a stop instead of halting the instant you let go. */}
           <OrbitControls
             target={[...f.target]}
@@ -62,7 +68,6 @@ export default function Character3D({ look, pose = 'idle', interactive, pedestal
             rotateSpeed={0.7}
             enableDamping
             dampingFactor={0.09}
-            regress
           />
         </>
       )}

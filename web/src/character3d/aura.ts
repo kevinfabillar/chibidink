@@ -1,22 +1,11 @@
 import * as THREE from 'three'
 import type { AuraVisual } from '../cosmetics/visuals'
-import { S } from './gear'
 import { glow, mesh } from './materials'
 import { auraColumnTexture, flameTexture, glowTexture, rayTexture } from './textures'
 
 export interface AuraRig {
   group: THREE.Group
   update: (t: number) => void
-}
-
-/**
- * Maps a point from the 2D aura artwork (parts/Aura.tsx, the old 204-wide stage) to world
- * coordinates, using the same fit as the 2D avatar, so 3D auras match their 2D look and icons.
- */
-function fromArt(x: number, y: number): [number, number] {
-  const nx = (x + 22) * (858 / 204) - 129
-  const ny = (y + 2) * (858 / 204) - 110
-  return [(nx - 300) * S, (748 - ny) * S]
 }
 
 /** A soft additive glow that always faces the camera (no hard edges from any angle). */
@@ -42,7 +31,7 @@ export function buildAura(a: AuraVisual): AuraRig {
   const column = sprite(a.color, auraColumnTexture(), 0.55, 2.3, 3.4, [0, 1.45, -0.35])
   g.add(disc, halo, ring, column)
 
-  // Sparkles drifting upward, in a few sizes.
+  // Sparkles drifting upward and slowly swirling around the character.
   const count = 56
   const positions = new Float32Array(count * 3)
   const speeds: number[] = []
@@ -54,16 +43,15 @@ export function buildAura(a: AuraVisual): AuraRig {
   }
   const sparkGeo = new THREE.BufferGeometry()
   sparkGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-  const sparks = new THREE.Points(
-    sparkGeo,
-    new THREE.PointsMaterial({ color: a.accent, size: 0.09, map: glowTexture(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }),
-  )
+  const sparkMat = new THREE.PointsMaterial({ color: a.accent, size: 0.09, map: glowTexture(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false })
+  const sparks = new THREE.Points(sparkGeo, sparkMat)
   g.add(sparks)
 
   let spin: THREE.Group | null = null
   const orbit = a.kind === 'orbit' ? orbits(a) : a.kind === 'celestial' ? celestial(a) : a.kind === 'phoenix' ? phoenix(a) : null
   if (orbit) g.add(orbit.group)
-  if (a.kind === 'nova') {
+  const nova = a.kind === 'nova' ? novaBurst(a) : null
+  if (nova) {
     spin = new THREE.Group()
     spin.position.set(0, 1.35, -0.45)
     const tex = rayTexture()
@@ -72,26 +60,61 @@ export function buildAura(a: AuraVisual): AuraRig {
       ray.rotation.z = (i / 12) * Math.PI
       spin.add(ray)
     }
-    g.add(spin, sprite(a.accent, glowTexture(), 0.5, 1.6, 1.6, [0, 1.35, -0.46]))
+    g.add(spin, nova.group)
   }
   const fire = a.kind === 'flame' ? inferno(a) : null
   if (fire) g.add(fire.group)
-  if (a.kind === 'spark') g.add(bolts(a))
+  const storm = a.kind === 'spark' ? lightning(a) : null
+  if (storm) g.add(storm.group)
+  const pulse = a.kind === 'pulse' ? pulseWaves(a) : null
+  if (pulse) g.add(pulse.group)
 
+  let last = 0
   return {
     group: g,
     update(t) {
-      column.material.opacity = 0.45 + 0.12 * Math.sin(t * 2.4)
-      ring.scale.setScalar(1 + 0.03 * Math.sin(t * 3))
-      halo.scale.setScalar(1 + 0.04 * Math.sin(t * 3))
+      // Lightning lights up the column as it strikes; the pulse aura beats like a heart.
+      const beat = pulse ? pulse.beat(t) : 0
+      column.material.opacity = 0.45 + 0.12 * Math.sin(t * 2.4) + (storm ? storm.flash * 0.35 : 0) + beat * 0.25
+      ring.scale.setScalar(1 + 0.03 * Math.sin(t * 3) + beat * 0.05)
+      halo.scale.setScalar(1 + 0.04 * Math.sin(t * 3) + beat * 0.08)
+      // Time-based, so sparkles rise at the same speed on every screen (and in snapshots).
+      const dt = Math.min(0.05, Math.max(0, t - last)) || 0.016
+      last = t
       const p = sparkGeo.attributes.position as THREE.BufferAttribute
-      for (let i = 0; i < count; i++) p.setY(i, (p.getY(i) + speeds[i] * 0.016) % 2.8)
+      for (let i = 0; i < count; i++) p.setY(i, (p.getY(i) + speeds[i] * dt) % 2.8)
       p.needsUpdate = true
+      sparks.rotation.y = t * 0.12
+      sparkMat.opacity = 0.75 + 0.25 * Math.sin(t * 5)
       if (spin) spin.rotation.z = t * 0.25
       orbit?.update(t)
       fire?.update(t)
+      storm?.update(t)
+      pulse?.update(t)
+      nova?.update(t)
     },
   }
+}
+
+/** A long flame feather, brightest along its outer half (the part that shows past the body), with a pointed tip. */
+function featherTexture(): THREE.Texture {
+  const c = document.createElement('canvas')
+  c.width = 64
+  c.height = 256
+  const ctx = c.getContext('2d')!
+  const shape = new Path2D('M32 254 C18 220 6 150 14 90 C20 50 28 24 32 2 C36 24 44 50 50 90 C58 150 46 220 32 254 Z')
+  const g = ctx.createLinearGradient(0, 256, 0, 0)
+  g.addColorStop(0, 'rgba(255,255,255,0.15)')
+  g.addColorStop(0.35, 'rgba(255,255,255,0.75)')
+  g.addColorStop(0.7, 'rgba(255,255,255,1)')
+  g.addColorStop(1, 'rgba(255,255,255,0.35)')
+  ctx.shadowColor = 'rgba(255,255,255,0.8)'
+  ctx.shadowBlur = 8
+  ctx.fillStyle = g
+  ctx.fill(shape)
+  const t = new THREE.CanvasTexture(c)
+  t.colorSpace = THREE.SRGBColorSpace
+  return t
 }
 
 /** Radial fade for the ground halo: bright in the middle of the ring, soft on both sides. */
@@ -110,25 +133,159 @@ function ringTexture(): THREE.Texture {
   return t
 }
 
-/** The 2D bolts (Aura.tsx), as glowing tubes beside the head and body. */
-const BOLTS: [number, number][][] = [
-  [[22, 70], [31, 82], [24, 85], [35, 100]],
-  [[140, 84], [131, 95], [138, 98], [128, 113]],
-  [[18, 150], [28, 158], [22, 162], [32, 171]],
-  [[144, 150], [134, 158], [140, 162], [130, 171]],
-]
-
-function bolts(a: AuraVisual) {
-  const g = new THREE.Group()
-  for (const pts of BOLTS) {
-    const path = new THREE.CurvePath<THREE.Vector3>()
-    const v = pts.map(([x, y]) => new THREE.Vector3(...fromArt(x, y), 0.05))
-    for (let i = 1; i < v.length; i++) path.add(new THREE.LineCurve3(v[i - 1], v[i]))
-    // A thin bright core inside a wider soft glow, like the 2D bolt.
-    g.add(mesh(new THREE.TubeGeometry(path, 48, 0.014, 12, false), glow(a.accent, 0.95)))
-    g.add(mesh(new THREE.TubeGeometry(path, 48, 0.055, 12, false), glow(a.color, 0.35)))
+/** A jagged lightning path from `from` to `to`, `steps` segments, kinked sideways by up to `jag`. */
+function boltPath(from: THREE.Vector3, to: THREE.Vector3, steps: number, jag: number) {
+  const path = new THREE.CurvePath<THREE.Vector3>()
+  let prev = from.clone()
+  for (let i = 1; i <= steps; i++) {
+    const p = from.clone().lerp(to, i / steps)
+    if (i < steps) p.add(new THREE.Vector3((Math.random() - 0.5) * 2 * jag, (Math.random() - 0.5) * jag * 0.6, (Math.random() - 0.5) * jag * 0.5))
+    path.add(new THREE.LineCurve3(prev, p))
+    prev = p
   }
+  return path
+}
+
+/** A bright core inside a wider soft glow, like the 2D bolt. */
+function boltMesh(path: THREE.CurvePath<THREE.Vector3>, a: AuraVisual, thick = 1) {
+  const g = new THREE.Group()
+  g.add(mesh(new THREE.TubeGeometry(path, 36, 0.013 * thick, 6, false), glow('#FFFFFF', 0.95)))
+  g.add(mesh(new THREE.TubeGeometry(path, 36, 0.032 * thick, 8, false), glow(a.accent, 0.7)))
+  g.add(mesh(new THREE.TubeGeometry(path, 36, 0.07 * thick, 8, false), glow(a.color, 0.25)))
   return g
+}
+
+/**
+ * Electric: lightning striking down both sides of the character. Each strike picks one of a few
+ * pre-built bolts (so nothing is built while animating), flickers, and lights up the aura; arcs of
+ * static crawl around the floor ring.
+ */
+function lightning(a: AuraVisual) {
+  const g = new THREE.Group()
+  const VARIANTS = 3
+  const slots: { bolts: THREE.Group[]; rate: number; phase: number; glowS: THREE.Sprite }[] = []
+  for (let s = 0; s < 6; s++) {
+    const side = s % 2 ? 1 : -1
+    const y = 0.45 + Math.floor(s / 2) * 0.8
+    const x = side * (0.82 + Math.random() * 0.18)
+    const bolts: THREE.Group[] = []
+    for (let v = 0; v < VARIANTS; v++) {
+      const b = boltMesh(boltPath(new THREE.Vector3(x - side * 0.05, y + 0.6, 0.05), new THREE.Vector3(x + side * 0.12, y - 0.15, 0.05), 6, 0.09), a, s < 2 ? 1.2 : 1)
+      b.visible = false
+      bolts.push(b)
+      g.add(b)
+    }
+    const glowS = sprite(a.color, glowTexture(), 0, 0.9, 1.1, [x, y + 0.2, 0])
+    g.add(glowS)
+    slots.push({ bolts, rate: 0.55 + Math.random() * 0.5, phase: Math.random() * 10, glowS })
+  }
+  // Short arcs of static running around the floor ring.
+  const crawl = new THREE.Group()
+  crawl.position.y = 0.03
+  const arcs: THREE.Group[] = []
+  for (let i = 0; i < 4; i++) {
+    const a0 = (i / 4) * Math.PI * 2
+    const from = new THREE.Vector3(Math.cos(a0) * 0.9, 0, Math.sin(a0) * 0.9)
+    const to = new THREE.Vector3(Math.cos(a0 + 0.5) * 0.9, 0, Math.sin(a0 + 0.5) * 0.9)
+    const arc = boltMesh(boltPath(from, to, 5, 0.05), a, 0.6)
+    arcs.push(arc)
+    crawl.add(arc)
+  }
+  g.add(crawl)
+
+  const rig = {
+    group: g,
+    /** 0..1: how brightly lightning is striking right now. */
+    flash: 0,
+    update(t: number) {
+      let flash = 0
+      for (const slot of slots) {
+        const cycle = t * slot.rate + slot.phase
+        const frac = cycle % 1
+        const pick = Math.floor(cycle) % VARIANTS
+        // Strike, cut out, strike again, then rest until the next one.
+        const on = frac < 0.07 || (frac > 0.11 && frac < 0.26)
+        slot.bolts.forEach((b, i) => (b.visible = on && i === pick))
+        slot.glowS.material.opacity = on ? 0.55 : 0
+        if (on) flash = Math.max(flash, frac < 0.07 ? 1 : 0.6)
+      }
+      crawl.rotation.y = t * 1.6
+      arcs.forEach((arc, i) => (arc.visible = Math.sin(t * 13 + i * 2.3) > -0.2))
+      rig.flash = flash
+    },
+  }
+  return rig
+}
+
+/** Green Pulse: shockwaves rippling out across the floor, a ring of light rising up the body, a heartbeat. */
+function pulseWaves(a: AuraVisual) {
+  const g = new THREE.Group()
+  const waves = [0, 1, 2].map(() => {
+    const w = mesh(new THREE.TorusGeometry(1, 0.016, 8, 128), glow(a.accent, 0.9), [0, 0.02, 0])
+    w.rotation.x = Math.PI / 2
+    const soft = mesh(new THREE.RingGeometry(0.9, 1.1, 96), glow(a.color, 0.35), [0, 0.018, 0])
+    soft.rotation.x = -Math.PI / 2
+    g.add(w, soft)
+    return { w, soft }
+  })
+  const riser = mesh(new THREE.TorusGeometry(0.72, 0.012, 8, 128), glow(a.accent, 0.8))
+  riser.rotation.x = Math.PI / 2
+  const riserSoft = mesh(new THREE.TorusGeometry(0.72, 0.05, 8, 128), glow(a.color, 0.25))
+  riserSoft.rotation.x = Math.PI / 2
+  g.add(riser, riserSoft)
+  /** A double beat, like a heart: lub-dub, then rest. 0..1. */
+  const beat = (t: number) => {
+    const u = (t * 0.8) % 1
+    const bump = (c: number, w: number) => Math.max(0, 1 - Math.abs(u - c) / w)
+    return Math.max(bump(0.05, 0.06), bump(0.2, 0.06) * 0.7)
+  }
+  return {
+    group: g,
+    beat,
+    update(t: number) {
+      waves.forEach(({ w, soft }, i) => {
+        const k = (t * 0.45 + i / 3) % 1
+        const r = 0.35 + k * 1.05
+        w.scale.set(r, r, 1)
+        soft.scale.setScalar(r)
+        ;(w.material as THREE.MeshBasicMaterial).opacity = 0.9 * (1 - k)
+        ;(soft.material as THREE.MeshBasicMaterial).opacity = 0.35 * (1 - k)
+      })
+      const k = (t * 0.35) % 1
+      riser.position.y = riserSoft.position.y = 0.1 + k * 2.6
+      const fade = Math.sin(k * Math.PI)
+      ;(riser.material as THREE.MeshBasicMaterial).opacity = 0.8 * fade
+      ;(riserSoft.material as THREE.MeshBasicMaterial).opacity = 0.25 * fade
+    },
+  }
+}
+
+/** Nova: the shared radiance, a pulsing star-core behind the head, and rings bursting out from it. */
+function novaBurst(a: AuraVisual) {
+  const g = new THREE.Group()
+  const core = sprite(a.accent, glowTexture(), 0.55, 1.6, 1.6, [0, 1.35, -0.46])
+  const star = sprite('#FFFFFF', glowTexture(), 0.9, 0.45, 0.45, [0, 1.35, -0.44])
+  g.add(core, star)
+  const bursts = [0, 1].map(() => {
+    const r = mesh(new THREE.TorusGeometry(1, 0.012, 8, 128), glow(a.accent, 0.8), [0, 1.35, -0.47])
+    g.add(r)
+    return r
+  })
+  const shine = radiance(g, a.color, a.accent, a.accent, 36)
+  return {
+    group: g,
+    update(t: number) {
+      const k = 0.5 + 0.5 * Math.sin(t * 2.2)
+      core.material.opacity = 0.4 + 0.25 * k
+      star.scale.setScalar(0.35 + 0.2 * k)
+      bursts.forEach((r, i) => {
+        const u = (t * 0.4 + i / 2) % 1
+        r.scale.setScalar(0.3 + u * 1.3)
+        ;(r.material as THREE.MeshBasicMaterial).opacity = 0.8 * (1 - u)
+      })
+      shine(t)
+    },
+  }
 }
 
 /**
@@ -253,9 +410,21 @@ function celestial(a: AuraVisual) {
     g.add(s)
     return s
   })
+  // Now and then a shooting star streaks across the sky.
+  const comet = new THREE.Group()
+  comet.add(sprite('#FFFFFF', glowTexture(), 1, 0.16, 0.16, [0, 0, 0]))
+  const tail = sprite(a.accent, glowTexture(), 0.7, 0.9, 0.08, [0.4, 0.13, 0])
+  tail.material.rotation = 0.32
+  comet.add(tail)
+  g.add(comet)
   return {
     group: g,
     update(t: number) {
+      const u = (t * 0.22) % 1
+      comet.visible = u < 0.3
+      const k = u / 0.3
+      comet.position.set(1.5 - k * 3, 3.2 - k * 1.0, -0.6)
+      tail.material.opacity = 0.7 * Math.sin(k * Math.PI)
       ring.rotation.y = t * 0.35
       ring2.rotation.y = -t * 0.25
       shine(t)
@@ -297,10 +466,38 @@ function phoenix(a: AuraVisual) {
   }
   inner.add(mesh(new THREE.TorusGeometry(0.85, 0.006, 8, 128), glow('#FFF3C4', 0.8)))
   g.add(ring, inner, sprite('#FFF3C4', glowTexture(), 0.35, 1.2, 1.2, [0, 1.45, -0.5]))
+  // Wings of fire: broad flame feathers fanned from behind each shoulder, beating forward and back.
+  const featherTex = featherTexture()
+  const feathers: THREE.Mesh[] = []
+  const wings = [-1, 1].map((side) => {
+    const pivot = new THREE.Group()
+    pivot.position.set(side * 0.2, 1.85, -0.6)
+    for (let i = 0; i < 9; i++) {
+      const k = i / 8
+      const th = 0.3 + k * 1.3 // from up-and-out to out-and-down
+      const len = 1.8 - k * 0.7
+      for (const [color, w, l, op] of [[i % 2 ? a.color : '#FF4D1A', 0.5, len, 0.95], [i % 2 ? '#FFF3C4' : a.accent, 0.22, len * 0.75, 1]] as const) {
+        const geo = new THREE.PlaneGeometry(w, l)
+        geo.translate(0, l / 2, 0) // the base sits on the shoulder, so it grows outward
+        const f = mesh(geo, glow(color, op, featherTex), [0, 0, i * 0.003])
+        f.rotation.z = -side * th
+        pivot.add(f)
+        feathers.push(f)
+      }
+    }
+    g.add(pivot)
+    return { pivot, side }
+  })
   const shine = radiance(g, '#FF4D1A', a.color, '#FFB347', 50)
   return {
     group: g,
     update(t: number) {
+      const flap = Math.sin(t * 2.2)
+      for (const { pivot, side } of wings) {
+        pivot.rotation.y = side * (0.3 + 0.25 * flap)
+        pivot.rotation.z = side * 0.08 * flap
+      }
+      feathers.forEach((f, i) => (f.scale.y = 0.9 + 0.12 * Math.sin(t * 10 + i * 1.3)))
       ring.rotation.z = t * 0.4
       inner.rotation.z = -t * 0.6
       shine(t)
