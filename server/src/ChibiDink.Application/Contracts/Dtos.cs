@@ -92,7 +92,10 @@ public sealed record ParticipantDto(
     PlayerCardDto Player, SessionRole Role, ParticipantStatus Status, int SkillEstimate,
     DateTimeOffset? WaitingSince, int? QueuePosition,
     int CompletedGames, int Wins, int Losses, double? WinRate,
-    Guid? PartnerId);
+    Guid? PartnerId,
+    // Session standings (null until they've finished a game). RankTied: level with someone on every measure.
+    // Players only see the place; how a tie was broken isn't shown.
+    int? Rank = null, bool RankTied = false);
 
 // ---- Matches --------------------------------------------------------------------------------
 

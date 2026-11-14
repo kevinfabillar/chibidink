@@ -58,6 +58,28 @@ public sealed class SessionQueries(
             courts, participants, myGames, snapshot.UpNext);
     }
 
+    /// <summary>Each player's place in the session standings (see <see cref="SessionStandings"/> for the order).</summary>
+    private static List<ParticipantDto> WithStandings(List<ParticipantDto> participants, IReadOnlyList<Match> completed)
+    {
+        var games = completed
+            .Where(m => m.Result is not null)
+            .Select(m =>
+            {
+                var aWon = m.Result!.Winner == Team.A;
+                var (winners, losers) = aWon ? (m.TeamA, m.TeamB) : (m.TeamB, m.TeamA);
+                return new GameResult(
+                    winners.Select(p => p.UserId).ToList(), losers.Select(p => p.UserId).ToList(),
+                    aWon ? m.Result.TeamAScore : m.Result.TeamBScore, aWon ? m.Result.TeamBScore : m.Result.TeamAScore);
+            })
+            .ToList();
+        var standings = SessionStandings
+            .Rank(participants.Select(p => new PlayerRecord(p.Player.UserId, p.Wins, p.Losses)).ToList(), games)
+            .ToDictionary(s => s.UserId);
+        return participants
+            .Select(p => standings.TryGetValue(p.Player.UserId, out var s) ? p with { Rank = s.Rank, RankTied = s.Tied } : p)
+            .ToList();
+    }
+
     /// <summary>The viewer-independent part of a session view. Runs without the request's token, since others share it.</summary>
     private async Task<SessionSnapshot> LoadSnapshotAsync(Guid sessionId)
     {
@@ -76,6 +98,7 @@ public sealed class SessionQueries(
             .OrderBy(p => p.QueuePosition ?? int.MaxValue)
             .ThenBy(p => p.Player.DisplayName)
             .ToList();
+        participants = WithStandings(participants, completed);
         var upNext = session.IsClosed ? [] : UpNext(session, live, completed, people);
         return new SessionSnapshot(session, live, completed, people, participants, upNext);
     }

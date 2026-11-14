@@ -175,6 +175,10 @@ export interface Participant {
   winRate: number | null
   /** Fixed doubles partner for this session, set by the organizer. */
   partnerId: string | null
+  /** Place in the session standings (null until they've finished a game). */
+  rank?: number | null
+  /** Level with someone on every measure, so the place is shared ("T-2"). */
+  rankTied?: boolean
 }
 
 export interface MatchHistoryItem {
