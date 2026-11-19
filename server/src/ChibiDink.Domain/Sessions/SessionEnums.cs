@@ -30,7 +30,7 @@ public enum QueueMode
 {
     /// <summary>Equal play: fewest games first, then longest wait. Skill is ignored.</summary>
     FairMatch = 1,
-    /// <summary>Players are grouped with others of the same tier (Beginner, Intermediate, Advanced).</summary>
+    /// <summary>Still equal games first, but same-level courts (Beginner, Intermediate, Advanced) are preferred among players who are due.</summary>
     SkillBased = 2,
 }
 

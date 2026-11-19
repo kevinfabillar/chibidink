@@ -5,10 +5,10 @@ namespace ChibiDink.Domain.Matchmaking;
 /// <summary>
 /// Fills courts one at a time. Two modes:
 /// - Fair Match: equal play. Rotation decides everything; skill is ignored (partners still rotate).
-/// - Skill Based: each court gets four players of the same tier (Beginner, Intermediate, Advanced),
-///   taking the first tier in line that has four waiting. If no tier has four, the closest mix is used
-///   (marked mixed-skill) rather than leaving a court empty.
-/// Within the chosen group, in this order of importance:
+/// - Skill Based: still a fair match (equal games first), but among players who are equally due, four of the
+///   same level (Beginner, Intermediate, Advanced) are preferred. To keep a court one level the queue may call
+///   someone with one extra game, never two; otherwise the closest mix plays (marked mixed-skill).
+/// In this order of importance:
 /// 1. Players with fewer games this session go first (equal-game rotation).
 /// 2. Anyone waiting longer than the protection window jumps the line.
 /// 3. The player at the front of the line is always included, so nobody is skipped forever.
@@ -23,7 +23,16 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
         double ExtraGames = 40,
         double QueuePosition = 4,
         double SkillGap = 12,
-        double OverTolerance = 25,
+        // Skill Based: a court mixing levels costs 75, more than one extra game (40) but less than two (80). So to
+        // keep a court one level the queue may call someone with one extra game, never two: games stay as even as
+        // Fair Match. Each Beginner–Advanced pair on a mixed court adds 20, so a level that can't make a four of
+        // its own (e.g. two Advanced) mixes with the level next to it (Intermediate) whenever they're due.
+        double MixedLevels = 75,
+        double LevelsApart = 20,
+        // Skill Based: a level has fewer players, so partners repeat more; partner variety (repeat partners,
+        // back to back) counts a quarter as much, or it would keep breaking same-level courts apart. The same
+        // four twice in a row and last game's partners together stay ruled out.
+        double SkillBasedVariety = 0.25,
         // Teaming up again is allowed but made rare, and rarer each time: n earlier games together costs
         // 20 × (1 + 2 + … + n), so 20, 60, 120… Fair turns (an extra game costs 40) still come first.
         double RepeatPartner = 20,
@@ -62,10 +71,7 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
             // Several courts at once: the brackets take turns court by court too.
             if (court > 0 && request.WinnersVsLosers && lineups[^1].WinnersBracket is { } lastWinners)
                 request = request with { WinnersBracketNext = !lastWinners };
-            var pool = skillBased ? SameTierPool(queue, needed) : null;
-            if (pool is not null && FrontIsStranded(queue[0], pool, request)) pool = null; // mix them in instead
-            var best = BestLineup(pool ?? queue, request, needed, skillBased, mixed: skillBased && pool is null)
-                       ?? (pool is null ? null : BestLineup(queue, request, needed, skillBased, mixed: true));
+            var best = BestLineup(queue, request, needed, skillBased);
             if (best is null) break; // only pairs and an odd one out left: nothing valid to make
             var used = best.TeamA.Concat(best.TeamB).ToHashSet();
             if (request.WinnersVsLosers)
@@ -77,43 +83,25 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
     }
 
     /// <summary>
-    /// The front of the line can't make a game at their own level (their level is short of four), and is behind:
-    /// fewer games than everyone in the level that would play instead, or waiting past the protection window.
-    /// Skipping them again would leave them out (a level with only three players would never play), so they get
-    /// a mixed game with the closest level. When they're not behind, they wait for their level as usual.
-    /// </summary>
-    private static bool FrontIsStranded(QueueCandidate front, List<QueueCandidate> pool, MatchmakingRequest request) =>
-        SkillLevel.TierOf(front.Skill) != SkillLevel.TierOf(pool[0].Skill)
-        && (front.CompletedGames < pool.Min(c => c.CompletedGames) || request.Now - front.WaitingSince >= request.WaitProtection);
-
-    /// <summary>Players of the first tier (in queue order) that has enough waiting for a full court.</summary>
-    private static List<QueueCandidate>? SameTierPool(List<QueueCandidate> queue, int needed)
-    {
-        foreach (var tier in queue.Select(c => SkillLevel.TierOf(c.Skill)).Distinct())
-        {
-            var group = queue.Where(c => SkillLevel.TierOf(c.Skill) == tier).ToList();
-            if (group.Count >= needed) return group;
-        }
-        return null;
-    }
-
-    /// <summary>
     /// The best group that includes the front of the line. If fixed pairs make that impossible (e.g. the front
     /// player is alone and only pairs are left), the next player in line anchors instead.
     /// </summary>
-    private ProposedLineup? BestLineup(List<QueueCandidate> queue, MatchmakingRequest request, int needed, bool skillBased, bool mixed)
+    private ProposedLineup? BestLineup(List<QueueCandidate> queue, MatchmakingRequest request, int needed, bool skillBased)
     {
         for (var i = 0; i < queue.Count; i++)
-            if (BestLineupAnchoredOn(queue, i, request, needed, skillBased, mixed) is { } lineup)
+            if (BestLineupAnchoredOn(queue, i, request, needed, skillBased) is { } lineup)
                 return lineup;
         return null;
     }
 
-    private ProposedLineup? BestLineupAnchoredOn(List<QueueCandidate> queue, int anchorIndex, MatchmakingRequest request, int needed, bool skillBased, bool mixed)
+    private ProposedLineup? BestLineupAnchoredOn(List<QueueCandidate> queue, int anchorIndex, MatchmakingRequest request, int needed, bool skillBased)
     {
         var anchor = queue[anchorIndex];
         var rest = queue.Where((_, i) => i != anchorIndex).ToList();
         var window = rest.Take(needed - 1 + _w.LookAhead).ToList();
+        // Skill Based: the anchor's level may be further back in line; look at as many of them too.
+        if (skillBased)
+            window.AddRange(rest.Skip(window.Count).Where(c => SkillLevel.TierOf(c.Skill) == SkillLevel.TierOf(anchor.Skill)).Take(needed - 1 + _w.LookAhead));
         // Someone's partner may be further back in line: bring partners of the window into it.
         foreach (var partner in rest.Skip(window.Count).Where(c => c.PartnerId is { } p && (p == anchor.UserId || window.Any(w => w.UserId == p))).ToList())
             window.Add(partner);
@@ -129,16 +117,17 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
             if (!KeepsPairsTogether(group)) continue;
             var rotationCost = group.Sum(c => (c.CompletedGames - minGames) * _w.ExtraGames + position[c.UserId] * _w.QueuePosition);
 
-            // A mixed group (no tier had four) prefers the smallest spread of tiers.
-            var tierSpread = mixed ? group.Max(c => SkillLevel.TierOf(c.Skill)) - group.Min(c => SkillLevel.TierOf(c.Skill)) : 0;
+            var tierSpread = group.Max(c => SkillLevel.TierOf(c.Skill)) - group.Min(c => SkillLevel.TierOf(c.Skill));
+            var levelCost = !skillBased || tierSpread == 0 ? 0
+                : _w.MixedLevels + _w.LevelsApart * group.Count(c => SkillLevel.TierOf(c.Skill) == SkillLevel.Min) * group.Count(c => SkillLevel.TierOf(c.Skill) == SkillLevel.Max);
             foreach (var (teamA, teamB) in TeamSplits(group))
             {
                 if (!SameTeam(teamA, teamB)) continue;
-                var lineup = Evaluate(teamA, teamB, skillBased, mixed);
+                var lineup = Evaluate(teamA, teamB, skillBased && tierSpread > 0);
                 var cost = rotationCost
                            + (skillBased ? lineup.SkillGap * _w.SkillGap : 0)
-                           + tierSpread * _w.OverTolerance
-                           + RepeatCost(teamA, teamB, request.History)
+                           + levelCost
+                           + RepeatCost(teamA, teamB, request.History, skillBased ? _w.SkillBasedVariety : 1)
                            + (request.WinnersVsLosers ? BracketCost(group, request.WinnersBracketNext) : 0);
                 if (cost < bestCost)
                 {
@@ -158,15 +147,15 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
     private static bool SameTeam(List<QueueCandidate> teamA, List<QueueCandidate> teamB) =>
         teamA.All(c => c.PartnerId is not { } p || teamB.All(o => o.UserId != p));
 
-    private static ProposedLineup Evaluate(List<QueueCandidate> teamA, List<QueueCandidate> teamB, bool skillBased, bool mixed)
+    private static ProposedLineup Evaluate(List<QueueCandidate> teamA, List<QueueCandidate> teamB, bool mixedSkill)
     {
         var gap = Math.Abs(teamA.Average(c => SkillLevel.TierOf(c.Skill)) - teamB.Average(c => SkillLevel.TierOf(c.Skill)));
         return new ProposedLineup(
             teamA.Select(c => c.UserId).ToList(),
             teamB.Select(c => c.UserId).ToList(),
             Math.Round(gap, 2),
-            // Only skill-based sessions care: a group of different tiers is a mixed-skill match.
-            skillBased && mixed);
+            // Only skill-based sessions care: a group of different levels is a mixed-skill match.
+            mixedSkill);
     }
 
     /// <summary>Growing cost of teaming up again: 0, 20, 60, 120… for 0, 1, 2, 3 earlier games together.</summary>
@@ -183,7 +172,7 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
         return bracket == winnersNext ? 0 : _w.OtherBracket;
     }
 
-    private double RepeatCost(List<QueueCandidate> teamA, List<QueueCandidate> teamB, PairingHistory history)
+    private double RepeatCost(List<QueueCandidate> teamA, List<QueueCandidate> teamB, PairingHistory history, double variety)
     {
         double cost = 0;
 
@@ -196,7 +185,7 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
             {
                 var together = history.PlayedLastGameTogether(group[i].UserId, group[j].UserId);
                 allTogetherLastTime &= together;
-                if (together && group[i].PartnerId != group[j].UserId) cost += _w.BackToBack;
+                if (together && group[i].PartnerId != group[j].UserId) cost += _w.BackToBack * variety;
             }
         // Every pair played together last game = the very same group again (same four, or the same singles
         // opponent). Never, unless there's no one else to make a game with.
@@ -206,8 +195,8 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
                 cost += _w.SamePartnerAgain;
 
         // Fixed partners always play together, so that's never a "repeat" to avoid.
-        if (teamA.Count == 2 && teamA[0].PartnerId != teamA[1].UserId) cost += RepeatPartnerCost(history.PartnerCount(teamA[0].UserId, teamA[1].UserId));
-        if (teamB.Count == 2 && teamB[0].PartnerId != teamB[1].UserId) cost += RepeatPartnerCost(history.PartnerCount(teamB[0].UserId, teamB[1].UserId));
+        if (teamA.Count == 2 && teamA[0].PartnerId != teamA[1].UserId) cost += variety * RepeatPartnerCost(history.PartnerCount(teamA[0].UserId, teamA[1].UserId));
+        if (teamB.Count == 2 && teamB[0].PartnerId != teamB[1].UserId) cost += variety * RepeatPartnerCost(history.PartnerCount(teamB[0].UserId, teamB[1].UserId));
         foreach (var a in teamA)
             foreach (var b in teamB)
                 cost += history.OpponentCount(a.UserId, b.UserId) * _w.RepeatOpponent;

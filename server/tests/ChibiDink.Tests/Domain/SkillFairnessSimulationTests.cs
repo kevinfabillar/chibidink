@@ -7,8 +7,8 @@ namespace ChibiDink.Tests.Domain;
 
 /// <summary>
 /// Skill Based queues over a whole night: 21 players on 2 courts, with different mixes of Beginners, Intermediates and
-/// Advanced players. Courts only take four of one level when they can, so how even the night is depends on how many
-/// players each level has. Fair Match (skill ignored) is the baseline.
+/// Advanced players. Equal games still come first (as in Fair Match, the baseline); levels only decide between
+/// players who are equally due.
 /// </summary>
 public sealed class SkillFairnessSimulationTests(ITestOutputHelper output)
 {
@@ -74,8 +74,8 @@ public sealed class SkillFairnessSimulationTests(ITestOutputHelper output)
             $"RESULT|{mode}|{beginners}/{intermediates}/{advanced}|{PerTier(1):0.0}|{PerTier(2):0.0}|{PerTier(3):0.0}|" +
             $"{gaps.Count(g => g <= 1)}/100|{gaps.Average():0.00}|{nights.Max(n => n.MaxGapDuring)}|{nights.Average(n => n.MixedGames) / Games:P0}");
 
-        // Every level gets on court, and nobody is left far behind.
+        // Still a fair match: every level gets on court, and nobody is ever more than 2 games apart.
         Assert.All(nights, n => Assert.True(n.Games.Min() > 0));
-        Assert.All(nights, n => Assert.True(n.MaxGapDuring <= 4, $"gap reached {n.MaxGapDuring}"));
+        Assert.All(nights, n => Assert.True(n.MaxGapDuring <= 2, $"gap reached {n.MaxGapDuring}"));
     }
 }

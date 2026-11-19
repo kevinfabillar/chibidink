@@ -84,7 +84,7 @@ export function CreateSessionForm() {
             onClick={() => setMode('SkillBased')}
             icon={<Scale className="size-6" />}
             title="Skill Based"
-            text="Players are grouped by level (Beginner, Intermediate, Advanced), so games stay even. Good when levels differ a lot."
+            text="Players are grouped by level (Beginner, Intermediate, Advanced), while everyone still gets about the same number of games. Good when levels differ a lot."
           />
         </div>
         {mode === 'FairMatch' && <WinnersVsLosersSwitch checked={winnersVsLosers} onChange={setWinnersVsLosers} />}
