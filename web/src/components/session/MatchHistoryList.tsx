@@ -27,9 +27,11 @@ export function MatchHistoryList({ items, empty }: { items: MatchHistoryItem[]; 
               {new Date(m.playedAt).toLocaleDateString()} · Court {m.courtNumber} · {m.format}
             </div>
           </div>
-          <span className="font-display text-xl font-bold">
-            {m.myScore}–{m.opponentScore}
-          </span>
+          {!m.winnerOnly && (
+            <span className="font-display text-xl font-bold">
+              {m.myScore}–{m.opponentScore}
+            </span>
+          )}
         </li>
       ))}
     </ul>

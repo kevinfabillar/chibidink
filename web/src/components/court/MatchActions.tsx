@@ -1,14 +1,14 @@
-import { Check, ClipboardCheck, Pencil, Play, X } from 'lucide-react'
+import { Check, Pencil, Play, Trophy, X } from 'lucide-react'
 import { useState } from 'react'
 import { matchApi } from '../../api/api'
-import type { Match, SessionDetail } from '../../api/types'
+import type { Match, MatchResult, SessionDetail } from '../../api/types'
 import { useSessionAction } from '../../hooks/queries'
 import { durationText, useNow } from '../../lib/format'
 import { allowedActions } from '../../lib/matchActions'
 import { Button } from '../ui/Button'
 import { ErrorNote } from '../ui/primitives'
 import { EditMatchSheet } from './EditMatchSheet'
-import { ReportScoreSheet } from './ReportScoreSheet'
+import { ReportWinnerSheet } from './ReportWinnerSheet'
 
 interface Props {
   session: SessionDetail
@@ -32,9 +32,7 @@ function MatchActionsFor({ session, match }: Props) {
   const decline = useSessionAction(session.id, () => matchApi.decline(session.id, match.id))
   const start = useSessionAction(session.id, () => matchApi.start(session.id, match.id))
   const verify = useSessionAction(session.id, () => matchApi.verify(session.id, match.id))
-  const report = useSessionAction(session.id, ({ a, b, notes }: { a: number; b: number; notes?: string }) =>
-    matchApi.report(session.id, match.id, a, b, notes),
-  )
+  const report = useSessionAction(session.id, (winner: 'A' | 'B') => matchApi.reportWinner(session.id, match.id, winner))
   const error = accept.error ?? decline.error ?? start.error ?? verify.error ?? report.error
 
   if (!Object.values(can).some(Boolean)) return <MatchMeta match={match} />
@@ -66,13 +64,13 @@ function MatchActionsFor({ session, match }: Props) {
           </Button>
         )}
         {can.report && (
-          <Button variant="grape" icon={<ClipboardCheck className="size-5" />} loading={report.isPending} onClick={() => setSheet('report')} pill className="flex-1">
-            {report.isPending ? 'Saving score…' : 'Enter score'}
+          <Button variant="grape" icon={<Trophy className="size-5" />} loading={report.isPending} onClick={() => setSheet('report')} pill className="flex-1">
+            {report.isPending ? 'Saving…' : 'Who won?'}
           </Button>
         )}
         {can.verify && (
           <Button icon={<Check className="size-5" />} loading={verify.isPending} onClick={() => verify.mutate()} pill className="flex-1">
-            Confirm {match.result?.teamAScore}–{match.result?.teamBScore}
+            Confirm {match.result && resultText(match.result)}
           </Button>
         )}
         {can.edit && (
@@ -83,17 +81,14 @@ function MatchActionsFor({ session, match }: Props) {
       </div>
       <ErrorNote error={error} />
 
-      <ReportScoreSheet
-        open={sheet === 'report'}
-        onClose={() => setSheet(null)}
-        session={session}
-        match={match}
-        onSubmit={(a, b, notes) => report.mutate({ a, b, notes })}
-      />
+      <ReportWinnerSheet open={sheet === 'report'} onClose={() => setSheet(null)} match={match} onWinner={(team) => report.mutate(team)} />
       <EditMatchSheet open={sheet === 'edit'} onClose={() => setSheet(null)} session={session} match={match} />
     </div>
   )
 }
+
+/** "Team A won" for a Won-button result, or the score for older ones. */
+const resultText = (r: MatchResult) => (r.winnerOnly ? `Team ${r.winner} won` : `${r.teamAScore}–${r.teamBScore}`)
 
 /** Countdown while confirming, game clock while playing. */
 function MatchMeta({ match }: { match: Match }) {
@@ -115,7 +110,7 @@ function MatchMeta({ match }: { match: Match }) {
   if (match.status === 'PendingResult' && match.result)
     return (
       <p className="text-center text-sm text-[#d6a8ff]">
-        Reported {match.result.teamAScore}–{match.result.teamBScore}, waiting for the other team or organizer
+        Reported {resultText(match.result)}, waiting for the other team or organizer
       </p>
     )
   return null

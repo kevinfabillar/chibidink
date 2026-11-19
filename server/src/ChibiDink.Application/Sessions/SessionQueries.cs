@@ -67,9 +67,10 @@ public sealed class SessionQueries(
             {
                 var aWon = m.Result!.Winner == Team.A;
                 var (winners, losers) = aWon ? (m.TeamA, m.TeamB) : (m.TeamB, m.TeamA);
-                return new GameResult(
-                    winners.Select(p => p.UserId).ToList(), losers.Select(p => p.UserId).ToList(),
-                    aWon ? m.Result.TeamAScore : m.Result.TeamBScore, aWon ? m.Result.TeamBScore : m.Result.TeamAScore);
+                // A winner-only result has no score, so it adds nothing to point difference.
+                var (won, lost) = m.Result.IsWinnerOnly ? (0, 0)
+                    : aWon ? (m.Result.TeamAScore, m.Result.TeamBScore) : (m.Result.TeamBScore, m.Result.TeamAScore);
+                return new GameResult(winners.Select(p => p.UserId).ToList(), losers.Select(p => p.UserId).ToList(), won, lost);
             })
             .ToList();
         var standings = SessionStandings
@@ -118,7 +119,7 @@ public sealed class SessionQueries(
         return new InvitePreviewDto(
             session.Id, session.Title, session.Location, session.ScheduledAt, session.Format, session.Status,
             session.Courts.Count, session.Participants.Count(p => p.Status != ParticipantStatus.Left),
-            organizer?.DisplayName ?? "Organizer");
+            organizer?.DisplayName ?? "Organizer", session.Settings.Mode == QueueMode.SkillBased);
     }
 
     public async Task<IReadOnlyList<AuditEntryDto>> GetAuditAsync(Guid sessionId, CancellationToken ct)
@@ -147,10 +148,12 @@ public sealed class SessionQueries(
         // at a time; the matchmaker still checks every session before it actually puts anyone on a court.)
         IReadOnlySet<Guid> busy = live.SelectMany(m => m.PlayerIds).ToHashSet();
         // Not still playing, not held for a lined-up group, and fixed partners together.
-        var candidates = MatchmakingCandidates.Build(session, busy, held);
+        var winnersVsLosers = session.Settings.Mode == QueueMode.FairMatch && session.Settings.WinnersVsLosers;
+        var candidates = MatchmakingCandidates.Build(session, busy, held, winnersVsLosers ? MatchmakingCandidates.LastResults(completed) : null);
         var request = new MatchmakingRequest(
             session.Format, Math.Max(1, session.Courts.Count), candidates, history, clock.UtcNow,
-            session.Settings.SkillTolerance, TimeSpan.FromMinutes(session.Settings.WaitProtectionMinutes), session.Settings.Mode);
+            session.Settings.SkillTolerance, TimeSpan.FromMinutes(session.Settings.WaitProtectionMinutes), session.Settings.Mode,
+            winnersVsLosers, winnersVsLosers && MatchmakingCandidates.WinnersBracketNext(completed.Concat(live)));
         var skillOf = session.Participants.ToDictionary(p => p.UserId, p => p.SkillEstimate);
 
         // The organizer's lined-up groups first, in their order, then the matchmaker's picks from everyone else.

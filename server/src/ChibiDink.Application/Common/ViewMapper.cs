@@ -24,7 +24,7 @@ public static class ViewMapper
         var result = m.Result is null
             ? null
             : new MatchResultDto(m.Result.TeamAScore, m.Result.TeamBScore, m.Result.Winner,
-                m.Result.ReportedById, m.Result.VerifiedAt is not null, m.Result.Notes);
+                m.Result.ReportedById, m.Result.VerifiedAt is not null, m.Result.Notes, m.Result.IsWinnerOnly);
 
         return new MatchDto(
             m.Id, m.CourtNumber, m.Format, m.Status, m.IsManual, m.IsMixedSkill,
@@ -45,7 +45,8 @@ public static class ViewMapper
             m.Id, m.SessionId, m.EndedAt ?? m.CreatedAt, m.Format, m.CourtNumber,
             result.Winner == myTeam, mine, theirs,
             m.Participants.Where(p => p.Team == myTeam && p.UserId != userId).Select(p => Name(p.UserId)).ToList(),
-            m.Participants.Where(p => p.Team != myTeam).Select(p => Name(p.UserId)).ToList());
+            m.Participants.Where(p => p.Team != myTeam).Select(p => Name(p.UserId)).ToList(),
+            result.IsWinnerOnly);
     }
 
     public static SessionSummaryDto Summary(PlaySession s, Guid viewerId) => new(

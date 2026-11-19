@@ -11,7 +11,8 @@ namespace ChibiDink.Application.Sessions;
 public interface ISessionService
 {
     Task<Guid> CreateAsync(CreateSessionRequest request, CancellationToken ct);
-    Task<Guid> JoinByCodeAsync(string inviteCode, CancellationToken ct);
+    /// <param name="skill">The level picked on the join screen (saved to the profile too); null keeps the profile's.</param>
+    Task<Guid> JoinByCodeAsync(string inviteCode, int? skill, CancellationToken ct);
     Task UpdateAsync(Guid sessionId, UpdateSessionRequest request, CancellationToken ct);
     Task StartMatchmakingAsync(Guid sessionId, CancellationToken ct);
     Task PauseMatchmakingAsync(Guid sessionId, CancellationToken ct);
@@ -55,7 +56,7 @@ public sealed class SessionService(
         return sessionId;
     }
 
-    public async Task<Guid> JoinByCodeAsync(string inviteCode, CancellationToken ct)
+    public async Task<Guid> JoinByCodeAsync(string inviteCode, int? skill, CancellationToken ct)
     {
         var code = inviteCode.Trim().ToUpperInvariant();
         var sessionId = await sessions.FindIdByInviteCodeAsync(code, ct) ?? throw new NotFoundException("Session");
@@ -70,9 +71,13 @@ public sealed class SessionService(
         await runner.RunAsync(sessionId, async (session, innerCt) =>
         {
             var profile = await profiles.FindAsync(userId, innerCt) ?? throw new NotFoundException("Profile");
+            // A level picked on the join screen becomes their level here and on their profile (remembered next time).
+            if (skill is { } picked) profile.SetSkillEstimate(new SkillLevel(picked));
             // Joining with the code or QR at the courts is the check-in: straight into the queue.
             var now = clock.UtcNow;
-            var participant = session.Join(userId, new SkillLevel(SkillLevel.TierOf(profile.SkillEstimate)), now);
+            var level = new SkillLevel(SkillLevel.TierOf(profile.SkillEstimate));
+            var participant = session.Join(userId, level, now);
+            if (skill is not null) participant.SetSkillEstimate(level); // also when rejoining with a new level
             if (participant.Status != ParticipantStatus.InMatch) participant.EnterQueue(now);
         }, ct);
         return sessionId;

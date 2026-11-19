@@ -480,6 +480,9 @@ namespace ChibiDink.Infrastructure.Persistence.Migrations
 
                             b1.Property<int>("WinBy")
                                 .HasColumnType("integer");
+
+                            b1.Property<bool>("WinnersVsLosers")
+                                .HasColumnType("boolean");
                         });
 
                     b.HasKey("Id");

@@ -26,35 +26,43 @@ export function Podium({ players, title = 'Session champions' }: { players: Part
       <h2 className="relative text-center font-display text-2xl font-extrabold">{title}</h2>
       <div className="relative mt-4 flex items-end justify-center gap-2 sm:gap-4">
         {STEPS.map((step) => {
-          const p = ranked[step.place - 1]
+          // Everyone sharing this place stands on the step together (a shared 2nd leaves the 3rd step empty).
+          const here = ranked.filter((p, i) => (p.rank ?? i + 1) === step.place)
+          const shown = here.slice(0, 3)
+          const shared = here.length > 1
           return (
-            <div key={step.place} className="flex w-28 flex-col items-center sm:w-36">
-              {p ? (
-                <>
-                  {/* Live, moving 3D characters (not draggable), wearing their aura and effects. */}
-                  <div className="relative">
-                    {step.place === 1 && (
-                      <>
-                        <div className="podium-spotlight pointer-events-none absolute -inset-x-6 -top-10 bottom-0" aria-hidden />
-                        <Sparkles className="podium-twinkle absolute -top-1 right-0 size-5 text-amber-300" aria-hidden />
-                        <Sparkles className="podium-twinkle absolute top-1/3 -left-2 size-4 text-amber-300 [animation-delay:0.7s]" aria-hidden />
-                      </>
-                    )}
-                  <PlayerAvatar
-                    player={p.player}
-                    variant="full"
-                    live
-                    pose={POSE[step.place]}
-                    className={clsx('relative', step.place === 1 ? 'w-28 sm:w-40' : 'w-24 sm:w-32')}
-                  />
-                  </div>
-                  <div className="mt-1.5 flex max-w-full min-w-0 justify-center text-center font-semibold">
-                    <PlayerName player={p.player} truncate />
-                  </div>
-                  <div className="text-xs text-muted">
-                    {p.wins}W {p.losses}L · {winRateText(p.winRate)}
-                  </div>
-                </>
+            <div key={step.place} className={clsx('flex flex-col items-center', shared ? 'min-w-28 sm:min-w-36' : 'w-28 sm:w-36')}>
+              {shown.length > 0 ? (
+                <div className="flex items-end justify-center gap-1">
+                  {shown.map((p) => (
+                    <div key={p.player.userId} className="flex min-w-0 flex-col items-center">
+                      {/* Live, moving 3D characters (not draggable), wearing their aura and effects. */}
+                      <div className="relative">
+                        {step.place === 1 && (
+                          <>
+                            <div className="podium-spotlight pointer-events-none absolute -inset-x-6 -top-10 bottom-0" aria-hidden />
+                            <Sparkles className="podium-twinkle absolute -top-1 right-0 size-5 text-amber-300" aria-hidden />
+                            <Sparkles className="podium-twinkle absolute top-1/3 -left-2 size-4 text-amber-300 [animation-delay:0.7s]" aria-hidden />
+                          </>
+                        )}
+                        <PlayerAvatar
+                          player={p.player}
+                          variant="full"
+                          live
+                          pose={POSE[step.place]}
+                          className={clsx('relative', shared ? 'w-20 sm:w-24' : step.place === 1 ? 'w-28 sm:w-40' : 'w-24 sm:w-32')}
+                        />
+                      </div>
+                      <div className="mt-1.5 flex max-w-full min-w-0 justify-center text-center font-semibold">
+                        <PlayerName player={p.player} truncate />
+                      </div>
+                      <div className="text-xs whitespace-nowrap text-muted">
+                        {p.wins}W {p.losses}L{shared ? '' : ` · ${winRateText(p.winRate)}`}
+                      </div>
+                    </div>
+                  ))}
+                  {here.length > shown.length && <div className="self-center text-sm font-semibold text-muted">+{here.length - shown.length}</div>}
+                </div>
               ) : (
                 <div className="h-24" />
               )}
@@ -62,7 +70,7 @@ export function Podium({ players, title = 'Session champions' }: { players: Part
                 className={clsx('mt-2 grid w-full place-items-center rounded-t-2xl font-display text-2xl font-extrabold text-ink', step.height)}
                 style={{ background: `linear-gradient(180deg, ${step.color}, ${step.color}99)` }}
               >
-                {step.label}
+                {shared ? `T-${step.label}` : step.label}
               </div>
             </div>
           )

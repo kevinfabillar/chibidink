@@ -76,8 +76,12 @@ public sealed class MatchService(
                 throw new ForbiddenException("Only the session organizer can enter scores.");
 
             var now = clock.UtcNow;
-            match.ReportResult(PlayToTargetScoringRule.For(session.Settings),
-                request.TeamAScore, request.TeamBScore, userId, request.Notes, now);
+            if (request.Winner is { } winner)
+                match.ReportWinner(winner, userId, now);
+            else if (request.TeamAScore is { } a && request.TeamBScore is { } b)
+                match.ReportResult(PlayToTargetScoringRule.For(session.Settings), a, b, userId, request.Notes, now);
+            else
+                throw new DomainException("Pick the team that won.");
             await VerifyAsync(session, match, userId, now, innerCt);
         }, ct);
 
@@ -149,7 +153,7 @@ public sealed class MatchService(
         var outcome = match.Verify(session, verifierId, now);
         foreach (var handler in completionHandlers) await handler.HandleAsync(outcome, ct);
         if (session.IsOrganizer(verifierId) && !match.Involves(verifierId))
-            Audit(session, match, "Verify", $"Verified {match.Result!.TeamAScore}–{match.Result.TeamBScore}");
+            Audit(session, match, "Verify", $"Verified {match.Result!.Describe()}");
     }
 
     private Task WithMatch(Guid sessionId, Guid matchId, Func<PlaySession, Match, CancellationToken, Task> work, CancellationToken ct) =>

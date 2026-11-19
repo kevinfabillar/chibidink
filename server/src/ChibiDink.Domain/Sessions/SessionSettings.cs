@@ -24,6 +24,13 @@ public sealed record SessionSettings
     /// <summary>1 = no deuce (first to the target wins, e.g. 11–10). 2 = deuce (play on until someone leads by 2).</summary>
     public int WinBy { get; init; } = 1;
 
+    /// <summary>
+    /// Fair Match only: winners' and losers' brackets take turns. Winners (and new players who haven't played
+    /// yet) play together in one game, losers in the next, and so on. Equal games still come first; brackets only
+    /// decide between players who are equally due.
+    /// </summary>
+    public bool WinnersVsLosers { get; init; }
+
     /// <summary>When on, the server fills free courts automatically.</summary>
     public bool AutoMatchmaking { get; init; } = true;
 

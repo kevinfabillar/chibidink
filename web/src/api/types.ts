@@ -96,6 +96,8 @@ export interface SessionSettings {
   winBy: number
   autoMatchmaking: boolean
   openAdmission: boolean
+  /** Fair Match only: winners of their last game play winners, losers play losers (equal games still first). */
+  winnersVsLosers?: boolean
 }
 
 export interface SessionSummary {
@@ -121,6 +123,8 @@ export interface InvitePreview {
   courtCount: number
   playerCount: number
   organizerName: string
+  /** Courts are grouped by level, so joining asks for the player's level. */
+  skillBased: boolean
 }
 
 export interface MatchPlayer {
@@ -135,6 +139,8 @@ export interface MatchResult {
   reportedById: string
   verified: boolean
   notes: string | null
+  /** Reported with just the winner (no score): show who won, not the 1–0 it's stored as. */
+  winnerOnly: boolean
 }
 
 export interface Match {
@@ -192,6 +198,8 @@ export interface MatchHistoryItem {
   opponentScore: number
   partners: string[]
   opponents: string[]
+  /** Reported with just the winner: there's no score to show. */
+  winnerOnly: boolean
 }
 
 export interface SessionDetail {

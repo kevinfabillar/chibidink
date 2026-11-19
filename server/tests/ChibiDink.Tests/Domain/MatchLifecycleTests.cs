@@ -103,6 +103,37 @@ public sealed class MatchLifecycleTests
     }
 
     [Fact]
+    public void Tapping_won_records_the_winner_without_a_score()
+    {
+        var (session, organizer, players, match) = NewMatch();
+        foreach (var p in players[..4]) match.Accept(p);
+        match.Start(TestData.Now, byOrganizer: false);
+
+        match.ReportWinner(Team.B, organizer, TestData.Now.AddMinutes(12));
+        var outcome = match.Verify(session, organizer, TestData.Now.AddMinutes(12));
+
+        Assert.True(match.Result!.IsWinnerOnly);
+        Assert.Equal(Team.B, match.Result.Winner);
+        Assert.Equal("Team B won", match.Result.Describe());
+        Assert.Equal(players[2..4], outcome.Winners);
+        Assert.Equal(1, session.GetParticipant(players[2]).Wins);
+        Assert.Equal(1, session.GetParticipant(players[0]).Losses);
+    }
+
+    [Fact]
+    public void A_real_score_is_never_mistaken_for_a_winner_only_result()
+    {
+        var (_, organizer, players, match) = NewMatch();
+        foreach (var p in players[..4]) match.Accept(p);
+        match.Start(TestData.Now, byOrganizer: false);
+
+        match.ReportResult(Rule, 11, 0, organizer, null, TestData.Now);
+
+        Assert.False(match.Result!.IsWinnerOnly);
+        Assert.Equal("11–0", match.Result.Describe());
+    }
+
+    [Fact]
     public void Verified_result_updates_session_records_exactly_once()
     {
         var (session, organizer, players, match) = NewMatch();

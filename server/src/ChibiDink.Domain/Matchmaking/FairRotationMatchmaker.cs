@@ -36,6 +36,12 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
         // Partners from last game teamed up again: ruled out whenever another team split is possible
         // (if the same four must play, they at least swap partners).
         double SamePartnerAgain = 10_000,
+        // Winners vs Losers brackets take turns. Winners' bracket = won their last game, or new (no games yet).
+        // A court from the bracket whose turn it is costs 0, from the other bracket 20, mixing the two 60: a bit
+        // more than one extra game (40) but less than two (80). So to keep a bracket together the queue may call
+        // someone with one extra game, never two: everyone stays within about a game of each other.
+        double OtherBracket = 20,
+        double MixedBrackets = 60,
         int LookAhead = 6);
 
     private readonly Weights _w = weights ?? new Weights();
@@ -53,16 +59,32 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
         var skillBased = request.Mode == Sessions.QueueMode.SkillBased;
         for (var court = 0; court < request.FreeCourts && queue.Count >= needed; court++)
         {
+            // Several courts at once: the brackets take turns court by court too.
+            if (court > 0 && request.WinnersVsLosers && lineups[^1].WinnersBracket is { } lastWinners)
+                request = request with { WinnersBracketNext = !lastWinners };
             var pool = skillBased ? SameTierPool(queue, needed) : null;
+            if (pool is not null && FrontIsStranded(queue[0], pool, request)) pool = null; // mix them in instead
             var best = BestLineup(pool ?? queue, request, needed, skillBased, mixed: skillBased && pool is null)
                        ?? (pool is null ? null : BestLineup(queue, request, needed, skillBased, mixed: true));
             if (best is null) break; // only pairs and an odd one out left: nothing valid to make
-            lineups.Add(best);
             var used = best.TeamA.Concat(best.TeamB).ToHashSet();
+            if (request.WinnersVsLosers)
+                best = best with { WinnersBracket = WinnersBracket.Of(queue.Where(c => used.Contains(c.UserId)).Select(c => c.LastWon)) };
+            lineups.Add(best);
             queue.RemoveAll(c => used.Contains(c.UserId));
         }
         return lineups;
     }
+
+    /// <summary>
+    /// The front of the line can't make a game at their own level (their level is short of four), and is behind:
+    /// fewer games than everyone in the level that would play instead, or waiting past the protection window.
+    /// Skipping them again would leave them out (a level with only three players would never play), so they get
+    /// a mixed game with the closest level. When they're not behind, they wait for their level as usual.
+    /// </summary>
+    private static bool FrontIsStranded(QueueCandidate front, List<QueueCandidate> pool, MatchmakingRequest request) =>
+        SkillLevel.TierOf(front.Skill) != SkillLevel.TierOf(pool[0].Skill)
+        && (front.CompletedGames < pool.Min(c => c.CompletedGames) || request.Now - front.WaitingSince >= request.WaitProtection);
 
     /// <summary>Players of the first tier (in queue order) that has enough waiting for a full court.</summary>
     private static List<QueueCandidate>? SameTierPool(List<QueueCandidate> queue, int needed)
@@ -116,7 +138,8 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
                 var cost = rotationCost
                            + (skillBased ? lineup.SkillGap * _w.SkillGap : 0)
                            + tierSpread * _w.OverTolerance
-                           + RepeatCost(teamA, teamB, request.History);
+                           + RepeatCost(teamA, teamB, request.History)
+                           + (request.WinnersVsLosers ? BracketCost(group, request.WinnersBracketNext) : 0);
                 if (cost < bestCost)
                 {
                     bestCost = cost;
@@ -148,6 +171,17 @@ public sealed class FairRotationMatchmaker(FairRotationMatchmaker.Weights? weigh
 
     /// <summary>Growing cost of teaming up again: 0, 20, 60, 120… for 0, 1, 2, 3 earlier games together.</summary>
     private double RepeatPartnerCost(int timesTogether) => _w.RepeatPartner * timesTogether * (timesTogether + 1) / 2;
+
+    /// <summary>
+    /// Winners vs Losers: 0 for a court from the bracket whose turn it is, more for the other bracket, most for a
+    /// court mixing both. New players (no games yet) are in the winners' bracket: they play winners, not losers.
+    /// </summary>
+    private double BracketCost(List<QueueCandidate> group, bool winnersNext)
+    {
+        var bracket = WinnersBracket.Of(group.Select(c => c.LastWon));
+        if (bracket is null) return _w.MixedBrackets;
+        return bracket == winnersNext ? 0 : _w.OtherBracket;
+    }
 
     private double RepeatCost(List<QueueCandidate> teamA, List<QueueCandidate> teamB, PairingHistory history)
     {

@@ -18,6 +18,7 @@ import type {
   KudosKind,
   StreetCredEntry,
   MyKudos,
+  Team,
 } from './types'
 
 export const API_BASE = import.meta.env.VITE_API_URL ?? ''
@@ -80,7 +81,9 @@ export const cosmeticsApi = {
 
 export const inviteApi = {
   preview: (code: string) => http.get<InvitePreview>(`/api/invites/${encodeURIComponent(code)}`),
-  join: (code: string) => http.post<{ sessionId: string }>(`/api/invites/${encodeURIComponent(code)}/join`),
+  /** `skill`: the level picked on the join screen (Skill Based sessions); also saved to the profile. */
+  join: (code: string, skill?: number) =>
+    http.post<{ sessionId: string }>(`/api/invites/${encodeURIComponent(code)}/join`, skill === undefined ? undefined : { skill }),
 }
 
 const s = (id: string) => `/api/sessions/${id}`
@@ -115,8 +118,8 @@ export const matchApi = {
   accept: (sid: string, mid: string) => http.post(`${m(sid, mid)}/accept`),
   decline: (sid: string, mid: string) => http.post(`${m(sid, mid)}/decline`),
   start: (sid: string, mid: string) => http.post(`${m(sid, mid)}/start`),
-  report: (sid: string, mid: string, teamAScore: number, teamBScore: number, notes?: string) =>
-    http.post(`${m(sid, mid)}/result`, { teamAScore, teamBScore, notes }),
+  /** The organizer taps Won on the winning team: no score. Ends the game. */
+  reportWinner: (sid: string, mid: string, winner: Team) => http.post(`${m(sid, mid)}/result`, { winner }),
   verify: (sid: string, mid: string) => http.post(`${m(sid, mid)}/verify`),
   replace: (sid: string, mid: string, outgoingUserId: string, incomingUserId: string) =>
     http.post(`${m(sid, mid)}/replace`, { outgoingUserId, incomingUserId }),

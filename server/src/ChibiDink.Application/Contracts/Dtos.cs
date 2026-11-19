@@ -27,11 +27,15 @@ public sealed record SetPartnerRequest(Guid? PartnerId);
 public sealed record PlannedGroupRequest(Guid[] TeamA, Guid[] TeamB);
 public sealed record SetPlannedGroupsRequest(PlannedGroupRequest[] Groups);
 
-public sealed record ReportResultRequest(int TeamAScore, int TeamBScore, string? Notes);
+/// <summary>A result: the winning team (the Won button), or a score (older clients).</summary>
+public sealed record ReportResultRequest(int? TeamAScore, int? TeamBScore, string? Notes, Team? Winner = null);
 public sealed record ReasonRequest(string? Reason);
 public sealed record SetSkillRequest(int Skill);
 public sealed record CourtAvailabilityRequest(bool Available);
 public sealed record UpdateProfileRequest(string DisplayName, int SkillEstimate);
+
+/// <summary>Joining a session. Skill: the level the player picked (Skill Based sessions ask for it); null keeps their profile's.</summary>
+public sealed record JoinSessionRequest(int? Skill);
 
 // ---- Shared views ---------------------------------------------------------------------------
 
@@ -66,7 +70,9 @@ public sealed record SessionSummaryDto(
 /// <summary>Public invitation info. Visible to guests before they sign in.</summary>
 public sealed record InvitePreviewDto(
     Guid Id, string Title, string Location, DateTimeOffset ScheduledAt,
-    MatchFormat Format, SessionStatus Status, int CourtCount, int PlayerCount, string OrganizerName);
+    MatchFormat Format, SessionStatus Status, int CourtCount, int PlayerCount, string OrganizerName,
+    // Skill Based: courts are grouped by level, so the join screen asks for the player's level.
+    bool SkillBased);
 
 public sealed record SessionDetailDto(
     Guid Id, string Title, string Location, DateTimeOffset ScheduledAt,
@@ -101,7 +107,8 @@ public sealed record ParticipantDto(
 
 public sealed record MatchPlayerDto(PlayerCardDto Player, ConfirmationStatus Confirmation);
 
-public sealed record MatchResultDto(int TeamAScore, int TeamBScore, Team Winner, Guid ReportedById, bool Verified, string? Notes);
+/// <param name="WinnerOnly">Reported with just the winner: show who won, not the 1–0 it's stored as.</param>
+public sealed record MatchResultDto(int TeamAScore, int TeamBScore, Team Winner, Guid ReportedById, bool Verified, string? Notes, bool WinnerOnly);
 
 public sealed record MatchDto(
     Guid Id, int CourtNumber, MatchFormat Format, MatchStatus Status,
@@ -118,7 +125,8 @@ public sealed record AuditEntryDto(Guid? MatchId, string ActorName, string Actio
 public sealed record MatchHistoryItemDto(
     Guid MatchId, Guid SessionId, DateTimeOffset PlayedAt, MatchFormat Format, int CourtNumber,
     bool Won, int MyScore, int OpponentScore,
-    IReadOnlyList<string> Partners, IReadOnlyList<string> Opponents);
+    IReadOnlyList<string> Partners, IReadOnlyList<string> Opponents,
+    bool WinnerOnly);
 
 /// <param name="Friendship">You and this player (None on your own profile).</param>
 /// <param name="FriendRequests">Friend requests waiting for your answer (your own profile only).</param>

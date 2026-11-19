@@ -5,6 +5,7 @@ import { Button } from '../../../components/ui/Button'
 import { ErrorNote, SectionTitle, Segmented, Toggle } from '../../../components/ui/primitives'
 import { useSessionAction } from '../../../hooks/queries'
 import { modeText } from '../../../lib/queue'
+import { WinnersVsLosersSwitch } from '../../../components/session/CreateSessionForm'
 
 export function SettingsForm({ session }: { session: SessionDetail }) {
   const [s, setS] = useState<SessionSettings>(session.settings)
@@ -27,6 +28,7 @@ export function SettingsForm({ session }: { session: SessionDetail }) {
           ]}
         />
         <p className="mt-1.5 text-xs text-muted">{modeText[s.mode]}</p>
+        {s.mode === 'FairMatch' && <WinnersVsLosersSwitch checked={!!s.winnersVsLosers} onChange={(v) => set('winnersVsLosers', v)} />}
       </Row>
       <Row label="Game to">
         <Segmented label="Points to win" value={s.pointsToWin} onChange={(v) => set('pointsToWin', v)} options={[11, 15, 21].map((n) => ({ value: n, label: n }))} />

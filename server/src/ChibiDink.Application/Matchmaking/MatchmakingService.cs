@@ -93,16 +93,20 @@ public sealed class MatchmakingService(
 
         // Players held for a lined-up group (still waiting on a teammate's game) aren't picked for another.
         var held = session.PlannedGroups.SelectMany(g => g.Players).ToHashSet();
-        var history = await RecentHistoryAsync(session.Id, ct);
+        var recent = await matches.ListRecentCompletedAsync(session.Id, HistoryDepth, ct);
+        var history = HistoryOf(recent);
+        var winnersVsLosers = session.Settings.Mode == QueueMode.FairMatch && session.Settings.WinnersVsLosers;
         var request = new MatchmakingRequest(
             session.Format,
             freeCourts.Count - created,
-            MatchmakingCandidates.Build(session, busy, held),
+            MatchmakingCandidates.Build(session, busy, held, winnersVsLosers ? MatchmakingCandidates.LastResults(recent) : null),
             history,
             now,
             session.Settings.SkillTolerance,
             TimeSpan.FromMinutes(session.Settings.WaitProtectionMinutes),
-            session.Settings.Mode);
+            session.Settings.Mode,
+            winnersVsLosers,
+            winnersVsLosers && MatchmakingCandidates.WinnersBracketNext(recent.Concat(await matches.ListLiveAsync(session.Id, ct))));
 
         var lineups = strategy.FindLineups(request);
         var live = holdToMix ? await matches.ListLiveAsync(session.Id, ct) : [];
@@ -119,10 +123,10 @@ public sealed class MatchmakingService(
         return created;
     }
 
-    private async Task<PairingHistory> RecentHistoryAsync(Guid sessionId, CancellationToken ct)
+    private static PairingHistory HistoryOf(IEnumerable<Match> recent)
     {
         var history = new PairingHistory();
-        foreach (var match in await matches.ListRecentCompletedAsync(sessionId, HistoryDepth, ct))
+        foreach (var match in recent)
             history.AddMatch(match.TeamA.Select(p => p.UserId).ToList(), match.TeamB.Select(p => p.UserId).ToList());
         return history;
     }

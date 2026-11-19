@@ -4,12 +4,14 @@ namespace ChibiDink.Domain.Matchmaking;
 
 /// <summary>A waiting player as the matchmaker sees them.</summary>
 /// <param name="PartnerId">Fixed partner, when they're also a candidate: the two must play together, on one team.</param>
+/// <param name="LastWon">Won their last game this session (null: no games yet). Used by Winners vs Losers.</param>
 public sealed record QueueCandidate(
     Guid UserId,
     int Skill,
     int CompletedGames,
     DateTimeOffset WaitingSince,
-    Guid? PartnerId = null);
+    Guid? PartnerId = null,
+    bool? LastWon = null);
 
 /// <summary>Everything the matchmaker needs to fill courts. Contains no database or framework types.</summary>
 public sealed record MatchmakingRequest(
@@ -20,14 +22,33 @@ public sealed record MatchmakingRequest(
     DateTimeOffset Now,
     double SkillTolerance,
     TimeSpan WaitProtection,
-    Sessions.QueueMode Mode = Sessions.QueueMode.FairMatch);
+    Sessions.QueueMode Mode = Sessions.QueueMode.FairMatch,
+    bool WinnersVsLosers = false,
+    // Winners vs Losers: the bracket whose turn it is (the opposite of the last game's). Courts filled in one
+    // pass take turns from here.
+    bool WinnersBracketNext = true);
 
 /// <summary>A group the matchmaker wants to put on a court.</summary>
+/// <param name="WinnersBracket">Winners vs Losers: true = winners' bracket, false = losers', null = mixed or off.</param>
 public sealed record ProposedLineup(
     IReadOnlyList<Guid> TeamA,
     IReadOnlyList<Guid> TeamB,
     double SkillGap,
-    bool ExceedsSkillTolerance);
+    bool ExceedsSkillTolerance,
+    bool? WinnersBracket = null);
+
+/// <summary>Winners vs Losers brackets: winners' = won their last game or new (no games yet); losers' = lost it.</summary>
+public static class WinnersBracket
+{
+    /// <summary>The bracket of a group from each player's last result (null = new): true winners', false losers', null mixed.</summary>
+    public static bool? Of(IEnumerable<bool?> lastResults)
+    {
+        var results = lastResults.ToList();
+        if (results.All(r => r != false)) return true;
+        if (results.All(r => r == false)) return false;
+        return null;
+    }
+}
 
 /// <summary>Who has recently partnered with or played against whom in this session.</summary>
 public sealed class PairingHistory

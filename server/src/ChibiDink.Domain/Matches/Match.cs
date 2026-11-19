@@ -146,6 +146,15 @@ public sealed class Match : Entity
         StartedAt = now;
     }
 
+    /// <summary>Just the winner, no score (the Won button).</summary>
+    public void ReportWinner(Team winner, Guid reporterId, DateTimeOffset now)
+    {
+        if (Status == MatchStatus.Ready) Start(now, byOrganizer: false);
+        RequireStatus(MatchStatus.Playing, MatchStatus.PendingResult);
+        Result = MatchResult.WinnerOnly(winner, reporterId, now);
+        Status = MatchStatus.PendingResult;
+    }
+
     public void ReportResult(IScoringRule rule, int teamAScore, int teamBScore, Guid reporterId, string? notes, DateTimeOffset now)
     {
         // A score for a game nobody tapped Start on: it was played, so start it now.

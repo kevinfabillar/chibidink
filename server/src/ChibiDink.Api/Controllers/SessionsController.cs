@@ -96,7 +96,8 @@ public sealed class InvitesController(ISessionService sessions, ISessionQueries 
     [AllowAnonymous]
     public Task<InvitePreviewDto> Preview(string code, CancellationToken ct) => queries.GetInvitePreviewAsync(code, ct);
 
+    /// <summary>Check in with the code. The body is optional: Skill Based sessions send the level the player picked.</summary>
     [HttpPost("{code}/join")]
-    public async Task<IActionResult> Join(string code, CancellationToken ct) =>
-        Ok(new { sessionId = await sessions.JoinByCodeAsync(code, ct) });
+    public async Task<IActionResult> Join(string code, [FromBody(EmptyBodyBehavior = Microsoft.AspNetCore.Mvc.ModelBinding.EmptyBodyBehavior.Allow)] JoinSessionRequest? request, CancellationToken ct) =>
+        Ok(new { sessionId = await sessions.JoinByCodeAsync(code, request?.Skill, ct) });
 }

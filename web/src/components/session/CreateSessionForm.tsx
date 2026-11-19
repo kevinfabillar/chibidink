@@ -24,6 +24,7 @@ const DEFAULT_SETTINGS: SessionSettings = {
   winBy: 1, // no deuce: first to 11 wins
   autoMatchmaking: true,
   openAdmission: true,
+  winnersVsLosers: false,
 }
 
 /**
@@ -40,6 +41,7 @@ export function CreateSessionForm() {
   const [when, setWhen] = useState(nowLocal)
   const [more, setMore] = useState(false)
   const [deuce, setDeuce] = useState(false)
+  const [winnersVsLosers, setWinnersVsLosers] = useState(false)
 
   const create = useMutation({
     mutationFn: async () => {
@@ -49,7 +51,7 @@ export function CreateSessionForm() {
         scheduledAt: new Date(when).toISOString(),
         format: 'Doubles',
         courtCount: courts,
-        settings: { ...DEFAULT_SETTINGS, mode, winBy: deuce ? 2 : 1 },
+        settings: { ...DEFAULT_SETTINGS, mode, winBy: deuce ? 2 : 1, winnersVsLosers: mode === 'FairMatch' && winnersVsLosers },
       })
       // Not started yet: players can join and check in; games begin when the organizer taps Start session.
       return created
@@ -85,6 +87,7 @@ export function CreateSessionForm() {
             text="Players are grouped by level (Beginner, Novice, Intermediate), so games stay even. Good when levels differ a lot."
           />
         </div>
+        {mode === 'FairMatch' && <WinnersVsLosersSwitch checked={winnersVsLosers} onChange={setWinnersVsLosers} />}
         <p className="mt-2 text-xs text-muted">Not sure? Pick Fair Match. You can switch later.</p>
       </Step>
 
@@ -137,6 +140,19 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
       </h3>
       {children}
     </section>
+  )
+}
+
+/** Fair Match option: group last game's winners together and losers together (equal games still come first). */
+export function WinnersVsLosersSwitch({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="mt-2.5 flex items-center justify-between gap-3 rounded-2xl bg-night/70 p-3">
+      <div>
+        <div className="font-semibold">Winners vs losers</div>
+        <div className="text-xs text-muted">Winners (and new players) play together, then losers play together, taking turns. Everyone still gets about the same number of games.</div>
+      </div>
+      <Toggle label="Winners vs losers" checked={checked} onChange={onChange} />
+    </div>
   )
 }
 

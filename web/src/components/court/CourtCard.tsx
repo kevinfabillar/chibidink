@@ -86,9 +86,9 @@ export function CourtCard({ court, format, size = 'card', onOpen, actions, waiti
 
         {match ? (
           <div className={clsx('relative', full ? 'mt-6 [--stage:15rem] md:[--stage:22rem]' : 'mt-3 [--stage:9.75rem] sm:[--stage:11rem]')}>
-            <TeamRow team="A" players={match.teamA} size={size} queued={queued} winner={match.result?.winner} score={match.result?.teamAScore} />
+            <TeamRow team="A" players={match.teamA} size={size} queued={queued} winner={match.result?.winner} score={match.result?.winnerOnly ? undefined : match.result?.teamAScore} />
             <div className={full ? 'h-6' : 'h-2.5'} />
-            <TeamRow team="B" players={match.teamB} size={size} queued={queued} winner={match.result?.winner} score={match.result?.teamBScore} />
+            <TeamRow team="B" players={match.teamB} size={size} queued={queued} winner={match.result?.winner} score={match.result?.winnerOnly ? undefined : match.result?.teamBScore} />
             <VsMark full={full} />
           </div>
         ) : (
