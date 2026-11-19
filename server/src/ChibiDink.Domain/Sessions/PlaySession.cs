@@ -92,7 +92,8 @@ public sealed class PlaySession : Entity
         Guard.That(IsMatchmakingActive, "Start the session first. Players can check in, but games begin once you start it.");
     }
 
-    public SessionParticipant Join(Guid userId, SkillLevel skill, DateTimeOffset now)
+    /// <param name="byOrganizer">Added by the organizer: allowed even when the session isn't taking new players.</param>
+    public SessionParticipant Join(Guid userId, SkillLevel skill, DateTimeOffset now, bool byOrganizer = false)
     {
         EnsureNotClosed();
         var existing = FindParticipant(userId);
@@ -101,7 +102,7 @@ public sealed class PlaySession : Entity
             existing.Rejoin();
             return existing;
         }
-        Guard.That(Settings.OpenAdmission, "This session is not accepting new players.");
+        Guard.That(byOrganizer || Settings.OpenAdmission, "This session is not accepting new players.");
         var participant = new SessionParticipant(Id, userId, SessionRole.Player, skill, now);
         _participants.Add(participant);
         return participant;

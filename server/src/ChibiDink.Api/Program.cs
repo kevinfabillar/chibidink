@@ -97,6 +97,7 @@ services.AddRateLimiter(o =>
 services.AddHttpContextAccessor();
 services.AddMemoryCache();
 services.AddScoped<ICurrentUser, HttpCurrentUser>();
+services.AddScoped<ChibiDink.Api.Infrastructure.GuestAccounts>();
 services.AddSingleton<ISessionNotifier, SignalRSessionNotifier>();
 services.AddSingleton<MatchmakingInbox>();
 services.AddSingleton<IMatchmakingScheduler>(sp => sp.GetRequiredService<MatchmakingInbox>());

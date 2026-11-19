@@ -100,6 +100,9 @@ export const sessionApi = {
   fill: (id: string) => http.post<{ created: number }>(`${s(id)}/fill`),
   setCourtAvailable: (id: string, court: number, available: boolean) =>
     http.put(`${s(id)}/courts/${court}/availability`, { available }),
+  /** Organizer: add someone without a phone by name. They're checked in to the queue straight away. */
+  addPlayer: (id: string, displayName: string, skill: number) =>
+    http.post<{ userId: string }>(`${s(id)}/players`, { displayName, skill }),
   setSkill: (id: string, userId: string, skill: number) => http.put(`${s(id)}/players/${userId}/skill`, { skill }),
   /** Organizer: set a player's fixed partner (null unpairs them). */
   setPartner: (id: string, userId: string, partnerId: string | null) => http.put(`${s(id)}/players/${userId}/partner`, { partnerId }),

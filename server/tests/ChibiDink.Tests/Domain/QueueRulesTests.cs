@@ -105,7 +105,7 @@ public sealed class QueueRulesTests
     [Fact]
     public void Fair_match_ignores_skill()
     {
-        // The four who are due are two Beginners and two Intermediates: they play together.
+        // The four who are due are two Beginners and two Advanced players: they play together.
         var due = new[] { P(waited: 10, skill: 1), P(waited: 9, skill: 3), P(waited: 8, skill: 1), P(waited: 7, skill: 3) };
         var behind = Enumerable.Range(0, 4).Select(i => P(waited: 2, skill: 2)).ToList();
 

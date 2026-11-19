@@ -1,10 +1,10 @@
 // Pickleball skill tiers used by skill-based queues (and to balance teams). Older 1–5 estimates
-// above 3 count as Intermediate.
+// above 3 count as Advanced.
 
 export const SKILL_TIERS = [
   { value: 1, label: 'Beginner' },
-  { value: 2, label: 'Novice' },
-  { value: 3, label: 'Intermediate' },
+  { value: 2, label: 'Intermediate' },
+  { value: 3, label: 'Advanced' },
 ] as const
 
 export const tierOf = (skill: number) => Math.min(3, Math.max(1, Math.round(skill)))

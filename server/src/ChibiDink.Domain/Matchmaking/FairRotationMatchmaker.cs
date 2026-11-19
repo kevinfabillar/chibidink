@@ -5,7 +5,7 @@ namespace ChibiDink.Domain.Matchmaking;
 /// <summary>
 /// Fills courts one at a time. Two modes:
 /// - Fair Match: equal play. Rotation decides everything; skill is ignored (partners still rotate).
-/// - Skill Based: each court gets four players of the same tier (Beginner, Novice, Intermediate),
+/// - Skill Based: each court gets four players of the same tier (Beginner, Intermediate, Advanced),
 ///   taking the first tier in line that has four waiting. If no tier has four, the closest mix is used
 ///   (marked mixed-skill) rather than leaving a court empty.
 /// Within the chosen group, in this order of importance:

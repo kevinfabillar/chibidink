@@ -21,7 +21,7 @@ namespace ChibiDink.Api.Controllers;
 public sealed class AuthController(
     UserManager<AppUser> users,
     SignInManager<AppUser> signIn,
-    RoleManager<IdentityRole<Guid>> roles,
+    GuestAccounts guests,
     IProfileService profiles,
     ISessionQueries sessionQueries,
     IEmailSender email,
@@ -125,21 +125,12 @@ public sealed class AuthController(
         if (invite.Status == SessionStatus.Closed)
             return Problem(statusCode: StatusCodes.Status400BadRequest, title: "Session ended", detail: "This session has already ended.");
 
-        var id = Guid.NewGuid();
-        var user = new AppUser
+        var (user, errors) = await guests.CreateAsync();
+        if (user is null)
         {
-            Id = id, UserName = $"guest-{id:N}", Email = $"guest-{id:N}@guest.chibidink.local", EmailConfirmed = true,
-            TermsAcceptedAt = DateTimeOffset.UtcNow, TermsVersion = LegalTerms.Version,
-        };
-        var created = await users.CreateAsync(user); // no password: a guest signs in only through this token
-        if (!created.Succeeded)
-        {
-            foreach (var error in created.Errors) ModelState.AddModelError(error.Code, error.Description);
+            foreach (var error in errors) ModelState.AddModelError(error.Code, error.Description);
             return ValidationProblem(ModelState);
         }
-        if (!await roles.RoleExistsAsync(AppUser.Roles.Guest))
-            await roles.CreateAsync(new IdentityRole<Guid>(AppUser.Roles.Guest));
-        await users.AddToRoleAsync(user, AppUser.Roles.Guest);
 
         await profiles.EnsureProfileAsync(user.Id, name, ct);
         return await IssueTokenAsync(user);

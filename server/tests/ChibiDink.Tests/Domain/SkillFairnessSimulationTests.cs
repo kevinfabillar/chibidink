@@ -6,8 +6,8 @@ using Xunit.Abstractions;
 namespace ChibiDink.Tests.Domain;
 
 /// <summary>
-/// Skill Based queues over a whole night: 21 players on 2 courts, with different mixes of Beginners, Novices and
-/// Intermediates. Courts only take four of one level when they can, so how even the night is depends on how many
+/// Skill Based queues over a whole night: 21 players on 2 courts, with different mixes of Beginners, Intermediates and
+/// Advanced players. Courts only take four of one level when they can, so how even the night is depends on how many
 /// players each level has. Fair Match (skill ignored) is the baseline.
 /// </summary>
 public sealed class SkillFairnessSimulationTests(ITestOutputHelper output)
@@ -65,13 +65,13 @@ public sealed class SkillFairnessSimulationTests(ITestOutputHelper output)
     [InlineData(QueueMode.SkillBased, 8, 8, 5)]
     [InlineData(QueueMode.SkillBased, 3, 12, 6)]
     [InlineData(QueueMode.SkillBased, 9, 9, 3)]
-    public void Twenty_one_players_on_two_courts(QueueMode mode, int beginners, int novices, int intermediates)
+    public void Twenty_one_players_on_two_courts(QueueMode mode, int beginners, int intermediates, int advanced)
     {
-        var nights = Enumerable.Range(1, 100).Select(seed => Play([beginners, novices, intermediates], mode, seed)).ToList();
+        var nights = Enumerable.Range(1, 100).Select(seed => Play([beginners, intermediates, advanced], mode, seed)).ToList();
         double PerTier(int t) => nights.Average(n => Enumerable.Range(0, n.Games.Length).Where(i => n.Tier[i] == t).Average(i => n.Games[i]));
         var gaps = nights.Select(n => n.Games.Max() - n.Games.Min()).ToList();
         output.WriteLine(
-            $"RESULT|{mode}|{beginners}/{novices}/{intermediates}|{PerTier(1):0.0}|{PerTier(2):0.0}|{PerTier(3):0.0}|" +
+            $"RESULT|{mode}|{beginners}/{intermediates}/{advanced}|{PerTier(1):0.0}|{PerTier(2):0.0}|{PerTier(3):0.0}|" +
             $"{gaps.Count(g => g <= 1)}/100|{gaps.Average():0.00}|{nights.Max(n => n.MaxGapDuring)}|{nights.Average(n => n.MixedGames) / Games:P0}");
 
         // Every level gets on court, and nobody is left far behind.

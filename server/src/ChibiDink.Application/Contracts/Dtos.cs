@@ -37,6 +37,9 @@ public sealed record UpdateProfileRequest(string DisplayName, int SkillEstimate)
 /// <summary>Joining a session. Skill: the level the player picked (Skill Based sessions ask for it); null keeps their profile's.</summary>
 public sealed record JoinSessionRequest(int? Skill);
 
+/// <summary>Organizer: add a player who has no phone (a guest with just a name), checked in straight away.</summary>
+public sealed record AddPlayerRequest(string DisplayName, int? Skill);
+
 // ---- Shared views ---------------------------------------------------------------------------
 
 /// <summary>Enough to draw a player's character anywhere in the app.</summary>

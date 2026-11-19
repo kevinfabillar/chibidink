@@ -20,6 +20,10 @@ public interface ISessionService
     Task SetCourtAvailabilityAsync(Guid sessionId, int courtNumber, bool available, CancellationToken ct);
     Task SetPlayerSkillAsync(Guid sessionId, Guid userId, int skill, CancellationToken ct);
     Task SetPartnerAsync(Guid sessionId, Guid userId, Guid? partnerId, CancellationToken ct);
+    /// <summary>Throws unless the current user organizes this session and it's still open (checked before making an account).</summary>
+    Task EnsureCanAddPlayersAsync(Guid sessionId, CancellationToken ct);
+    /// <summary>Organizer: puts a player they added (no phone) in the session, checked in to the queue.</summary>
+    Task AddPlayerAsync(Guid sessionId, Guid userId, int? skill, CancellationToken ct);
 }
 
 public sealed class SessionService(
@@ -130,6 +134,26 @@ public sealed class SessionService(
     public Task SetPartnerAsync(Guid sessionId, Guid userId, Guid? partnerId, CancellationToken ct) =>
         AsOrganizer(sessionId, "Partner", partnerId is null ? "Unpaired a fixed partner" : "Paired two players as fixed partners",
             s => s.SetPartner(userId, partnerId), ct);
+
+    public async Task EnsureCanAddPlayersAsync(Guid sessionId, CancellationToken ct)
+    {
+        var session = await sessions.FindAsync(sessionId, ct) ?? throw new NotFoundException("Session");
+        session.EnsureOrganizer(currentUser.UserId);
+        session.EnsureNotClosed();
+    }
+
+    public Task AddPlayerAsync(Guid sessionId, Guid userId, int? skill, CancellationToken ct) =>
+        runner.RunAsync(sessionId, async (session, innerCt) =>
+        {
+            session.EnsureOrganizer(currentUser.UserId);
+            var profile = await profiles.FindAsync(userId, innerCt) ?? throw new NotFoundException("Profile");
+            if (skill is { } picked) profile.SetSkillEstimate(new SkillLevel(picked));
+            var now = clock.UtcNow;
+            var participant = session.Join(userId, new SkillLevel(SkillLevel.TierOf(profile.SkillEstimate)), now, byOrganizer: true);
+            if (participant.Status != ParticipantStatus.InMatch) participant.EnterQueue(now);
+            audit.Record(new MatchEditAudit(sessionId, null, currentUser.UserId, "Add player",
+                $"Added {profile.DisplayName} and checked them in", now));
+        }, ct);
 
     private Task AsOrganizer(Guid sessionId, string action, string details, Action<PlaySession> change, CancellationToken ct) =>
         runner.RunAsync(sessionId, (session, _) =>

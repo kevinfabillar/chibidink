@@ -84,7 +84,7 @@ export interface Progress {
   coins: number
 }
 
-/** Fair Match = equal play; Skill Based = grouped by Beginner / Novice / Intermediate. */
+/** Fair Match = equal play; Skill Based = grouped by Beginner / Intermediate / Advanced. */
 export type QueueMode = 'FairMatch' | 'SkillBased'
 
 export interface SessionSettings {

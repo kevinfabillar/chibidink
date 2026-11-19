@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ChibiDink.Infrastructure.Identity;
+using ChibiDink.Api.Infrastructure;
+using ChibiDink.Application.Players;
+using ChibiDink.Domain.Players;
 using ChibiDink.Application.Contracts;
 using ChibiDink.Application.Matchmaking;
 using ChibiDink.Application.Sessions;
@@ -14,7 +17,9 @@ public sealed class SessionsController(
     ISessionQueries queries,
     IQueueService queue,
     IUpNextService upNext,
-    IMatchmakingService matchmaking) : ControllerBase
+    IMatchmakingService matchmaking,
+    GuestAccounts guests,
+    IProfileService profiles) : ControllerBase
 {
     [HttpGet]
     public Task<IReadOnlyList<SessionSummaryDto>> ListMine(CancellationToken ct) => queries.ListMineAsync(ct);
@@ -60,6 +65,31 @@ public sealed class SessionsController(
     [HttpPut("{sessionId:guid}/courts/{courtNumber:int}/availability")]
     public Task<IActionResult> SetCourtAvailability(Guid sessionId, int courtNumber, CourtAvailabilityRequest request, CancellationToken ct) =>
         Done(sessions.SetCourtAvailabilityAsync(sessionId, courtNumber, request.Available, ct));
+
+    /// <summary>
+    /// Organizer: add someone without a phone. Makes a guest with just that name and checks them in to the
+    /// queue. Each tap adds a new person (two players can share a name).
+    /// </summary>
+    [HttpPost("{sessionId:guid}/players")]
+    public async Task<IActionResult> AddPlayer(Guid sessionId, AddPlayerRequest request, CancellationToken ct)
+    {
+        var name = request.DisplayName?.Trim() ?? "";
+        if (name.Length is 0 or > PlayerProfile.MaxDisplayNameLength)
+        {
+            ModelState.AddModelError(nameof(request.DisplayName), $"Name must be 1–{PlayerProfile.MaxDisplayNameLength} characters.");
+            return ValidationProblem(ModelState);
+        }
+        await sessions.EnsureCanAddPlayersAsync(sessionId, ct); // before making an account nobody would use
+        var (user, errors) = await guests.CreateAsync();
+        if (user is null)
+        {
+            foreach (var error in errors) ModelState.AddModelError(error.Code, error.Description);
+            return ValidationProblem(ModelState);
+        }
+        await profiles.EnsureProfileAsync(user.Id, name, ct);
+        await sessions.AddPlayerAsync(sessionId, user.Id, request.Skill, ct);
+        return Ok(new { userId = user.Id });
+    }
 
     [HttpPut("{sessionId:guid}/players/{userId:guid}/skill")]
     public Task<IActionResult> SetSkill(Guid sessionId, Guid userId, SetSkillRequest request, CancellationToken ct) =>

@@ -1,11 +1,49 @@
+import { useState } from 'react'
 import { sessionApi } from '../../../api/api'
 import type { SessionDetail } from '../../../api/types'
 import { PlayerAvatar } from '../../../components/character/Stage'
-import { ErrorNote, SectionTitle, Toggle } from '../../../components/ui/primitives'
+import { Button } from '../../../components/ui/Button'
+import { ErrorNote, SectionTitle, Segmented, Toggle } from '../../../components/ui/primitives'
 import { useSessionAction } from '../../../hooks/queries'
 import { SKILL_TIERS, tierOf } from '../../../lib/skill'
 
 const statusText = { Waiting: 'Checked in', InMatch: 'On court', Paused: 'Checked out', Left: 'Left' }
+
+/** Add someone who has no phone: just a name (and level). They're checked in straight away. */
+function AddPlayer({ session }: { session: SessionDetail }) {
+  const [name, setName] = useState('')
+  const [skill, setSkill] = useState<number>(2)
+  const add = useSessionAction(session.id, () => sessionApi.addPlayer(session.id, name.trim(), skill))
+
+  return (
+    <form
+      className="mb-4 space-y-2.5 rounded-2xl bg-night/70 p-3"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (name.trim()) add.mutate(undefined, { onSuccess: () => setName('') })
+      }}
+    >
+      <div className="text-sm font-semibold">Add a player without a phone</div>
+      <div className="flex gap-2">
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          maxLength={24}
+          placeholder="Name"
+          aria-label="New player's name"
+          className="h-10 min-w-0 flex-1 rounded-xl border border-white/10 bg-ink px-3 text-sm text-white placeholder:text-white/30 focus:border-lime/70 focus:outline-none"
+        />
+        <Button type="submit" disabled={!name.trim()} loading={add.isPending}>
+          Add &amp; check in
+        </Button>
+      </div>
+      {session.settings.mode === 'SkillBased' && (
+        <Segmented label="New player's level" value={skill} onChange={setSkill} options={SKILL_TIERS.map((t) => ({ value: t.value as number, label: t.label }))} />
+      )}
+      <ErrorNote error={add.error} />
+    </form>
+  )
+}
 
 /** Each player's level (used by Skill Based queues) and check-in. */
 export function PlayersAdmin({ session }: { session: SessionDetail }) {
@@ -19,6 +57,7 @@ export function PlayersAdmin({ session }: { session: SessionDetail }) {
   return (
     <section className="card p-5">
       <SectionTitle>Players ({session.participants.length})</SectionTitle>
+      {session.status !== 'Closed' && <AddPlayer session={session} />}
       <p className="mb-3 text-sm text-muted">Set each player's level for Skill Based queues. The switch checks a player in or out.</p>
       <ul className="max-h-[28rem] space-y-2 overflow-y-auto pr-1">
         {session.participants.map((p) => (
