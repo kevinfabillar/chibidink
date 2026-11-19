@@ -6,6 +6,7 @@ import type { Court, MatchFormat, MatchPlayer, MatchStatus, Team } from '../../a
 import { formatLabel, matchStatusLabel } from '../../lib/format'
 import { PlayerAvatar } from '../character/Stage'
 import { PlayerName } from '../character/NameTag'
+import { LevelBadge } from '../session/LevelBadge'
 
 type Size = 'card' | 'full'
 type State = MatchStatus | 'Empty' | 'Unavailable'
@@ -31,8 +32,7 @@ const FRAME: Record<State, string> = {
   Completed: LIME_FRAME,
   Proposed: SKY_FRAME,
   AwaitingConfirmation: SKY_FRAME,
-  PendingResult:
-    'bg-[linear-gradient(180deg,#F3E8FF_0%,#C084FC_40%,#A348FA_75%,#D946EF_100%)] shadow-[0_0_28px_-10px_rgb(163_72_250/0.9)]',
+  PendingResult: 'bg-[linear-gradient(180deg,#F3E8FF_0%,#C084FC_40%,#A348FA_75%,#D946EF_100%)] shadow-[0_0_28px_-10px_rgb(163_72_250/0.9)]',
   Cancelled: 'bg-white/10',
   Voided: 'bg-white/10',
   Empty: 'bg-white/12',
@@ -86,9 +86,23 @@ export function CourtCard({ court, format, size = 'card', onOpen, actions, waiti
 
         {match ? (
           <div className={clsx('relative', full ? 'mt-6 [--stage:15rem] md:[--stage:22rem]' : 'mt-3 [--stage:9.75rem] sm:[--stage:11rem]')}>
-            <TeamRow team="A" players={match.teamA} size={size} queued={queued} winner={match.result?.winner} score={match.result?.winnerOnly ? undefined : match.result?.teamAScore} />
+            <TeamRow
+              team="A"
+              players={match.teamA}
+              size={size}
+              queued={queued}
+              winner={match.result?.winner}
+              score={match.result?.winnerOnly ? undefined : match.result?.teamAScore}
+            />
             <div className={full ? 'h-6' : 'h-2.5'} />
-            <TeamRow team="B" players={match.teamB} size={size} queued={queued} winner={match.result?.winner} score={match.result?.winnerOnly ? undefined : match.result?.teamBScore} />
+            <TeamRow
+              team="B"
+              players={match.teamB}
+              size={size}
+              queued={queued}
+              winner={match.result?.winner}
+              score={match.result?.winnerOnly ? undefined : match.result?.teamBScore}
+            />
             <VsMark full={full} />
           </div>
         ) : (
@@ -207,12 +221,18 @@ function TeamRow({
           Team {team}
           {won && <Trophy className="ml-1.5 inline size-4 text-lime" />}
         </div>
-        <div className={clsx('text-white/85 [overflow-wrap:anywhere] leading-tight', full ? 'text-lg' : 'text-sm', score !== undefined && (full ? 'pr-16' : 'pr-10'))}>
+        <div
+          className={clsx(
+            'text-white/85 [overflow-wrap:anywhere] leading-tight',
+            full ? 'text-lg' : 'text-sm',
+            score !== undefined && (full ? 'pr-16' : 'pr-10'),
+          )}
+        >
           {queued && 'Queued: '}
           {players.map((p, i) => (
             <span key={p.player.userId}>
               {i > 0 && ' & '}
-              <PlayerName player={p.player} />
+              <PlayerName player={p.player} /> <LevelBadge userId={p.player.userId} short />
             </span>
           ))}
         </div>

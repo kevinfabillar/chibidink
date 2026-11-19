@@ -111,7 +111,7 @@ public sealed class FairRotationMatchmakerTests
         // 10 players, 2 courts, play 10 rounds: game counts should never drift by more than 1.
         var games = Enumerable.Range(0, 10).ToDictionary(_ => Guid.NewGuid(), _ => 0);
         var waiting = games.Keys.ToDictionary(id => id, _ => Now);
-        var history = new PairingHistory();
+        var history = new GameLog();
 
         for (var round = 0; round < 10; round++)
         {

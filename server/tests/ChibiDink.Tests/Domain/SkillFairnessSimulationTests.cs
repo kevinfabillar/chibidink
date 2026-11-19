@@ -26,7 +26,7 @@ public sealed class SkillFairnessSimulationTests(ITestOutputHelper output)
         var games = new int[players];
         var playing = new bool[players];
         var waitingSince = ids.Select(_ => TestData.Now.AddSeconds(rng.Next(0, 300))).ToArray();
-        var history = new PairingHistory();
+        var history = new GameLog();
         var matchmaker = new FairRotationMatchmaker();
         var freeAt = Enumerable.Repeat(TestData.Now.AddMinutes(5), Courts).ToArray();
         var onCourt = new List<int>?[Courts];

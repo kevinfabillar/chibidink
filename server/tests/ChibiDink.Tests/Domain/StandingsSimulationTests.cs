@@ -25,7 +25,7 @@ public sealed class StandingsSimulationTests(ITestOutputHelper output)
         var waitingSince = ids.Select(_ => TestData.Now.AddSeconds(rng.Next(0, 300))).ToArray();
         var playing = new bool[Players];
         var results = new List<GameResult>();
-        var history = new PairingHistory();
+        var history = new GameLog();
         var matchmaker = new FairRotationMatchmaker();
         var freeAt = Enumerable.Repeat(TestData.Now.AddMinutes(5), Courts).ToArray();
         var onCourt = new (List<int> A, List<int> B)?[Courts];

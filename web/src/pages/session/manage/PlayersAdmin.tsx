@@ -7,7 +7,12 @@ import { ErrorNote, SectionTitle, Segmented, Toggle } from '../../../components/
 import { useSessionAction } from '../../../hooks/queries'
 import { SKILL_TIERS, tierOf } from '../../../lib/skill'
 
-const statusText = { Waiting: 'Checked in', InMatch: 'On court', Paused: 'Checked out', Left: 'Left' }
+const statusText = {
+  Waiting: 'Checked in',
+  InMatch: 'On court',
+  Paused: 'Checked out',
+  Left: 'Left',
+}
 
 /** Add someone who has no phone: just a name (and level). They're checked in straight away. */
 function AddPlayer({ session }: { session: SessionDetail }) {
@@ -38,7 +43,15 @@ function AddPlayer({ session }: { session: SessionDetail }) {
         </Button>
       </div>
       {session.settings.mode === 'SkillBased' && (
-        <Segmented label="New player's level" value={skill} onChange={setSkill} options={SKILL_TIERS.map((t) => ({ value: t.value as number, label: t.label }))} />
+        <Segmented
+          label="New player's level"
+          value={skill}
+          onChange={setSkill}
+          options={SKILL_TIERS.map((t) => ({
+            value: t.value as number,
+            label: t.label,
+          }))}
+        />
       )}
       <ErrorNote error={add.error} />
     </form>
@@ -71,7 +84,12 @@ export function PlayersAdmin({ session }: { session: SessionDetail }) {
             </div>
             <select
               value={tierOf(p.skillEstimate)}
-              onChange={(e) => setSkill.mutate({ userId: p.player.userId, skill: Number(e.target.value) })}
+              onChange={(e) =>
+                setSkill.mutate({
+                  userId: p.player.userId,
+                  skill: Number(e.target.value),
+                })
+              }
               className="h-9 rounded-xl border border-white/10 bg-ink px-2 text-sm"
               aria-label={`${p.player.displayName} skill`}
             >

@@ -6,6 +6,7 @@ import { PlayerAvatar } from '../../../components/character/Stage'
 import { Button } from '../../../components/ui/Button'
 import { ErrorNote, SectionTitle, Segmented } from '../../../components/ui/primitives'
 import { useSessionAction } from '../../../hooks/queries'
+import { tierName } from '../../../lib/skill'
 
 /** Organizer picks a court and hand-picks both teams. Tap a player to cycle: none → A → B. */
 export function ManualMatchBuilder({ session }: { session: SessionDetail }) {
@@ -46,7 +47,10 @@ export function ManualMatchBuilder({ session }: { session: SessionDetail }) {
         label="Court"
         value={selectedCourt ?? 0}
         onChange={setCourt}
-        options={freeCourts.map((c) => ({ value: c.number, label: `Court ${c.number}` }))}
+        options={freeCourts.map((c) => ({
+          value: c.number,
+          label: `Court ${c.number}`,
+        }))}
       />
       <p className="text-sm text-muted">
         Tap players to place them: first tap Team A, second Team B, third removes. Skipped players keep their queue spot.
@@ -69,9 +73,7 @@ export function ManualMatchBuilder({ session }: { session: SessionDetail }) {
                 <PlayerAvatar player={p.player} size={36} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold">{p.player.displayName}</span>
-                  <span className="text-xs text-muted">
-                    {team ? `Team ${team}` : `${p.completedGames} games · skill ${p.skillEstimate}`}
-                  </span>
+                  <span className="text-xs text-muted">{team ? `Team ${team}` : `${p.completedGames} games · ${tierName(p.skillEstimate)}`}</span>
                 </span>
               </button>
             </li>

@@ -11,9 +11,8 @@ import { useCosmetics, useSessionAction } from '../../hooks/queries'
 import { minutesAgo, useNow } from '../../lib/format'
 import { modeText, partnerNames } from '../../lib/queue'
 import { sessionEarnings } from '../../lib/rewards'
-import { tierName } from '../../lib/skill'
+import { LevelBadge } from '../../components/session/LevelBadge'
 import { PlayerName } from '../../components/character/NameTag'
-
 
 export function QueueTab({ session }: { session: SessionDetail }) {
   const now = useNow(15_000)
@@ -39,8 +38,13 @@ export function QueueTab({ session }: { session: SessionDetail }) {
           <h2 className="mt-1 font-display text-2xl font-bold">
             <PlayerName player={me.player} size="md" />
           </h2>
+          {skillBased && (
+            <div className="my-1">
+              <LevelBadge userId={me.player.userId} />
+            </div>
+          )}
           <p className="text-sm text-muted">
-            {skillBased && `${tierName(me.skillEstimate)} · `}This session: {me.completedGames} games · {me.wins}W {me.losses}L
+            This session: {me.completedGames} games · {me.wins}W {me.losses}L
           </p>
           {earned && (
             <p className="mt-1 text-sm font-semibold">
@@ -104,8 +108,8 @@ export function QueueTab({ session }: { session: SessionDetail }) {
             </section>
           )
         )}
-        <PlayerGroup title={`Waitlist (${stillWaiting.length})`} players={stillWaiting} now={now} showPosition skillBased={skillBased} partners={partners} />
-        <PlayerGroup title={`Checked out (${checkedOut.length})`} players={checkedOut} now={now} dim skillBased={skillBased} partners={partners} />
+        <PlayerGroup title={`Waitlist (${stillWaiting.length})`} players={stillWaiting} now={now} showPosition partners={partners} />
+        <PlayerGroup title={`Checked out (${checkedOut.length})`} players={checkedOut} now={now} dim partners={partners} />
         {waiting.length === 0 && playing.length === 0 && (
           <p className="card p-5 text-center text-sm text-muted">Nobody is checked in yet. Share the code or QR from the Session tab.</p>
         )}
@@ -137,7 +141,6 @@ export function PlayerGroup({
   now,
   showPosition,
   dim,
-  skillBased,
   partners,
 }: {
   title: string
@@ -145,7 +148,7 @@ export function PlayerGroup({
   now: number
   showPosition?: boolean
   dim?: boolean
-  skillBased?: boolean
+
   /** userId -> fixed partner's name. */
   partners?: Map<string, string>
 }) {
@@ -161,6 +164,7 @@ export function PlayerGroup({
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 font-semibold [overflow-wrap:anywhere] leading-tight">
                 <PlayerName player={p.player} />
+                <LevelBadge userId={p.player.userId} />
                 {p.role === 'Organizer' && <Crown className="size-3.5 text-lime" aria-label="Organizer" />}
                 {partners?.has(p.player.userId) && (
                   <span className="inline-flex items-center gap-1 rounded-full border border-lime/40 px-1.5 py-px text-[11px] font-semibold text-lime">
@@ -170,7 +174,6 @@ export function PlayerGroup({
                 )}
               </div>
               <div className="text-xs text-muted">
-                {skillBased && `${tierName(p.skillEstimate)} · `}
                 {p.completedGames} games · {p.wins}W {p.losses}L
               </div>
             </div>

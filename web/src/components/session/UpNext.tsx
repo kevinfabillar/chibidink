@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import type { PlayerCard, UpNextGroup } from '../../api/types'
 import { PlayerAvatar } from '../character/Stage'
 import { PlayerName } from '../character/NameTag'
+import { LevelBadge } from './LevelBadge'
 
 /** One predicted group of four: who goes on court next, split into the two teams. */
 export function UpNextCard({
@@ -25,8 +26,12 @@ export function UpNextCard({
           {highlight ? 'NEXT ON COURT' : `GROUP ${group.order}`}
         </span>
         {group.tier && <span className="rounded-full border border-white/15 px-2 py-0.5 text-[11px] font-semibold text-white/80">{group.tier}</span>}
-        {group.isMixedSkill && <span className="rounded-full border border-amber-300/40 px-2 py-0.5 text-[11px] font-semibold text-amber-200">Mixed levels</span>}
-        {group.isPlanned && <span className="ml-auto rounded-full border border-sky/50 px-2 py-0.5 text-[11px] font-semibold text-sky">Lined up</span>}
+        {group.isMixedSkill && (
+          <span className="rounded-full border border-amber-300/40 px-2 py-0.5 text-[11px] font-semibold text-amber-200">Mixed levels</span>
+        )}
+        {group.isPlanned && (
+          <span className="ml-auto rounded-full border border-sky/50 px-2 py-0.5 text-[11px] font-semibold text-sky">Lined up</span>
+        )}
       </div>
       <div className="flex items-center gap-2">
         <Team players={group.teamA} compact={compact} />
@@ -50,7 +55,10 @@ function Team({ players, compact }: { players: PlayerCard[]; compact?: boolean }
       {players.map((p) => (
         <div key={p.userId} className="flex min-w-0 items-center gap-2">
           <PlayerAvatar player={p} size={compact ? 28 : 34} />
-          <PlayerName player={p} className="min-w-0 text-sm font-semibold [overflow-wrap:anywhere] leading-tight" />
+          <div className="flex min-w-0 flex-wrap items-center gap-1">
+            <PlayerName player={p} className="min-w-0 text-sm font-semibold [overflow-wrap:anywhere] leading-tight" />
+            <LevelBadge userId={p.userId} short={compact} />
+          </div>
         </div>
       ))}
     </div>

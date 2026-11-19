@@ -15,6 +15,7 @@ import { SessionInfoTab } from './SessionInfoTab'
 import { SessionBottomNav } from './SessionNav'
 import { sessionTabs, type SessionTab } from './sessionTabs'
 import { PageError } from '../../components/ui/ErrorPage'
+import { SessionLevelsProvider } from '../../components/session/LevelBadge'
 
 export function SessionPage() {
   const { sessionId } = useParams()
@@ -31,37 +32,39 @@ export function SessionPage() {
   const waiting = s.participants.filter((p) => p.status === 'Waiting').length
 
   return (
-    <div className="mx-auto max-w-7xl">
-      <SessionHeader session={s} live={live} />
-      {s.status === 'Closed' && <Podium players={s.participants} />}
-      {s.myMatch && tab !== 'courts' && tab !== 'games' && <MyMatchBanner session={s} match={s.myMatch} />}
-      <GiveKudosButton sessionId={s.id} />
+    <SessionLevelsProvider session={s}>
+      <div className="mx-auto max-w-7xl">
+        <SessionHeader session={s} live={live} />
+        {s.status === 'Closed' && <Podium players={s.participants} />}
+        {s.myMatch && tab !== 'courts' && tab !== 'games' && <MyMatchBanner session={s} match={s.myMatch} />}
+        <GiveKudosButton sessionId={s.id} />
 
-      {/* Desktop tabs; phones use the bottom nav */}
-      <div role="tablist" className="mb-5 hidden gap-1.5 rounded-2xl border border-white/8 bg-night/70 p-1.5 lg:flex">
-        {sessionTabs.map((t) => (
-          <button
-            key={t.id}
-            role="tab"
-            aria-selected={tab === t.id}
-            onClick={() => setParams({ tab: t.id }, { replace: true })}
-            className={clsx(
-              'flex h-10 flex-1 items-center justify-center gap-2 rounded-xl font-display text-base font-bold transition',
-              tab === t.id ? 'bg-lime text-ink' : 'text-white/70 hover:bg-white/8',
-            )}
-          >
-            <t.icon className="size-4.5" />
-            {t.id === 'courts' ? `Queue (${waiting})` : t.id === 'session' && s.isOrganizer ? 'Manage' : t.label}
-          </button>
-        ))}
+        {/* Desktop tabs; phones use the bottom nav */}
+        <div role="tablist" className="mb-5 hidden gap-1.5 rounded-2xl border border-white/8 bg-night/70 p-1.5 lg:flex">
+          {sessionTabs.map((t) => (
+            <button
+              key={t.id}
+              role="tab"
+              aria-selected={tab === t.id}
+              onClick={() => setParams({ tab: t.id }, { replace: true })}
+              className={clsx(
+                'flex h-10 flex-1 items-center justify-center gap-2 rounded-xl font-display text-base font-bold transition',
+                tab === t.id ? 'bg-lime text-ink' : 'text-white/70 hover:bg-white/8',
+              )}
+            >
+              <t.icon className="size-4.5" />
+              {t.id === 'courts' ? `Queue (${waiting})` : t.id === 'session' && s.isOrganizer ? 'Manage' : t.label}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'courts' && <CourtsTab session={s} />}
+        {tab === 'games' && <MyGamesTab session={s} />}
+        {tab === 'session' && (s.isOrganizer ? <ManageTab session={s} /> : <SessionInfoTab session={s} />)}
+
+        <SessionBottomNav sessionId={s.id} tab={tab} />
       </div>
-
-      {tab === 'courts' && <CourtsTab session={s} />}
-      {tab === 'games' && <MyGamesTab session={s} />}
-      {tab === 'session' && (s.isOrganizer ? <ManageTab session={s} /> : <SessionInfoTab session={s} />)}
-
-      <SessionBottomNav sessionId={s.id} tab={tab} />
-    </div>
+    </SessionLevelsProvider>
   )
 }
 
@@ -74,9 +77,17 @@ function SessionHeader({ session: s, live }: { session: SessionDetail; live: Liv
   )
   const badge =
     s.status === 'Closed'
-      ? { text: 'CLOSED', cls: 'border-white/20 text-white/50', dot: 'bg-white/40' }
+      ? {
+          text: 'CLOSED',
+          cls: 'border-white/20 text-white/50',
+          dot: 'bg-white/40',
+        }
       : s.status === 'Active'
-        ? { text: live === 'live' ? 'LIVE' : 'RECONNECTING', cls: 'border-lime text-lime shadow-[0_0_14px_-4px_rgb(183_243_59/0.9)]', dot: 'bg-lime animate-pulse' }
+        ? {
+            text: live === 'live' ? 'LIVE' : 'RECONNECTING',
+            cls: 'border-lime text-lime shadow-[0_0_14px_-4px_rgb(183_243_59/0.9)]',
+            dot: 'bg-lime animate-pulse',
+          }
         : { text: 'NOT STARTED', cls: 'border-sky/70 text-sky', dot: 'bg-sky' }
   const status = (
     <span className={clsx('pill bg-ink/50 font-display tracking-wide', badge.cls)}>
