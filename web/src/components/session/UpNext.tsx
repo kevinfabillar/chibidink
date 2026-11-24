@@ -55,8 +55,9 @@ function Team({ players, compact }: { players: PlayerCard[]; compact?: boolean }
       {players.map((p) => (
         <div key={p.userId} className="flex min-w-0 items-center gap-2">
           <PlayerAvatar player={p} size={compact ? 28 : 34} />
-          <div className="flex min-w-0 flex-wrap items-center gap-1">
-            <PlayerName player={p} className="min-w-0 text-sm font-semibold [overflow-wrap:anywhere] leading-tight" />
+          {/* The name keeps its width (the badge wraps under it), so narrow cards never squeeze it to a letter per line. */}
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
+            <PlayerName player={p} className="max-w-full shrink-0 text-sm font-semibold [overflow-wrap:anywhere] leading-tight" />
             <LevelBadge userId={p.userId} short={compact} />
           </div>
         </div>

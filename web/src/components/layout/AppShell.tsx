@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 import { Backpack, Handshake, Home, LogOut, PanelLeftClose, PanelLeftOpen, Store, UserRound, Users } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router'
 import { useAuth } from '../../auth/authStore'
 import { useMe } from '../../hooks/queries'
@@ -27,11 +27,25 @@ function readCollapsed() {
   }
 }
 
+/** Wide enough for the full sidebar. Below this (e.g. an iPad in landscape) it shows icons only, so the page keeps its room. */
+const WIDE = '(min-width: 1280px)'
+const useWide = () =>
+  useSyncExternalStore(
+    (onChange) => {
+      const query = window.matchMedia(WIDE)
+      query.addEventListener('change', onChange)
+      return () => query.removeEventListener('change', onChange)
+    },
+    () => window.matchMedia(WIDE).matches,
+  )
+
 /** Inside a session the session pages show their own bottom nav (Courts, Queue, My Games...). */
 const isSessionRoute = (path: string) => /^\/sessions\/(?!new\b)[^/]+/.test(path)
 
 export function AppShell() {
-  const [collapsed, setCollapsed] = useState(readCollapsed)
+  const [collapsedByChoice, setCollapsed] = useState(readCollapsed)
+  const wide = useWide()
+  const collapsed = collapsedByChoice || !wide
   const me = useMe().data
   const signOut = useAuth((s) => s.signOut)
   const { pathname } = useLocation()
@@ -58,9 +72,13 @@ export function AppShell() {
       >
         <div className="flex h-20 items-center justify-between px-1">
           {!collapsed && <Logo className="h-16" />}
-          <button onClick={toggle} className="rounded-xl p-2 text-white/60 hover:bg-white/8" aria-label="Toggle sidebar">
-            {collapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
-          </button>
+          {wide ? (
+            <button onClick={toggle} className="rounded-xl p-2 text-white/60 hover:bg-white/8" aria-label="Toggle sidebar">
+              {collapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
+            </button>
+          ) : (
+            <Logo className="mx-auto h-11" />
+          )}
         </div>
         <nav className="mt-4 flex flex-col gap-1.5">
           {[...nav, { to: '/friends', label: 'Friends', icon: Handshake, end: false }].map(({ to, label, icon: Icon, end }) => (

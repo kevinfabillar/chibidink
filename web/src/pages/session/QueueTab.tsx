@@ -31,7 +31,7 @@ export function QueueTab({ session }: { session: SessionDetail }) {
   const myGroup = me && session.upNext.find((g) => [...g.teamA, ...g.teamB].some((p) => p.userId === me.player.userId))
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[22rem_1fr]">
+    <div className="grid gap-6 xl:grid-cols-[22rem_1fr]">
       {me && (
         <section className="card h-fit p-5 text-center">
           <PlayerAvatar player={me.player} variant="full" size={130} className="mx-auto" />

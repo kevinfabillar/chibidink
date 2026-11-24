@@ -232,7 +232,11 @@ function TeamRow({
           {players.map((p, i) => (
             <span key={p.player.userId}>
               {i > 0 && ' & '}
-              <PlayerName player={p.player} /> <LevelBadge userId={p.player.userId} short />
+              {/* Name and level badge stay together on one line. */}
+              <span className="inline-flex max-w-full items-center gap-1 align-middle">
+                <PlayerName player={p.player} />
+                <LevelBadge userId={p.player.userId} short />
+              </span>
             </span>
           ))}
         </div>

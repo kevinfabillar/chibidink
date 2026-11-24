@@ -73,7 +73,7 @@ export function InviteCard({ session }: { session: SessionDetail }) {
         </div>
         <div className="min-w-0 flex-1 text-center sm:text-left">
           <div className="text-sm text-muted">Session code</div>
-          <div className="font-display text-4xl font-extrabold tracking-[0.14em] break-all text-lime min-[420px]:text-5xl light:rounded-full light:bg-[linear-gradient(90deg,#B7F33B,#DDFF8F)] light:px-6 light:py-1 light:!text-[#1b1035]">{session.inviteCode}</div>
+          <div className="font-display text-4xl font-extrabold tracking-[0.14em] break-all text-lime min-[420px]:text-5xl lg:text-3xl xl:text-4xl 2xl:text-5xl light:rounded-full light:bg-[linear-gradient(90deg,#B7F33B,#DDFF8F)] light:px-6 light:py-1 light:!text-[#1b1035]">{session.inviteCode}</div>
           <button onClick={copyCode} className="mt-1 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm font-semibold text-white/75 hover:bg-white/8 hover:text-white">
             {copied ? <Check className="size-4 text-lime" /> : <Copy className="size-4" />} {copied ? 'Copied' : 'Copy code'}
           </button>

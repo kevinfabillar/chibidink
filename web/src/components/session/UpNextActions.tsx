@@ -83,7 +83,7 @@ function EditGroupSheet({ open, onClose, session, group }: { open: boolean; onCl
   const anyPlanned = session.upNext.some((g) => g.isPlanned)
 
   return (
-    <Sheet open={open} onClose={onClose} title={group.order === 1 ? 'Edit next group' : `Edit group ${group.order}`}>
+    <Sheet open={open} onClose={onClose} title={group.order === 1 ? 'Edit next group' : `Edit group ${group.order}`} wide>
       <div className="space-y-4">
         <LineupEditor
           title="Next game"
@@ -93,6 +93,7 @@ function EditGroupSheet({ open, onClose, session, group }: { open: boolean; onCl
           sources={sources}
           partnerOf={new Map(session.participants.filter((p) => p.partnerId).map((p) => [p.player.userId, p.partnerId!]))}
           saving={save.isPending}
+          error={save.error}
           saveLabel="Save group"
           onSave={(a, b) => save.mutate([...a, ...b], { onSuccess: onClose })}
           onCancel={onClose}
@@ -110,7 +111,7 @@ function EditGroupSheet({ open, onClose, session, group }: { open: boolean; onCl
             Reset queue to automatic
           </Button>
         )}
-        <ErrorNote error={save.error ?? reset.error} />
+        <ErrorNote error={reset.error} />
       </div>
     </Sheet>
   )

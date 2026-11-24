@@ -5,6 +5,7 @@ import { useState, type ReactNode } from 'react'
 import type { PlayerCard } from '../../api/types'
 import { PlayerAvatar } from '../character/Stage'
 import { Button } from '../ui/Button'
+import { ErrorNote } from '../ui/primitives'
 
 /** A panel of people who can be brought in (waitlist, another court, another group). */
 export interface PickSource {
@@ -29,6 +30,8 @@ interface Props {
   note?: (lineup: string[]) => ReactNode
   /** Fixed partners (userId -> partner's userId), to warn when an edit splits a pair. */
   partnerOf?: Map<string, string>
+  /** Why the last save failed, shown right above the Save button. */
+  error?: unknown
 }
 
 type Pick = { kind: 'slot'; slot: number } | { kind: 'pool'; id: string } | null
@@ -39,9 +42,18 @@ type Lineup = (string | null)[]
  * Tap one player then another to swap them, use − / + to take players off and put them on, or drag
  * a card by its grip onto another. Works the same with a mouse and with touch (Chrome and Safari).
  */
-export function LineupEditor({ title, original, perTeam, people, sources, saving, saveLabel = 'Save changes', onSave, onCancel, note, partnerOf }: Props) {
+export function LineupEditor({ title, original, perTeam, people, sources, saving, saveLabel = 'Save changes', onSave, onCancel, note, partnerOf, error }: Props) {
   const [lineup, setLineup] = useState<Lineup>(original)
   const [picked, setPicked] = useState<Pick>(null)
+  // The players when this edit started. If the court changes meanwhile (the queue moved someone, a player
+  // declined), saving this draft would fail or undo that change: say so and offer to start over.
+  const [startedFrom, setStartedFrom] = useState(original)
+  const courtChanged = original.join() !== startedFrom.join()
+  const startOver = () => {
+    setLineup(original)
+    setStartedFrom(original)
+    setPicked(null)
+  }
 
   const onCourt = new Set(lineup.filter(Boolean) as string[])
   const full = lineup.every(Boolean)
@@ -258,23 +270,35 @@ export function LineupEditor({ title, original, perTeam, people, sources, saving
           ))}
       </section>
 
-      <div className="flex gap-2 pt-1">
-        <Button variant="dark" pill className="flex-1" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button
-          variant="grape"
-          pill
-          className="flex-[1.6]"
-          icon={<Check className="size-5" />}
-          disabled={!full || !changed}
-          loading={saving}
-          onClick={() => onSave(lineup.slice(0, perTeam) as string[], lineup.slice(perTeam) as string[])}
-        >
-          {saveLabel}
-        </Button>
+      {/* Always in view at the bottom of the sheet, even with a long waiting list on a short screen. */}
+      <div className="sticky -bottom-5 z-10 -mx-5 -mb-5 space-y-2 border-t border-white/10 bg-surface/95 px-5 pt-3 pb-5 backdrop-blur">
+        {courtChanged && (
+          <div className="flex items-center gap-2 rounded-xl border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-xs text-amber-200">
+            <span className="flex-1">This court changed while you were editing. Start over to edit the latest players.</span>
+            <Button size="sm" variant="dark" pill onClick={startOver}>
+              Start over
+            </Button>
+          </div>
+        )}
+        <ErrorNote error={error} />
+        <div className="flex gap-2">
+          <Button variant="dark" pill className="flex-1" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button
+            variant="grape"
+            pill
+            className="flex-[1.6]"
+            icon={<Check className="size-5" />}
+            disabled={!full || !changed}
+            loading={saving}
+            onClick={() => onSave(lineup.slice(0, perTeam) as string[], lineup.slice(perTeam) as string[])}
+          >
+            {saveLabel}
+          </Button>
+        </div>
+        {!full && <p className="text-center text-xs text-amber-200">Fill every spot on court to save.</p>}
       </div>
-      {!full && <p className="text-center text-xs text-amber-200">Fill every spot on court to save.</p>}
     </div>
   )
 }

@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import { X } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, type ReactNode } from 'react'
@@ -7,10 +8,12 @@ interface Props {
   onClose: () => void
   title: string
   children: ReactNode
+  /** Wider dialog on tablets and computers (the player editors), so less scrolling on short screens. */
+  wide?: boolean
 }
 
 /** Bottom sheet on phones, centered dialog on larger screens. */
-export function Sheet({ open, onClose, title, children }: Props) {
+export function Sheet({ open, onClose, title, children, wide }: Props) {
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -30,7 +33,10 @@ export function Sheet({ open, onClose, title, children }: Props) {
             onClick={onClose}
           />
           <motion.div
-            className="relative max-h-[88dvh] w-full overflow-y-auto rounded-t-3xl border border-white/10 bg-surface p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-w-lg sm:rounded-3xl"
+            className={clsx(
+              'relative max-h-[88dvh] w-full overflow-y-auto rounded-t-3xl border border-white/10 bg-surface p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:rounded-3xl',
+              wide ? 'sm:max-w-2xl lg:max-w-3xl' : 'sm:max-w-lg',
+            )}
             initial={{ y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 40, opacity: 0 }}

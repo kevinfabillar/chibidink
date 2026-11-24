@@ -48,11 +48,11 @@ export function EditMatchSheet({ open, onClose, session, match }: Props) {
   const move = useSessionAction(session.id, () => matchApi.move(session.id, match.id, court))
   const cancel = useSessionAction(session.id, () => matchApi.cancel(session.id, match.id))
   const voidMatch = useSessionAction(session.id, () => matchApi.void(session.id, match.id))
-  const error = save.error ?? move.error ?? cancel.error ?? voidMatch.error
+  const error = move.error ?? cancel.error ?? voidMatch.error
   const done = { onSuccess: onClose }
 
   return (
-    <Sheet open={open} onClose={onClose} title={`Edit court ${match.courtNumber}`}>
+    <Sheet open={open} onClose={onClose} title={`Edit court ${match.courtNumber}`} wide>
       <div className="space-y-6">
         {canChange ? (
           <LineupEditor
@@ -63,6 +63,7 @@ export function EditMatchSheet({ open, onClose, session, match }: Props) {
             sources={sources}
             partnerOf={new Map(session.participants.filter((p) => p.partnerId).map((p) => [p.player.userId, p.partnerId!]))}
             saving={save.isPending}
+            error={save.error}
             onSave={(a, b) => save.mutate({ a, b }, done)}
             onCancel={onClose}
           />
